@@ -56,17 +56,11 @@ export default function AdminMonitoring() {
     setError('');
 
     try {
-      const headers = { Authorization: `Bearer ${authToken}` };
+      const headers = { 'x-sentry-token': authToken };
 
       const [issuesRes, statsRes] = await Promise.all([
-        fetch(
-          `https://sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/issues/?query=${encodeURIComponent(filter)}&limit=30&expand=owners`,
-          { headers }
-        ),
-        fetch(
-          `https://sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/stats/?stat=received&resolution=1h&since=${Math.floor((Date.now() - 86400000) / 1000)}`,
-          { headers }
-        ),
+        fetch(`/api/sentry?type=issues&query=${encodeURIComponent(filter)}`, { headers }),
+        fetch(`/api/sentry?type=stats`, { headers }),
       ]);
 
       if (issuesRes.status === 401) {
