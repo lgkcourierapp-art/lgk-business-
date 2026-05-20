@@ -1,0 +1,367 @@
+'use client'
+export const dynamic = 'force-dynamic'
+import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import { supabase as supabaseClient } from '../../../utils/supabase'
+import { calculatePrice } from '@/lib/pricing'
+import { distanceBetweenCities } from '@/lib/cities'
+import { useApp } from '../../../utils/appContext'
+import AddressInput from '../../../components/AddressInput'
+import { generateOrderNumber } from '../../../utils/orderNumber'
+import Header from '@/components/Header'
+import { emailOrderConfirmed } from '../../../utils/emailService'
+
+export default function NewOrderPage() {
+  const router = useRouter()
+  const { t, lang } = useApp()
+  const [user, setUser] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [errors, setErrors] = useState({})
+  const prevTotal = useRef(0)
+  const [priceFlash, setPriceFlash] = useState(false)
+
+  const [savedAddresses, setSavedAddresses] = useState([])
+  const [pickupData, setPickupData] = useState({})
+  const [showSavePickup, setShowSavePickup] = useState(false)
+  const [showSaveDelivery, setShowSaveDelivery] = useState(false)
+  const [savePickupLabel, setSavePickupLabel] = useState('')
+  const [saveDeliveryLabel, setSaveDeliveryLabel] = useState('')
+
+  const [form, setForm] = useState({
+    pickupCity: 'szczecin', pickupStreet: '', pickupHouse: '', pickupApartment: '',
+    pickupPostal: '', pickupContact: '', pickupPhone: '', pickupAccess: '', pickupInstructions: '',
+    deliveryCity: 'szczecin', deliveryStreet: '', deliveryHouse: '', deliveryApartment: '',
+    deliveryPostal: '', deliveryContact: '', deliveryPhone: '', deliveryNotes: '',
+    weight: '5-10kg', timeWindow: 'same_day',
+    isFragile: false, hasInsurance: true,
+    wantsWhatsApp: false, whatsAppPhone: ''
+  })
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { router.push('/login'); return }
+      setUser(user)
+      const { data: addresses } = await supabaseClient
+        .from('saved_addresses')
+        .select('*')
+        .eq('client_id', user['id'])
+        .order('use_count', { ascending: false })
+      setSavedAddresses(addresses || [])
+      const defaultPickup = (addresses || []).find(a => a.is_default_pickup)
+      if (defaultPickup) {
+        const filled = {
+          street: defaultPickup.street || '',
+          house: defaultPickup.house_number || '',
+          apartment: defaultPickup.apartment || '',
+          postal: defaultPickup.postal_code || '',
+          city: defaultPickup.city || '',
+          contactName: defaultPickup.contact_name || '',
+          contactPhone: defaultPickup.contact_phone || '',
+          accessCode: defaultPickup.access_code || '',
+          instructions: defaultPickup.instructions || '',
+        }
+        setPickupData(filled)
+        set('pickupCity', defaultPickup.city); set('pickupStreet', defaultPickup.street)
+        set('pickupHouse', defaultPickup.house_number); set('pickupApartment', defaultPickup.apartment || '')
+        set('pickupPostal', defaultPickup.postal_code || ''); set('pickupContact', defaultPickup.contact_name || '')
+        set('pickupPhone', defaultPickup.contact_phone || ''); set('pickupAccess', defaultPickup.access_code || '')
+      }
+    })
+  }, [router])
+
+  const dist = distanceBetweenCities(form.pickupCity, form.deliveryCity)
+  const price = calculatePrice({
+    distance: dist, weight: form.weight, timeWindow: form.timeWindow,
+    pickupCity: form.pickupCity, deliveryCity: form.deliveryCity,
+    isCOD: false, isFragile: form.isFragile, hasInsurance: form.hasInsurance
+  })
+
+  useEffect(() => {
+    if (prevTotal.current !== price.total && prevTotal.current !== 0) {
+      setPriceFlash(true)
+      setTimeout(() => setPriceFlash(false), 400)
+    }
+    prevTotal.current = price.total
+  }, [price.total])
+
+  const validate = () => {
+    const e = {}
+    if (!form.pickupStreet) e.pickup = 'Pickup address required'
+    if (!form.pickupCity) e.pickup = 'Pickup city required'
+    if (form.pickupStreet.length > 200) e.pickup = 'Pickup street too long'
+    if (form.pickupAccess.length > 50) e.pickup = 'Access code too long (max 50)'
+    if (form.pickupInstructions.length > 500) e.pickup = 'Pickup instructions too long (max 500)'
+    if (!form.deliveryStreet) e.delivery = 'Delivery address required'
+    if (!form.deliveryCity) e.delivery = 'Delivery city required'
+    if (!form.deliveryContact) e.delivery = 'Recipient name required'
+    if (form.deliveryContact.length > 100) e.delivery = 'Recipient name too long'
+    if (!form.deliveryPhone) e.delivery = 'Recipient phone required'
+    if (!/^\+?[\d\s\-()]{7,20}$/.test(form.deliveryPhone)) e.delivery = 'Enter a valid phone number'
+    if (form.deliveryNotes.length > 500) e.delivery = 'Delivery notes too long (max 500)'
+    if (form.wantsWhatsApp && form.whatsAppPhone && !/^\+?[\d\s\-()]{7,20}$/.test(form.whatsAppPhone)) e.delivery = 'Enter a valid WhatsApp number'
+    return e
+  }
+
+  const submit = async () => {
+    const e = validate()
+    if (Object.keys(e).length > 0) { setErrors(e); return }
+    setSubmitting(true)
+    try {
+      const { data: { user: u } } = await supabase.auth.getUser()
+      if (!u) { router.push('/login'); return }
+      const orderId = await generateOrderNumber(
+        supabaseClient,
+        form.pickupCity,
+        form.pickupPostal
+      )
+      const delivery = {
+        id: orderId, client_id: u['id'],
+        pickup_city: form.pickupCity, pickup_street: form.pickupStreet,
+        pickup_house_number: form.pickupHouse, pickup_apartment: form.pickupApartment,
+        pickup_access_code: form.pickupAccess, pickup_postal_code: form.pickupPostal,
+        pickup_contact_name: form.pickupContact, pickup_contact_phone: form.pickupPhone,
+        pickup_instructions: form.pickupInstructions,
+        pickup_address: form.pickupStreet + ' ' + form.pickupHouse + ', ' + form.pickupCity,
+        delivery_city: form.deliveryCity, delivery_street: form.deliveryStreet,
+        delivery_house_number: form.deliveryHouse, delivery_apartment: form.deliveryApartment,
+        delivery_postal_code: form.deliveryPostal, delivery_contact_name: form.deliveryContact,
+        delivery_contact_phone: form.deliveryPhone, delivery_notes: form.deliveryNotes,
+        delivery_address: form.deliveryStreet + ' ' + form.deliveryHouse + ', ' + form.deliveryCity,
+        package_weight: form.weight, is_fragile: form.isFragile,
+        insurance_selected: form.hasInsurance, insurance_fee: form.hasInsurance ? 3 : 0,
+        whatsapp_updates: form.wantsWhatsApp, whatsapp_phone: form.wantsWhatsApp ? form.whatsAppPhone : null,
+        time_window: form.timeWindow, distance_km: dist, price_total: price.total,
+        price_breakdown: price, status: 'awaiting_payment', country: 'PL',
+        market_currency: 'PLN', created_at: new Date().toISOString()
+      }
+      const { error } = await supabase.from('deliveries').insert(delivery)
+      if (error) throw error
+
+      // Fire-and-forget confirmation email — never blocks order placement
+      try {
+        const { data: { user: u2 } } = await supabase.auth.getUser()
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('email, company_name')
+          .eq('id', u2['id'])
+          .single()
+        if (profile?.email) {
+          emailOrderConfirmed(delivery, profile.email, profile.company_name || '').catch(() => {})
+        }
+      } catch (emailError) {
+        console.warn('Order confirmation email failed:', emailError)
+      }
+
+      router.push('/orders/' + orderId + '?pay=1')
+    } catch (err) {
+      setErrors({ submit: 'Something went wrong placing your order. Please try again.' })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const cardStyle = { background: '#1A1A1A', border: '1px solid #333', borderRadius: '12px', padding: '24px', marginBottom: '16px' }
+  const timeOptions = [
+    { value: 'asap', label: t('asap'), note: '+PLN 8' },
+    { value: 'same_day', label: t('sameDay'), note: 'No extra charge' },
+    { value: 'scheduled', label: t('scheduled'), note: '-PLN 5' }
+  ]
+
+  return (
+    <div key={lang} style={{ minHeight: '100vh', background: '#0A0A0A' }}>
+      <Header />
+      <main style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px', paddingBottom: 120 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('newOrder')}</h1>
+
+        {/* Section 1: Pickup */}
+        <div style={cardStyle}>
+          <AddressInput
+            label={'1. ' + t('pickup')}
+            savedAddresses={savedAddresses.filter(a => a.address_type !== 'delivery')}
+            defaultValues={pickupData}
+            placeholder={t('pickupPlaceholder')}
+            onFill={(data) => {
+              set('pickupStreet', data.street || ''); set('pickupHouse', data.house || '')
+              set('pickupApartment', data.apartment || ''); set('pickupPostal', data.postal || '')
+              set('pickupCity', data.city || 'szczecin'); set('pickupContact', data.contactName || '')
+              set('pickupPhone', data.contactPhone || ''); set('pickupAccess', data.accessCode || '')
+              set('pickupInstructions', data.instructions || '')
+              setShowSavePickup(true)
+              setErrors(e => ({ ...e, pickup: undefined }))
+            }}
+          />
+          {errors.pickup && <div style={{ color: '#FF3B30', fontSize: 13, marginTop: 8 }}>{errors.pickup}</div>}
+          {showSavePickup && (
+            <div style={{ marginTop: 16, padding: 12, background: '#0A0A0A', borderRadius: 8, border: '1px solid #333' }}>
+              <div style={{ color: '#999', fontSize: 13, marginBottom: 8 }}>{t('saveAddress')}</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  placeholder={t('labelPickup')}
+                  value={savePickupLabel}
+                  onChange={e => setSavePickupLabel(e.target.value)}
+                  style={{ flex: 1, padding: 10, background: '#1A1A1A', border: '1px solid #333', borderRadius: 8, color: '#FFF', fontSize: 14, height: 40 }}
+                />
+                <button
+                  onClick={async () => {
+                    if (!savePickupLabel) return
+                    const { data: { user: u } } = await supabase.auth.getUser()
+                    await supabaseClient.from('saved_addresses').insert({
+                      client_id: u['id'], label: savePickupLabel, address_type: 'pickup',
+                      street: form.pickupStreet, house_number: form.pickupHouse,
+                      apartment: form.pickupApartment, postal_code: form.pickupPostal,
+                      city: form.pickupCity, contact_name: form.pickupContact,
+                      contact_phone: form.pickupPhone, access_code: form.pickupAccess,
+                      instructions: form.pickupInstructions,
+                      is_default_pickup: savedAddresses.filter(a => a.is_default_pickup).length === 0
+                    })
+                    setShowSavePickup(false); setSavePickupLabel('')
+                    const { data } = await supabaseClient.from('saved_addresses').select('*').eq('client_id', u['id']).order('use_count', { ascending: false })
+                    setSavedAddresses(data || [])
+                  }}
+                  className="btn-primary"
+                  style={{ height: 40, padding: '0 16px', fontSize: 14 }}
+                >{t('save')}</button>
+                <button onClick={() => setShowSavePickup(false)} style={{ background: 'transparent', border: '1px solid #333', padding: '0 16px', borderRadius: 8, color: '#999', cursor: 'pointer', fontSize: 14, height: 40 }}>{t('skip')}</button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Section 2: Delivery */}
+        <div style={cardStyle}>
+          <AddressInput
+            label={'2. ' + t('delivery')}
+            savedAddresses={savedAddresses.filter(a => a.address_type !== 'pickup')}
+            placeholder={t('deliveryPlaceholder')}
+            onFill={(data) => {
+              set('deliveryStreet', data.street || ''); set('deliveryHouse', data.house || '')
+              set('deliveryApartment', data.apartment || ''); set('deliveryPostal', data.postal || '')
+              set('deliveryCity', data.city || 'szczecin'); set('deliveryContact', data.contactName || '')
+              set('deliveryPhone', data.contactPhone || ''); set('deliveryNotes', data.instructions || '')
+              setShowSaveDelivery(true)
+              setErrors(e => ({ ...e, delivery: undefined }))
+            }}
+          />
+          {errors.delivery && <div style={{ color: '#FF3B30', fontSize: 13, marginTop: 8 }}>{errors.delivery}</div>}
+          {showSaveDelivery && (
+            <div style={{ marginTop: 16, padding: 12, background: '#0A0A0A', borderRadius: 8, border: '1px solid #333' }}>
+              <div style={{ color: '#999', fontSize: 13, marginBottom: 8 }}>{t('saveRecipient')}</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  placeholder={t('labelRecipient')}
+                  value={saveDeliveryLabel}
+                  onChange={e => setSaveDeliveryLabel(e.target.value)}
+                  style={{ flex: 1, padding: 10, background: '#1A1A1A', border: '1px solid #333', borderRadius: 8, color: '#FFF', fontSize: 14, height: 40 }}
+                />
+                <button
+                  onClick={async () => {
+                    if (!saveDeliveryLabel) return
+                    const { data: { user: u } } = await supabase.auth.getUser()
+                    await supabaseClient.from('saved_addresses').insert({
+                      client_id: u['id'], label: saveDeliveryLabel, address_type: 'delivery',
+                      street: form.deliveryStreet, house_number: form.deliveryHouse,
+                      apartment: form.deliveryApartment, postal_code: form.deliveryPostal,
+                      city: form.deliveryCity, contact_name: form.deliveryContact,
+                      contact_phone: form.deliveryPhone,
+                    })
+                    setShowSaveDelivery(false); setSaveDeliveryLabel('')
+                    const { data } = await supabaseClient.from('saved_addresses').select('*').eq('client_id', u['id']).order('use_count', { ascending: false })
+                    setSavedAddresses(data || [])
+                  }}
+                  className="btn-primary"
+                  style={{ height: 40, padding: '0 16px', fontSize: 14 }}
+                >{t('save')}</button>
+                <button onClick={() => setShowSaveDelivery(false)} style={{ background: 'transparent', border: '1px solid #333', padding: '0 16px', borderRadius: 8, color: '#999', cursor: 'pointer', fontSize: 14, height: 40 }}>{t('skip')}</button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Section 3: Package */}
+        <div style={cardStyle}>
+          <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>3. {t('package')}</div>
+          <label>{t('weight')}</label>
+          <select value={form.weight} onChange={e => set('weight', e.target.value)} style={{ marginBottom: 12 }}>
+            <option value="5kg">Up to 5kg</option>
+            <option value="5-10kg">5–10kg</option>
+            <option value="10-20kg">10–20kg (+PLN 5)</option>
+            <option value=">20kg">Over 20kg (+PLN 10)</option>
+          </select>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', textTransform: 'none', fontSize: 14, fontWeight: 400, letterSpacing: 0, marginBottom: 0 }}>
+            <input type="checkbox" checked={form.isFragile} onChange={e => set('isFragile', e.target.checked)} style={{ accentColor: '#D4FF00', width: 18, height: 18, flexShrink: 0 }} />
+            <span style={{ color: '#FFF', fontWeight: 600, fontSize: 14 }}>{t('fragile')} <span style={{ color: '#999', fontWeight: 400 }}>(+PLN 5)</span></span>
+          </label>
+        </div>
+
+        {/* Section 4: Options */}
+        <div style={cardStyle}>
+          <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>4. {t('options')}</div>
+          <label>{t('timeWindow')}</label>
+          <div style={{ marginBottom: 16 }}>
+            {timeOptions.map(opt => (
+              <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: form.timeWindow === opt.value ? '#D4FF0015' : '#0A0A0A', border: '1px solid ' + (form.timeWindow === opt.value ? '#D4FF00' : '#333'), borderRadius: 8, marginBottom: 6, cursor: 'pointer', textTransform: 'none', fontSize: 14, fontWeight: 400, letterSpacing: 0 }}>
+                <input type="radio" name="timeWindow" value={opt.value} checked={form.timeWindow === opt.value} onChange={() => set('timeWindow', opt.value)} style={{ accentColor: '#D4FF00' }} />
+                <span style={{ flex: 1, color: '#FFF', fontWeight: 600, fontSize: 14 }}>{opt.label}</span>
+                <span style={{ color: '#999', fontSize: 13 }}>{opt.note}</span>
+              </label>
+            ))}
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 0', borderBottom: '1px solid #333', textTransform: 'none', fontSize: 14, fontWeight: 400, letterSpacing: 0, marginBottom: 12 }}>
+            <input type="checkbox" checked={form.hasInsurance} onChange={e => set('hasInsurance', e.target.checked)} style={{ accentColor: '#D4FF00', width: 14, height: 14 }} />
+            <div>
+              <span style={{ color: '#999', fontSize: 13 }}>{t('shipmentProtection')}</span>
+              <span style={{ color: '#999', fontSize: 12, marginLeft: 6, opacity: 0.6 }}>{t('shipmentProtectionNote')}</span>
+            </div>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', textTransform: 'none', fontSize: 14, fontWeight: 400, letterSpacing: 0 }}>
+            <input type="checkbox" checked={form.wantsWhatsApp} onChange={e => set('wantsWhatsApp', e.target.checked)} style={{ accentColor: '#D4FF00', width: 18, height: 18, flexShrink: 0 }} />
+            <span style={{ color: '#FFF', fontWeight: 600, fontSize: 14 }}>{t('whatsappUpdates')}</span>
+          </label>
+          {form.wantsWhatsApp && (
+            <input type="tel" placeholder="+48 XXX XXX XXX" value={form.whatsAppPhone} onChange={e => set('whatsAppPhone', e.target.value)} style={{ marginTop: 8 }} />
+          )}
+        </div>
+
+        {/* Section 5: Price breakdown */}
+        <div style={{ ...cardStyle, border: '1px solid #D4FF00' }}>
+          <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>{t('priceBreakdown')}</div>
+          {[
+            [t('distanceLabel') + ': ' + dist + 'km', 'PLN ' + price.basePrice],
+            price.weightFee > 0 && [t('weight'), '+PLN ' + price.weightFee],
+            price.timeFee !== 0 && [t('timeWindowLine'), (price.timeFee > 0 ? '+' : '') + 'PLN ' + price.timeFee],
+            price.specialFees > 0 && [t('addOns'), '+PLN ' + price.specialFees],
+            price.cityMultiplier !== 1 && [t('cityRate'), 'x' + price.cityMultiplier]
+          ].filter(Boolean).map(([l, v]) => (
+            <div key={l} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 14, color: '#999' }}>
+              <span>{l}</span><span>{v}</span>
+            </div>
+          ))}
+          <div style={{ borderTop: '1px solid #333', marginTop: 12, paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 700, fontSize: 16 }}>{t('total').toUpperCase()}</span>
+            <span style={{ fontWeight: 900, fontSize: 28, color: '#D4FF00', fontFamily: "'Fira Code', monospace", fontVariantNumeric: 'tabular-nums' }}>PLN {price.total}</span>
+          </div>
+          {form.hasInsurance && (
+            <div style={{ color: '#999', fontSize: 11, opacity: 0.6, marginTop: 6, textAlign: 'right' }}>
+              {t('shipmentProtection')}
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Fixed bottom bar */}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#1A1A1A', borderTop: '1px solid #333', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 100 }}>
+        {errors.submit && <div style={{ position: 'absolute', top: '-40px', left: 0, right: 0, background: '#FF3B3020', borderTop: '1px solid #FF3B30', padding: '10px 24px', color: '#FF6B6B', fontSize: 13 }}>{errors.submit}</div>}
+        <div>
+          <div style={{ color: '#999', fontSize: 12 }}>{t('total')}</div>
+          <div style={{ color: '#D4FF00', fontWeight: 900, fontSize: 24, fontFamily: "'Fira Code', monospace", fontVariantNumeric: 'tabular-nums' }}>PLN {price.total}</div>
+        </div>
+        <button onClick={submit} disabled={submitting} className="btn-primary" style={{ fontSize: 16, padding: '0 32px', height: 52 }}>
+          {submitting ? t('placingOrder') : t('placeOrder')}
+        </button>
+      </div>
+    </div>
+  )
+}
