@@ -87,7 +87,7 @@ export default function AdminMonitoring() {
 
   const errorCount   = issues.filter(i => i.level === 'error' || i.level === 'fatal').length;
   const warningCount = issues.filter(i => i.level === 'warning').length;
-  const totalEvents  = stats ? stats.reduce((s, [, v]) => s + v, 0) : null;
+  const totalEvents  = Array.isArray(stats) ? stats.reduce((s, [, v]) => s + v, 0) : null;
 
   const FILTERS = [
     ['is:unresolved',                   'Unresolved'],

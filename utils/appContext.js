@@ -233,13 +233,13 @@ export const TRANSLATIONS = {
 };
 
 export function AppProvider({ children }) {
-  const [lang, setLang] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('lgk_lang') ||
-             (navigator.language?.startsWith('pl') ? 'pl' : 'en');
-    }
-    return 'en';
-  });
+  const [lang, setLang] = useState('en');
+
+  useEffect(() => {
+    const stored = localStorage.getItem('lgk_lang');
+    if (stored) setLang(stored);
+    else if (navigator.language?.startsWith('pl')) setLang('pl');
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('lang', lang);
