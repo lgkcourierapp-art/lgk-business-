@@ -9,7 +9,7 @@ const M = {
 
 const SENTRY_ORG     = 'lgk-courier';
 const SENTRY_PROJECT = 'javascript-nextjs';
-const SENTRY_URL     = `https://lgk-courier.sentry.io/issues/?project=${SENTRY_PROJECT}`;
+const SENTRY_URL     = 'https://lgk-courier.sentry.io/settings/auth-tokens/';
 
 const LEVEL_COLOR = {
   fatal:   '#FF3B30',
@@ -115,7 +115,7 @@ export default function AdminMonitoring() {
             color: '#D4FF00', padding: '9px 18px', borderRadius: '8px',
             textDecoration: 'none', ...M.display, fontSize: '12px', fontWeight: 700,
           }}
-        >↗ Open Sentry Dashboard</a>
+        >↗ Get Auth Token</a>
       </div>
 
       {/* Token setup — shown when no token saved */}
