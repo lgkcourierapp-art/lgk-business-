@@ -1,12 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+import { supabase } from '@/lib/supabase';
 
 const M = {
   card: { background: '#141414', border: '1px solid #1E1E1E', borderRadius: '12px', padding: '16px 20px' },
