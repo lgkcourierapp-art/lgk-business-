@@ -18,6 +18,8 @@ const NAV = [
   { href: '/admin/waitlist',   label: 'Waitlist',   icon: '📋' },
   { href: '/admin/payouts',    label: 'Payouts',    icon: '💸' },
   { href: '/admin/messages',   label: 'Messages',   icon: '📣' },
+  { href: '/admin/moderation',  label: 'Moderation',  icon: '🛡️' },
+  { href: '/admin/flags',       label: 'Flags',       icon: '🚩' },
   { href: '/admin/security',    label: 'Security',    icon: '🔒' },
   { href: '/admin/monitoring',  label: 'Monitoring',  icon: '🔭' },
   { href: '/admin/settings',    label: 'Settings',    icon: '⚙️' },
