@@ -16,6 +16,8 @@ const NAV = [
   { href: '/admin/enterprise', label: 'Enterprise', icon: '🚀' },
   { href: '/admin/regions',    label: 'Regions',    icon: '🌍' },
   { href: '/admin/waitlist',   label: 'Waitlist',   icon: '📋' },
+  { href: '/admin/payouts',    label: 'Payouts',    icon: '💸' },
+  { href: '/admin/messages',   label: 'Messages',   icon: '📣' },
   { href: '/admin/security',    label: 'Security',    icon: '🔒' },
   { href: '/admin/monitoring',  label: 'Monitoring',  icon: '🔭' },
   { href: '/admin/settings',    label: 'Settings',    icon: '⚙️' },
@@ -80,7 +82,7 @@ export default function AdminLayout({ children }) {
 
   const isActive = (item) => item.exact ? pathname === item.href : pathname.startsWith(item.href);
 
-  const OPS_SECTIONS = ['/admin', '/admin/orders', '/admin/couriers', '/admin/cs', '/admin/clients', '/admin/waitlist'];
+  const OPS_SECTIONS = ['/admin', '/admin/orders', '/admin/couriers', '/admin/cs', '/admin/clients', '/admin/waitlist', '/admin/payouts', '/admin/messages'];
   const visibleNav = adminRole === 'ops_assistant'
     ? NAV.filter(n => OPS_SECTIONS.some(s => n.href === s))
     : NAV;
