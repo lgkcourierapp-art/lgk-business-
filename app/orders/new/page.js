@@ -118,18 +118,21 @@ export default function NewOrderPage() {
         form.pickupPostal
       )
       const delivery = {
-        id: orderId, client_id: u['id'],
+        id: orderId, order_number: orderId, client_id: u['id'],
         pickup_city: form.pickupCity, pickup_street: form.pickupStreet,
         pickup_house_number: form.pickupHouse, pickup_apartment: form.pickupApartment,
         pickup_access_code: form.pickupAccess, pickup_postal_code: form.pickupPostal,
+        pickup_postal: form.pickupPostal,
         pickup_contact_name: form.pickupContact, pickup_contact_phone: form.pickupPhone,
         pickup_instructions: form.pickupInstructions,
+        pickup_notes: form.pickupInstructions,
         pickup_address: form.pickupStreet + ' ' + form.pickupHouse + ', ' + form.pickupCity,
         delivery_city: form.deliveryCity, delivery_street: form.deliveryStreet,
         delivery_house_number: form.deliveryHouse, delivery_apartment: form.deliveryApartment,
         delivery_postal_code: form.deliveryPostal, delivery_contact_name: form.deliveryContact,
         delivery_contact_phone: form.deliveryPhone, delivery_notes: form.deliveryNotes,
         delivery_address: form.deliveryStreet + ' ' + form.deliveryHouse + ', ' + form.deliveryCity,
+        recipient_name: form.deliveryContact, recipient_phone: form.deliveryPhone,
         package_weight: form.weight, is_fragile: form.isFragile,
         insurance_selected: form.hasInsurance, insurance_fee: form.hasInsurance ? 3 : 0,
         whatsapp_updates: form.wantsWhatsApp, whatsapp_phone: form.wantsWhatsApp ? form.whatsAppPhone : null,

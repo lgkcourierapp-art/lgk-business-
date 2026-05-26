@@ -106,6 +106,7 @@ export default function OrderPage({ params }) {
 
   const revolutUrl = 'https://revolut.me/' + REVOLUT_USER + '?amount=' + Math.round((order.price_total || 0) * 100) + '&currency=PLN&description=LGK+Order+' + order['id'].slice(-6).toUpperCase()
   const shortId = order['id'].slice(-6).toUpperCase()
+  const displayId = order.order_number || ('#' + shortId)
   const priceFormatted = 'PLN ' + (order.price_total || 0).toFixed(2)
 
   const steps = [
@@ -225,7 +226,8 @@ export default function OrderPage({ params }) {
       <div>
         <Link href="/dashboard" style={{ color: '#666', fontSize: 13, textDecoration: 'none', display: 'inline-block', marginBottom: 6 }}>← {t('dashboard')}</Link>
         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>
-          {t('orderPrefix')} <span style={{ fontFamily: "'Fira Code', monospace", color: '#D4FF00' }}>#{shortId}</span>
+          {!order.order_number && t('orderPrefix') + ' '}
+          <span style={{ fontFamily: "'Fira Code', monospace", color: '#D4FF00', fontSize: order.order_number ? 16 : 24 }}>{displayId}</span>
         </h1>
       </div>
       <div style={{

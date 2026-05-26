@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const { withSentryConfig } = require('@sentry/nextjs');
+const withSerwist = require('@serwist/next').default({
+  swSrc: 'app/sw.ts',
+  swDest: 'public/sw.js',
+  disable: process.env.NODE_ENV === 'development',
+});
 
 const nextConfig = {
   async headers() {
@@ -25,6 +30,7 @@ const nextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co https://openweathermap.org",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://*.sentry.io",
+              "worker-src 'self'",
               "frame-ancestors 'none'",
             ].join('; '),
           },
@@ -34,14 +40,16 @@ const nextConfig = {
   },
 };
 
+const configWithSerwist = withSerwist(nextConfig);
+
 // Sentry wraps next config to enable server-side error capture.
 // If NEXT_PUBLIC_SENTRY_DSN is not set, this is a no-op — app behaves identically.
 module.exports = process.env.NEXT_PUBLIC_SENTRY_DSN
-  ? withSentryConfig(nextConfig, {
+  ? withSentryConfig(configWithSerwist, {
       org: process.env.SENTRY_ORG,
       project: process.env.SENTRY_PROJECT,
-      silent: true,           // suppress Sentry build output
+      silent: true,
       disableLogger: true,
       widenClientFileUpload: true,
     })
-  : nextConfig;
+  : configWithSerwist;

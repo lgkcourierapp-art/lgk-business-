@@ -24,10 +24,12 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [lastRefresh, setLastRefresh] = useState(null)
   const [hoveredCard, setHoveredCard] = useState(null)
+  const [userId, setUserId] = useState(null)
 
   const fetchOrders = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
+    setUserId(user['id'])
     const { data, error } = await supabase
       .from('deliveries')
       .select('*')
@@ -45,9 +47,32 @@ export default function DashboardPage() {
     return () => clearInterval(interval)
   }, [fetchOrders])
 
+  useEffect(() => {
+    if (!userId) return
+    const channel = supabase
+      .channel('client-orders-' + userId)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'deliveries',
+        filter: 'client_id=eq.' + userId,
+      }, (payload) => {
+        setOrders(prev => [payload.new, ...prev])
+      })
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [userId])
+
   const active    = orders.filter(o => ['collected', 'in_transit'].includes(o.status))
   const pending   = orders.filter(o => ['pending', 'assigned', 'awaiting_payment'].includes(o.status))
   const completed = orders.filter(o => o.status === 'delivered' && isToday(o.delivered_at || o.created_at))
+
+  const now = new Date()
+  const thisMonth = orders.filter(o => {
+    const d = new Date(o.created_at)
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+  })
+  const deliveredMonth = thisMonth.filter(o => o.status === 'delivered')
+  const plnSpent = deliveredMonth.reduce((sum, o) => sum + (o.price_total || 0), 0)
+  const successRate = thisMonth.length > 0 ? Math.round((deliveredMonth.length / thisMonth.length) * 100) : 0
 
   const statusBorderMap = {
     awaiting_payment: '#8B5CF6',
@@ -175,6 +200,22 @@ export default function DashboardPage() {
         </div>
 
         <WeatherAlert city="szczecin" compact={true} />
+
+        {/* StatCards */}
+        {!loading && orders.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+            {[
+              { label: lang === 'pl' ? 'Zlecenia (mies.)' : 'Orders (month)', value: thisMonth.length, color: '#D4FF00' },
+              { label: lang === 'pl' ? 'Wydatki (mies.)' : 'Spent (month)', value: 'PLN ' + plnSpent.toFixed(0), color: '#D4FF00' },
+              { label: lang === 'pl' ? 'Skuteczność' : 'Success rate', value: successRate + '%', color: successRate >= 90 ? '#00C853' : successRate >= 70 ? '#FF9500' : '#FF3B30' },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ background: '#1A1A1A', border: '1px solid #333', borderRadius: 10, padding: '16px 18px' }}>
+                <div style={{ color: '#666', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{label}</div>
+                <div style={{ color, fontWeight: 900, fontSize: 22, fontFamily: "'Fira Code', monospace" }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: 60, color: '#666' }}>{t('loading')}</div>

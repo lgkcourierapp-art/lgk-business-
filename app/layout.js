@@ -1,5 +1,6 @@
 import './globals.css'
 import { AppProvider } from '../utils/appContext'
+import InstallPrompt from '../components/InstallPrompt'
 
 export const metadata = {
   title: 'LGK Courier Business',
@@ -20,6 +21,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <AppProvider>{children}</AppProvider>
+        <InstallPrompt />
       </body>
     </html>
   )
