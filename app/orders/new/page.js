@@ -27,6 +27,12 @@ export default function NewOrderPage() {
   const [showSaveDelivery, setShowSaveDelivery] = useState(false)
   const [savePickupLabel, setSavePickupLabel] = useState('')
   const [saveDeliveryLabel, setSaveDeliveryLabel] = useState('')
+  const [businessType, setBusinessType] = useState('general')
+  const [readyTime, setReadyTime] = useState('')
+  const [prepTime, setPrepTime] = useState('')
+  const [itemCount, setItemCount] = useState(1)
+  const [handlingFlags, setHandlingFlags] = useState([])
+  const [courierNote, setCourierNote] = useState('')
 
   const [form, setForm] = useState({
     pickupCity: 'szczecin', pickupStreet: '', pickupHouse: '', pickupApartment: '',
@@ -39,6 +45,7 @@ export default function NewOrderPage() {
   })
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const isRestaurant = businessType === 'restaurant'
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -50,6 +57,12 @@ export default function NewOrderPage() {
         .eq('client_id', user['id'])
         .order('use_count', { ascending: false })
       setSavedAddresses(addresses || [])
+      const { data: prof } = await supabaseClient
+        .from('profiles')
+        .select('business_type')
+        .eq('id', user['id'])
+        .single()
+      if (prof?.business_type) setBusinessType(prof.business_type)
       const defaultPickup = (addresses || []).find(a => a.is_default_pickup)
       if (defaultPickup) {
         const filled = {
@@ -124,8 +137,9 @@ export default function NewOrderPage() {
         pickup_access_code: form.pickupAccess, pickup_postal_code: form.pickupPostal,
         pickup_postal: form.pickupPostal,
         pickup_contact_name: form.pickupContact, pickup_contact_phone: form.pickupPhone,
-        pickup_instructions: form.pickupInstructions,
-        pickup_notes: form.pickupInstructions,
+        pickup_instructions: isRestaurant ? [courierNote, handlingFlags.join(' · ')].filter(Boolean).join(' | ') : form.pickupInstructions,
+        pickup_notes: isRestaurant ? [courierNote, handlingFlags.join(' · ')].filter(Boolean).join(' | ') : form.pickupInstructions,
+        order_item_count: isRestaurant ? itemCount : null,
         pickup_address: form.pickupStreet + ' ' + form.pickupHouse + ', ' + form.pickupCity,
         delivery_city: form.deliveryCity, delivery_street: form.deliveryStreet,
         delivery_house_number: form.deliveryHouse, delivery_apartment: form.deliveryApartment,
@@ -136,7 +150,7 @@ export default function NewOrderPage() {
         package_weight: form.weight, is_fragile: form.isFragile,
         insurance_selected: form.hasInsurance, insurance_fee: form.hasInsurance ? 3 : 0,
         whatsapp_updates: form.wantsWhatsApp, whatsapp_phone: form.wantsWhatsApp ? form.whatsAppPhone : null,
-        time_window: form.timeWindow, distance_km: dist, price_total: price.total,
+        time_window: isRestaurant ? (readyTime || 'any_time') : form.timeWindow, distance_km: dist, price_total: price.total,
         price_breakdown: price, status: 'awaiting_payment', country: 'PL',
         market_currency: 'PLN', created_at: new Date().toISOString()
       }
@@ -232,6 +246,69 @@ export default function NewOrderPage() {
             </div>
           )}
         </div>
+
+        {/* Restaurant details */}
+        {isRestaurant && (
+          <div style={cardStyle}>
+            <div style={{ color: '#FF9500', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>🍽️ Restaurant Details</div>
+
+            <div style={{ color: '#999', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Order Ready Time</div>
+            <input
+              type="time"
+              value={readyTime}
+              onChange={e => setReadyTime(e.target.value)}
+              style={{ width: '100%', padding: '12px 14px', background: '#0A0A0A', border: '1px solid #333', borderRadius: 8, color: '#FFF', fontSize: 15, marginBottom: 16, boxSizing: 'border-box' }}
+            />
+
+            <div style={{ color: '#999', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Prep Time</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+              {['10 min', '15 min', '20 min', '30 min', '45 min'].map(p => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPrepTime(prepTime === p ? '' : p)}
+                  style={{ padding: '8px 14px', borderRadius: 20, fontWeight: 700, fontSize: 13, border: '1px solid ' + (prepTime === p ? '#FF9500' : '#333'), background: prepTime === p ? '#FF950020' : '#0A0A0A', color: prepTime === p ? '#FF9500' : '#999', cursor: 'pointer' }}
+                >{p}</button>
+              ))}
+            </div>
+
+            <div style={{ color: '#999', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Number of Bags / Items</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+              {[1, 2, 3, 4, 5].map(n => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setItemCount(n)}
+                  style={{ width: 44, height: 44, borderRadius: 8, fontWeight: 700, fontSize: 15, border: '1px solid ' + (itemCount === n ? '#D4FF00' : '#333'), background: itemCount === n ? '#D4FF0020' : '#0A0A0A', color: itemCount === n ? '#D4FF00' : '#999', cursor: 'pointer' }}
+                >{n === 5 ? '5+' : n}</button>
+              ))}
+            </div>
+
+            <div style={{ color: '#999', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Handling</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              {['Hot food — keep warm', 'Liquid / spill risk', 'Keep upright', 'Contact-free dropoff'].map(flag => (
+                <label key={flag} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={handlingFlags.includes(flag)}
+                    onChange={e => setHandlingFlags(prev => e.target.checked ? [...prev, flag] : prev.filter(f => f !== flag))}
+                    style={{ accentColor: '#D4FF00', width: 18, height: 18, flexShrink: 0 }}
+                  />
+                  <span style={{ color: '#FFF', fontSize: 14 }}>{flag}</span>
+                </label>
+              ))}
+            </div>
+
+            <div style={{ color: '#999', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Note for Courier</div>
+            <textarea
+              placeholder="e.g. Buzzer code 4B, collect from kitchen window..."
+              value={courierNote}
+              onChange={e => setCourierNote(e.target.value)}
+              rows={2}
+              style={{ width: '100%', padding: '12px 14px', background: '#0A0A0A', border: '1px solid #333', borderRadius: 8, color: '#FFF', fontSize: 14, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+            />
+          </div>
+        )}
 
         {/* Section 2: Delivery */}
         <div style={cardStyle}>
