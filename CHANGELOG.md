@@ -1,3 +1,30 @@
+## [1.0.0] — 2026-05-26
+
+### Added — Full Platform Build
+- Client dashboard: stat cards (orders/month, PLN spent, success rate) + Supabase Realtime INSERT subscription
+- Order detail page: `order_number` displayed as primary identifier, Realtime UPDATE subscription
+- Collection QR page: single QR on dark card, order_number in yellow monospace, 24h expiry countdown, pickup notes box, "Collected at HH:MM" scanned state
+- Printable A6 label: segment strip [CITY][ZONE][DATE][SEQ][CHK] with city+check highlighted, dual-column addresses, tracking URL `lgk.pl/track/{order_number}`
+- Saved Addresses page (`/addresses`): full CRUD, default address, pickup/delivery type filter, bottom-sheet add/edit form
+- Shared layout components: `Sidebar.js` (desktop nav), `BottomNav.js` (mobile 4-item nav), `Topbar.js` (L° logo + page title + New order button)
+- PWA: `app/manifest.ts`, `public/sw.js` (network-first nav, cache-first assets, offline fallback), `InstallPrompt.jsx` (Android auto-banner, iOS Share → Add to Home Screen)
+- SW registered via `InstallPrompt` on first load — no App Store required
+
+### Changed — Order Numbering (DD-BIZ-002 → v2)
+- Date format: YYMMDD (was DDMMYY — now sorts correctly chronologically)
+- Sequence: global atomic counter via `get_next_order_sequence()` (was daily reset count — no more collisions)
+- Check digit: Luhn mod-10 (catches phone transcription errors)
+- International city codes added: PL · UK · DE · KE · AE
+- New exports: `validateOrderNumber()`, `parseOrderNumber()`, `calculateCheckDigit()`
+
+### Database (Phase 1 SQL — run in Supabase)
+- `order_counter` table + `get_next_order_sequence()` atomic function
+- `auto_create_qr_token()` trigger: QR auto-generated on every delivery INSERT (SCALE-007 fix)
+- New `deliveries` columns: `order_number`, `pickup_city/postal/zone/notes`, `recipient_name/phone`, `time_window`, `label_printed_at`, `qr_scanned_at`, `disputed_at/reason`, `auto_confirmed_at`
+- `auto_confirm_delivered_orders()` function: confirms delivered orders after 24h dispute window
+
+---
+
 ## [0.9.0] — 2026-05-26
 
 ### Added
