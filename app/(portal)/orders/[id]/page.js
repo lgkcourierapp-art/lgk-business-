@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import Header from '@/components/Header'
 import StatusBadge from '@/components/StatusBadge'
 import Link from 'next/link'
 import { useApp } from '../../../utils/appContext'
@@ -28,7 +27,6 @@ export default function OrderPage({ params }) {
   const [loading, setLoading] = useState(true)
   const [statusFlash, setStatusFlash] = useState(false)
 
-  // Report form state
   const [showReportForm, setShowReportForm] = useState(false)
   const [reportCategory, setReportCategory] = useState('')
   const [reportDesc, setReportDesc] = useState('')
@@ -73,12 +71,12 @@ export default function OrderPage({ params }) {
   }, [params.id])
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#0A0A0A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4FF00', fontSize: 18, fontWeight: 700 }}>
+    <div style={{ minHeight: '100vh', background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4FF00', fontSize: 18, fontWeight: 700 }}>
       {t('loading')}
     </div>
   )
   if (!order) return (
-    <div style={{ minHeight: '100vh', background: '#0A0A0A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FF3B30' }}>
+    <div style={{ minHeight: '100vh', background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FF3B30' }}>
       {t('orderNotFound')}
     </div>
   )
@@ -118,23 +116,23 @@ export default function OrderPage({ params }) {
   ]
 
   const fmt = ts => ts ? new Date(ts).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : null
-  const cardStyle = { background: '#1A1A1A', border: '1px solid #333', borderRadius: 12, padding: 20, marginBottom: 16 }
+  const cardStyle = { background: colors.card, border: '1px solid ' + colors.border, borderRadius: 12, padding: 20, marginBottom: 16 }
 
   const addressGrid = (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
       <div style={cardStyle}>
         <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{t('pickup')}</div>
-        <div style={{ fontSize: 13, color: '#FFF' }}>{formatStreetAddress(order.pickup_street, order.pickup_house_number)}</div>
-        <div style={{ fontSize: 12, color: '#999' }}>{formatCity(order.pickup_city)}</div>
-        <div style={{ fontSize: 13, marginTop: 8, color: '#FFF' }}>{order.pickup_contact_name}</div>
-        <div style={{ fontSize: 12, color: '#999' }}>{order.pickup_contact_phone}</div>
+        <div style={{ fontSize: 13, color: colors.text }}>{formatStreetAddress(order.pickup_street, order.pickup_house_number)}</div>
+        <div style={{ fontSize: 12, color: colors.textSecondary }}>{formatCity(order.pickup_city)}</div>
+        <div style={{ fontSize: 13, marginTop: 8, color: colors.text }}>{order.pickup_contact_name}</div>
+        <div style={{ fontSize: 12, color: colors.textSecondary }}>{order.pickup_contact_phone}</div>
       </div>
       <div style={cardStyle}>
         <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{t('delivery')}</div>
-        <div style={{ fontSize: 13, color: '#FFF' }}>{formatStreetAddress(order.delivery_street, order.delivery_house_number)}</div>
-        <div style={{ fontSize: 12, color: '#999' }}>{formatCity(order.delivery_city)}</div>
-        <div style={{ fontSize: 13, marginTop: 8, color: '#FFF' }}>{order.delivery_contact_name}</div>
-        <div style={{ fontSize: 12, color: '#999' }}>{order.delivery_contact_phone}</div>
+        <div style={{ fontSize: 13, color: colors.text }}>{formatStreetAddress(order.delivery_street, order.delivery_house_number)}</div>
+        <div style={{ fontSize: 12, color: colors.textSecondary }}>{formatCity(order.delivery_city)}</div>
+        <div style={{ fontSize: 13, marginTop: 8, color: colors.text }}>{order.delivery_contact_name}</div>
+        <div style={{ fontSize: 12, color: colors.textSecondary }}>{order.delivery_contact_phone}</div>
       </div>
     </div>
   )
@@ -203,7 +201,7 @@ export default function OrderPage({ params }) {
           <div style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 12 }}>{csResponseTime}</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={submitReport} disabled={!reportCategory}
-              style={{ background: reportCategory ? '#D4FF00' : '#333', color: reportCategory ? '#000' : '#666', border: 'none', padding: '12px 24px', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: reportCategory ? 'pointer' : 'not-allowed', flex: 1 }}>
+              style={{ background: reportCategory ? '#D4FF00' : colors.border, color: reportCategory ? '#000' : colors.textSecondary, border: 'none', padding: '12px 24px', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: reportCategory ? 'pointer' : 'not-allowed', flex: 1 }}>
               {t('reportSubmit')}
             </button>
             <button onClick={() => setShowReportForm(false)}
@@ -224,7 +222,7 @@ export default function OrderPage({ params }) {
   const headerRow = (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
       <div>
-        <Link href="/dashboard" style={{ color: '#666', fontSize: 13, textDecoration: 'none', display: 'inline-block', marginBottom: 6 }}>← {t('dashboard')}</Link>
+        <Link href="/dashboard" style={{ color: colors.textSecondary, fontSize: 13, textDecoration: 'none', display: 'inline-block', marginBottom: 6 }}>← {t('dashboard')}</Link>
         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>
           {!order.order_number && t('orderPrefix') + ' '}
           <span style={{ fontFamily: "'Fira Code', monospace", color: '#D4FF00', fontSize: order.order_number ? 16 : 24 }}>{displayId}</span>
@@ -242,21 +240,19 @@ export default function OrderPage({ params }) {
   )
 
   return (
-    <div key={lang} style={{ minHeight: '100vh', background: '#0A0A0A' }}>
-      <Header />
+    <div key={lang} style={{ minHeight: '100vh', background: colors.bg }}>
       <main style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px' }}>
 
         {isDelivered ? (
           <>
-            {/* DELIVERED: proof is the dominant element */}
             {order.proof_photo_url ? (
-              <div style={{ background: '#1A1A1A', border: '1px solid #00C85360', borderRadius: 16, padding: 28, marginBottom: 24, boxShadow: '0 2px 16px rgba(0,200,83,0.08)' }}>
+              <div style={{ background: colors.card, border: '1px solid #00C85360', borderRadius: 16, padding: 28, marginBottom: 24, boxShadow: '0 2px 16px rgba(0,200,83,0.08)' }}>
                 <div style={{ fontWeight: 700, marginBottom: 16, color: '#00C853', fontSize: 18 }}>{t('proofOfDelivery')}</div>
                 {order.proof_photo_url?.startsWith('https://') && (
                   <img src={order.proof_photo_url} alt="Proof" style={{ width: '100%', borderRadius: 8, marginBottom: 16 }} />
                 )}
                 {order.gps_proof && !isNaN(Number(order.gps_proof.lat)) && !isNaN(Number(order.gps_proof.lng)) && (
-                  <div style={{ color: '#999', fontSize: 12, marginBottom: 12, fontFamily: "'Fira Code', monospace" }}>
+                  <div style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 12, fontFamily: "'Fira Code', monospace" }}>
                     GPS: {Number(order.gps_proof.lat).toFixed(6)}, {Number(order.gps_proof.lng).toFixed(6)}
                   </div>
                 )}
@@ -272,14 +268,13 @@ export default function OrderPage({ params }) {
 
             {headerRow}
 
-            {/* Compressed timeline when delivered */}
             <div style={{ ...cardStyle, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
               {steps.filter(s => s.time).map((step, i, arr) => (
                 <span key={step.labelKey} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ color: '#00C853', fontSize: 12 }}>✓</span>
-                  <span style={{ color: '#999', fontSize: 12 }}>{t(step.labelKey)}</span>
-                  {step.time && <span style={{ color: '#555', fontSize: 11, fontFamily: "'Fira Code', monospace" }}>{fmt(step.time)}</span>}
-                  {i < arr.length - 1 && <span style={{ color: '#333', margin: '0 4px' }}>→</span>}
+                  <span style={{ color: colors.textSecondary, fontSize: 12 }}>{t(step.labelKey)}</span>
+                  {step.time && <span style={{ color: colors.textSecondary, fontSize: 11, fontFamily: "'Fira Code', monospace" }}>{fmt(step.time)}</span>}
+                  {i < arr.length - 1 && <span style={{ color: colors.border, margin: '0 4px' }}>→</span>}
                 </span>
               ))}
             </div>
@@ -290,29 +285,27 @@ export default function OrderPage({ params }) {
           </>
         ) : (
           <>
-            {/* NOT DELIVERED: payment banner → header → full timeline → addresses */}
             {!isPaid && (
               <div style={{ background: '#8B5CF615', border: '2px solid #8B5CF6', borderRadius: 12, padding: 24, marginBottom: 24 }}>
                 <div style={{ color: '#8B5CF6', fontWeight: 900, fontSize: 20, marginBottom: 8 }}>{t('awaitingPaymentTitle')}</div>
-                <div style={{ color: '#999', fontSize: 14, marginBottom: 16 }}>{t('awaitingPaymentDesc')}</div>
-                <div style={{ color: '#666', fontSize: 13 }}>{t('alreadyPaid')}</div>
+                <div style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 16 }}>{t('awaitingPaymentDesc')}</div>
+                <div style={{ color: colors.textSecondary, fontSize: 13 }}>{t('alreadyPaid')}</div>
               </div>
             )}
 
             {headerRow}
 
-            {/* Full expanded timeline */}
             <div style={cardStyle}>
               <div style={{ fontWeight: 700, marginBottom: 20, color: '#D4FF00' }}>{t('timeline')}</div>
               {steps.map((step, i) => (
                 <div key={step.labelKey} style={{ display: 'flex', gap: 16, marginBottom: i < steps.length - 1 ? 16 : 0 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: step.time ? '#00C853' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#000' }}>{step.time ? '✓' : ''}</div>
-                    {i < steps.length - 1 && <div style={{ width: 2, flex: 1, background: step.time ? '#00C853' : '#333', minHeight: 20, marginTop: 4 }} />}
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: step.time ? '#00C853' : colors.border, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#000' }}>{step.time ? '✓' : ''}</div>
+                    {i < steps.length - 1 && <div style={{ width: 2, flex: 1, background: step.time ? '#00C853' : colors.border, minHeight: 20, marginTop: 4 }} />}
                   </div>
                   <div style={{ paddingTop: 2 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14, color: step.time ? '#FFF' : '#666' }}>{t(step.labelKey)}</div>
-                    {step.time && <div style={{ color: '#999', fontSize: 12, fontFamily: "'Fira Code', monospace" }}>{fmt(step.time)}</div>}
+                    <div style={{ fontWeight: 600, fontSize: 14, color: step.time ? colors.text : colors.textSecondary }}>{t(step.labelKey)}</div>
+                    {step.time && <div style={{ color: colors.textSecondary, fontSize: 12, fontFamily: "'Fira Code', monospace" }}>{fmt(step.time)}</div>}
                   </div>
                 </div>
               ))}

@@ -9,12 +9,11 @@ import { distanceBetweenCities } from '@/lib/cities'
 import { useApp } from '../../../utils/appContext'
 import AddressInput from '../../../components/AddressInput'
 import { generateOrderNumber } from '../../../utils/orderNumber'
-import Header from '@/components/Header'
 import { emailOrderConfirmed } from '../../../utils/emailService'
 
 export default function NewOrderPage() {
   const router = useRouter()
-  const { t, lang } = useApp()
+  const { t, lang, colors } = useApp()
   const [user, setUser] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState({})
@@ -180,7 +179,7 @@ export default function NewOrderPage() {
     }
   }
 
-  const cardStyle = { background: '#1A1A1A', border: '1px solid #333', borderRadius: '12px', padding: '24px', marginBottom: '16px' }
+  const cardStyle = { background: colors.card, border: '1px solid ' + colors.border, borderRadius: '12px', padding: '24px', marginBottom: '16px' }
   const timeOptions = [
     { value: 'asap', label: t('asap'), note: '+PLN 8' },
     { value: 'same_day', label: t('sameDay'), note: 'No extra charge' },
@@ -188,8 +187,7 @@ export default function NewOrderPage() {
   ]
 
   return (
-    <div key={lang} style={{ minHeight: '100vh', background: '#0A0A0A' }}>
-      <Header />
+    <div key={lang} style={{ minHeight: '100vh', background: colors.bg }}>
       <main style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px', paddingBottom: 120 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('newOrder')}</h1>
 
@@ -212,14 +210,14 @@ export default function NewOrderPage() {
           />
           {errors.pickup && <div style={{ color: '#FF3B30', fontSize: 13, marginTop: 8 }}>{errors.pickup}</div>}
           {showSavePickup && (
-            <div style={{ marginTop: 16, padding: 12, background: '#0A0A0A', borderRadius: 8, border: '1px solid #333' }}>
-              <div style={{ color: '#999', fontSize: 13, marginBottom: 8 }}>{t('saveAddress')}</div>
+            <div style={{ marginTop: 16, padding: 12, background: colors.bg, borderRadius: 8, border: '1px solid ' + colors.border }}>
+              <div style={{ color: colors.textSecondary, fontSize: 13, marginBottom: 8 }}>{t('saveAddress')}</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   placeholder={t('labelPickup')}
                   value={savePickupLabel}
                   onChange={e => setSavePickupLabel(e.target.value)}
-                  style={{ flex: 1, padding: 10, background: '#1A1A1A', border: '1px solid #333', borderRadius: 8, color: '#FFF', fontSize: 14, height: 40 }}
+                  style={{ flex: 1, padding: 10, background: colors.input, border: '1px solid ' + colors.border, borderRadius: 8, color: colors.text, fontSize: 14, height: 40 }}
                 />
                 <button
                   onClick={async () => {
@@ -241,7 +239,7 @@ export default function NewOrderPage() {
                   className="btn-primary"
                   style={{ height: 40, padding: '0 16px', fontSize: 14 }}
                 >{t('save')}</button>
-                <button onClick={() => setShowSavePickup(false)} style={{ background: 'transparent', border: '1px solid #333', padding: '0 16px', borderRadius: 8, color: '#999', cursor: 'pointer', fontSize: 14, height: 40 }}>{t('skip')}</button>
+                <button onClick={() => setShowSavePickup(false)} style={{ background: 'transparent', border: '1px solid ' + colors.border, padding: '0 16px', borderRadius: 8, color: colors.textSecondary, cursor: 'pointer', fontSize: 14, height: 40 }}>{t('skip')}</button>
               </div>
             </div>
           )}
@@ -252,39 +250,39 @@ export default function NewOrderPage() {
           <div style={cardStyle}>
             <div style={{ color: '#FF9500', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>🍽️ Restaurant Details</div>
 
-            <div style={{ color: '#999', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Order Ready Time</div>
+            <div style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Order Ready Time</div>
             <input
               type="time"
               value={readyTime}
               onChange={e => setReadyTime(e.target.value)}
-              style={{ width: '100%', padding: '12px 14px', background: '#0A0A0A', border: '1px solid #333', borderRadius: 8, color: '#FFF', fontSize: 15, marginBottom: 16, boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '12px 14px', background: colors.bg, border: '1px solid ' + colors.border, borderRadius: 8, color: colors.text, fontSize: 15, marginBottom: 16, boxSizing: 'border-box' }}
             />
 
-            <div style={{ color: '#999', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Prep Time</div>
+            <div style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Prep Time</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
               {['10 min', '15 min', '20 min', '30 min', '45 min'].map(p => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => setPrepTime(prepTime === p ? '' : p)}
-                  style={{ padding: '8px 14px', borderRadius: 20, fontWeight: 700, fontSize: 13, border: '1px solid ' + (prepTime === p ? '#FF9500' : '#333'), background: prepTime === p ? '#FF950020' : '#0A0A0A', color: prepTime === p ? '#FF9500' : '#999', cursor: 'pointer' }}
+                  style={{ padding: '8px 14px', borderRadius: 20, fontWeight: 700, fontSize: 13, border: '1px solid ' + (prepTime === p ? '#FF9500' : colors.border), background: prepTime === p ? '#FF950020' : colors.bg, color: prepTime === p ? '#FF9500' : colors.textSecondary, cursor: 'pointer' }}
                 >{p}</button>
               ))}
             </div>
 
-            <div style={{ color: '#999', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Number of Bags / Items</div>
+            <div style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Number of Bags / Items</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
               {[1, 2, 3, 4, 5].map(n => (
                 <button
                   key={n}
                   type="button"
                   onClick={() => setItemCount(n)}
-                  style={{ width: 44, height: 44, borderRadius: 8, fontWeight: 700, fontSize: 15, border: '1px solid ' + (itemCount === n ? '#D4FF00' : '#333'), background: itemCount === n ? '#D4FF0020' : '#0A0A0A', color: itemCount === n ? '#D4FF00' : '#999', cursor: 'pointer' }}
+                  style={{ width: 44, height: 44, borderRadius: 8, fontWeight: 700, fontSize: 15, border: '1px solid ' + (itemCount === n ? '#D4FF00' : colors.border), background: itemCount === n ? '#D4FF0020' : colors.bg, color: itemCount === n ? '#D4FF00' : colors.textSecondary, cursor: 'pointer' }}
                 >{n === 5 ? '5+' : n}</button>
               ))}
             </div>
 
-            <div style={{ color: '#999', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Handling</div>
+            <div style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Handling</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
               {['Hot food — keep warm', 'Liquid / spill risk', 'Keep upright', 'Contact-free dropoff'].map(flag => (
                 <label key={flag} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
@@ -294,18 +292,18 @@ export default function NewOrderPage() {
                     onChange={e => setHandlingFlags(prev => e.target.checked ? [...prev, flag] : prev.filter(f => f !== flag))}
                     style={{ accentColor: '#D4FF00', width: 18, height: 18, flexShrink: 0 }}
                   />
-                  <span style={{ color: '#FFF', fontSize: 14 }}>{flag}</span>
+                  <span style={{ color: colors.text, fontSize: 14 }}>{flag}</span>
                 </label>
               ))}
             </div>
 
-            <div style={{ color: '#999', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Note for Courier</div>
+            <div style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Note for Courier</div>
             <textarea
               placeholder="e.g. Buzzer code 4B, collect from kitchen window..."
               value={courierNote}
               onChange={e => setCourierNote(e.target.value)}
               rows={2}
-              style={{ width: '100%', padding: '12px 14px', background: '#0A0A0A', border: '1px solid #333', borderRadius: 8, color: '#FFF', fontSize: 14, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+              style={{ width: '100%', padding: '12px 14px', background: colors.bg, border: '1px solid ' + colors.border, borderRadius: 8, color: colors.text, fontSize: 14, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
             />
           </div>
         )}
@@ -327,14 +325,14 @@ export default function NewOrderPage() {
           />
           {errors.delivery && <div style={{ color: '#FF3B30', fontSize: 13, marginTop: 8 }}>{errors.delivery}</div>}
           {showSaveDelivery && (
-            <div style={{ marginTop: 16, padding: 12, background: '#0A0A0A', borderRadius: 8, border: '1px solid #333' }}>
-              <div style={{ color: '#999', fontSize: 13, marginBottom: 8 }}>{t('saveRecipient')}</div>
+            <div style={{ marginTop: 16, padding: 12, background: colors.bg, borderRadius: 8, border: '1px solid ' + colors.border }}>
+              <div style={{ color: colors.textSecondary, fontSize: 13, marginBottom: 8 }}>{t('saveRecipient')}</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   placeholder={t('labelRecipient')}
                   value={saveDeliveryLabel}
                   onChange={e => setSaveDeliveryLabel(e.target.value)}
-                  style={{ flex: 1, padding: 10, background: '#1A1A1A', border: '1px solid #333', borderRadius: 8, color: '#FFF', fontSize: 14, height: 40 }}
+                  style={{ flex: 1, padding: 10, background: colors.input, border: '1px solid ' + colors.border, borderRadius: 8, color: colors.text, fontSize: 14, height: 40 }}
                 />
                 <button
                   onClick={async () => {
@@ -354,7 +352,7 @@ export default function NewOrderPage() {
                   className="btn-primary"
                   style={{ height: 40, padding: '0 16px', fontSize: 14 }}
                 >{t('save')}</button>
-                <button onClick={() => setShowSaveDelivery(false)} style={{ background: 'transparent', border: '1px solid #333', padding: '0 16px', borderRadius: 8, color: '#999', cursor: 'pointer', fontSize: 14, height: 40 }}>{t('skip')}</button>
+                <button onClick={() => setShowSaveDelivery(false)} style={{ background: 'transparent', border: '1px solid ' + colors.border, padding: '0 16px', borderRadius: 8, color: colors.textSecondary, cursor: 'pointer', fontSize: 14, height: 40 }}>{t('skip')}</button>
               </div>
             </div>
           )}
@@ -372,7 +370,7 @@ export default function NewOrderPage() {
           </select>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', textTransform: 'none', fontSize: 14, fontWeight: 400, letterSpacing: 0, marginBottom: 0 }}>
             <input type="checkbox" checked={form.isFragile} onChange={e => set('isFragile', e.target.checked)} style={{ accentColor: '#D4FF00', width: 18, height: 18, flexShrink: 0 }} />
-            <span style={{ color: '#FFF', fontWeight: 600, fontSize: 14 }}>{t('fragile')} <span style={{ color: '#999', fontWeight: 400 }}>(+PLN 5)</span></span>
+            <span style={{ color: colors.text, fontWeight: 600, fontSize: 14 }}>{t('fragile')} <span style={{ color: colors.textSecondary, fontWeight: 400 }}>(+PLN 5)</span></span>
           </label>
         </div>
 
@@ -382,23 +380,23 @@ export default function NewOrderPage() {
           <label>{t('timeWindow')}</label>
           <div style={{ marginBottom: 16 }}>
             {timeOptions.map(opt => (
-              <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: form.timeWindow === opt.value ? '#D4FF0015' : '#0A0A0A', border: '1px solid ' + (form.timeWindow === opt.value ? '#D4FF00' : '#333'), borderRadius: 8, marginBottom: 6, cursor: 'pointer', textTransform: 'none', fontSize: 14, fontWeight: 400, letterSpacing: 0 }}>
+              <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: form.timeWindow === opt.value ? '#D4FF0015' : colors.bg, border: '1px solid ' + (form.timeWindow === opt.value ? '#D4FF00' : colors.border), borderRadius: 8, marginBottom: 6, cursor: 'pointer', textTransform: 'none', fontSize: 14, fontWeight: 400, letterSpacing: 0 }}>
                 <input type="radio" name="timeWindow" value={opt.value} checked={form.timeWindow === opt.value} onChange={() => set('timeWindow', opt.value)} style={{ accentColor: '#D4FF00' }} />
-                <span style={{ flex: 1, color: '#FFF', fontWeight: 600, fontSize: 14 }}>{opt.label}</span>
-                <span style={{ color: '#999', fontSize: 13 }}>{opt.note}</span>
+                <span style={{ flex: 1, color: colors.text, fontWeight: 600, fontSize: 14 }}>{opt.label}</span>
+                <span style={{ color: colors.textSecondary, fontSize: 13 }}>{opt.note}</span>
               </label>
             ))}
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 0', borderBottom: '1px solid #333', textTransform: 'none', fontSize: 14, fontWeight: 400, letterSpacing: 0, marginBottom: 12 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 0', borderBottom: '1px solid ' + colors.border, textTransform: 'none', fontSize: 14, fontWeight: 400, letterSpacing: 0, marginBottom: 12 }}>
             <input type="checkbox" checked={form.hasInsurance} onChange={e => set('hasInsurance', e.target.checked)} style={{ accentColor: '#D4FF00', width: 14, height: 14 }} />
             <div>
-              <span style={{ color: '#999', fontSize: 13 }}>{t('shipmentProtection')}</span>
-              <span style={{ color: '#999', fontSize: 12, marginLeft: 6, opacity: 0.6 }}>{t('shipmentProtectionNote')}</span>
+              <span style={{ color: colors.textSecondary, fontSize: 13 }}>{t('shipmentProtection')}</span>
+              <span style={{ color: colors.textSecondary, fontSize: 12, marginLeft: 6, opacity: 0.6 }}>{t('shipmentProtectionNote')}</span>
             </div>
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', textTransform: 'none', fontSize: 14, fontWeight: 400, letterSpacing: 0 }}>
             <input type="checkbox" checked={form.wantsWhatsApp} onChange={e => set('wantsWhatsApp', e.target.checked)} style={{ accentColor: '#D4FF00', width: 18, height: 18, flexShrink: 0 }} />
-            <span style={{ color: '#FFF', fontWeight: 600, fontSize: 14 }}>{t('whatsappUpdates')}</span>
+            <span style={{ color: colors.text, fontWeight: 600, fontSize: 14 }}>{t('whatsappUpdates')}</span>
           </label>
           {form.wantsWhatsApp && (
             <input type="tel" placeholder="+48 XXX XXX XXX" value={form.whatsAppPhone} onChange={e => set('whatsAppPhone', e.target.value)} style={{ marginTop: 8 }} />
@@ -415,27 +413,27 @@ export default function NewOrderPage() {
             price.specialFees > 0 && [t('addOns'), '+PLN ' + price.specialFees],
             price.cityMultiplier !== 1 && [t('cityRate'), 'x' + price.cityMultiplier]
           ].filter(Boolean).map(([l, v]) => (
-            <div key={l} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 14, color: '#999' }}>
+            <div key={l} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 14, color: colors.textSecondary }}>
               <span>{l}</span><span>{v}</span>
             </div>
           ))}
-          <div style={{ borderTop: '1px solid #333', marginTop: 12, paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ borderTop: '1px solid ' + colors.border, marginTop: 12, paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontWeight: 700, fontSize: 16 }}>{t('total').toUpperCase()}</span>
             <span style={{ fontWeight: 900, fontSize: 28, color: '#D4FF00', fontFamily: "'Fira Code', monospace", fontVariantNumeric: 'tabular-nums' }}>PLN {price.total}</span>
           </div>
           {form.hasInsurance && (
-            <div style={{ color: '#999', fontSize: 11, opacity: 0.6, marginTop: 6, textAlign: 'right' }}>
+            <div style={{ color: colors.textSecondary, fontSize: 11, opacity: 0.6, marginTop: 6, textAlign: 'right' }}>
               {t('shipmentProtection')}
             </div>
           )}
         </div>
       </main>
 
-      {/* Fixed bottom bar */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#1A1A1A', borderTop: '1px solid #333', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 100 }}>
+      {/* Fixed bottom bar — portal-bottom-bar CSS offsets left from sidebar on desktop, floats above BottomNav on mobile */}
+      <div className="portal-bottom-bar" style={{ position: 'fixed', bottom: 0, right: 0, background: colors.card, borderTop: '1px solid ' + colors.border, padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 100 }}>
         {errors.submit && <div style={{ position: 'absolute', top: '-40px', left: 0, right: 0, background: '#FF3B3020', borderTop: '1px solid #FF3B30', padding: '10px 24px', color: '#FF6B6B', fontSize: 13 }}>{errors.submit}</div>}
         <div>
-          <div style={{ color: '#999', fontSize: 12 }}>{t('total')}</div>
+          <div style={{ color: colors.textSecondary, fontSize: 12 }}>{t('total')}</div>
           <div style={{ color: '#D4FF00', fontWeight: 900, fontSize: 24, fontFamily: "'Fira Code', monospace", fontVariantNumeric: 'tabular-nums' }}>PLN {price.total}</div>
         </div>
         <button onClick={submit} disabled={submitting} className="btn-primary" style={{ fontSize: 16, padding: '0 32px', height: 52 }}>

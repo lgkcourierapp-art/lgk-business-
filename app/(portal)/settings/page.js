@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import Header from '@/components/Header'
 import { useApp } from '../../utils/appContext'
 
 export default function SettingsPage() {
@@ -97,7 +96,6 @@ export default function SettingsPage() {
 
   return (
     <div key={lang} style={{ minHeight: '100vh', background: colors.bg }}>
-      <Header />
       <main style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px' }}>
 
         <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: colors.text }}>{t('settings')}</h1>
@@ -202,7 +200,7 @@ export default function SettingsPage() {
         <div style={cardStyle}>
           <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>{t('billing')}</div>
           <div style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 8 }}>{t('manualInvoice')}</div>
-          <div style={{ color: '#666', fontSize: 13 }}>{t('stripeComingSoon')}</div>
+          <div style={{ color: colors.textSecondary, fontSize: 13 }}>{t('stripeComingSoon')}</div>
         </div>
 
         {/* Danger zone */}

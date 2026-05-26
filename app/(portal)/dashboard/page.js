@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import Header from '@/components/Header'
 import StatusBadge from '@/components/StatusBadge'
 import { useApp } from '../../utils/appContext'
 import WeatherAlert from '../../components/WeatherAlert'
@@ -176,25 +175,24 @@ export default function DashboardPage() {
   )
 
   const emptyState = (msg) => (
-    <div className="card" style={{ textAlign: 'center', color: '#666', padding: 32 }}>
+    <div className="card" style={{ textAlign: 'center', color: colors.textSecondary, padding: 32, background: colors.card }}>
       <div style={{ fontSize: 28, marginBottom: 8 }}>📦</div>{msg}
     </div>
   )
 
   return (
-    <div key={lang} style={{ minHeight: '100vh', background: '#0A0A0A' }}>
-      <Header />
+    <div key={lang} style={{ minHeight: '100vh', background: colors.bg }}>
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>{t('dashboard')}</h1>
             {lastRefresh && (
-              <p style={{ margin: 0, color: '#555', fontSize: 12, marginTop: 4 }}>
+              <p style={{ margin: 0, color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
                 {t('updated')} {lastRefresh.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} &middot; {t('autoRefreshNote')}
               </p>
             )}
           </div>
-          <button onClick={fetchOrders} style={{ background: '#1A1A1A', border: '1px solid #333', color: '#999', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
+          <button onClick={fetchOrders} style={{ background: colors.card, border: '1px solid ' + colors.border, color: colors.textSecondary, padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
             {t('refresh')}
           </button>
         </div>
@@ -209,8 +207,8 @@ export default function DashboardPage() {
               { label: lang === 'pl' ? 'Wydatki (mies.)' : 'Spent (month)', value: 'PLN ' + plnSpent.toFixed(0), color: '#D4FF00' },
               { label: lang === 'pl' ? 'Skuteczność' : 'Success rate', value: successRate + '%', color: successRate >= 90 ? '#00C853' : successRate >= 70 ? '#FF9500' : '#FF3B30' },
             ].map(({ label, value, color }) => (
-              <div key={label} style={{ background: '#1A1A1A', border: '1px solid #333', borderRadius: 10, padding: '16px 18px' }}>
-                <div style={{ color: '#666', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{label}</div>
+              <div key={label} style={{ background: colors.card, border: '1px solid ' + colors.border, borderRadius: 10, padding: '16px 18px' }}>
+                <div style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{label}</div>
                 <div style={{ color, fontWeight: 900, fontSize: 22, fontFamily: "'Fira Code', monospace" }}>{value}</div>
               </div>
             ))}
@@ -218,7 +216,7 @@ export default function DashboardPage() {
         )}
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 60, color: '#666' }}>{t('loading')}</div>
+          <div style={{ textAlign: 'center', padding: 60, color: colors.textSecondary }}>{t('loading')}</div>
         ) : !loading && orders.length === 0 ? (
           <div style={{ background: colors.card, border: '2px dashed ' + colors.border, borderRadius: '14px', padding: '48px 24px', textAlign: 'center', marginTop: 24 }}>
             <div style={{ fontSize: '40px', marginBottom: '14px' }}>📦</div>
@@ -254,8 +252,8 @@ export default function DashboardPage() {
         )}
       </main>
 
-      <footer style={{ borderTop: '1px solid #1A1A1A', padding: '20px 16px', textAlign: 'center', color: '#444', fontSize: 12, marginTop: 48 }}>
-        <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: '13px', color: '#333', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>
+      <footer style={{ borderTop: '1px solid ' + colors.border, padding: '20px 16px', textAlign: 'center', color: colors.textSecondary, fontSize: 12, marginTop: 48 }}>
+        <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: '13px', color: colors.textSecondary, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>
           Less guessing. More doing.
         </div>
         {t('poweredBy')} &middot; lgkcourierapp@gmail.com

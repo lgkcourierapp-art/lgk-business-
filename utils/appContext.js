@@ -258,8 +258,8 @@ export function AppProvider({ children }) {
   const t = (key) => TRANSLATIONS[lang]?.[key] ?? TRANSLATIONS['en'][key] ?? key;
 
   const colors = {
-    bg: '#0A0A0A', card: '#1A1A1A', border: '#333333',
-    text: '#FFFFFF', textSecondary: '#999999', input: '#1A1A1A',
+    bg: '#FFFFFF', card: '#F5F5F5', border: '#E5E5E5',
+    text: '#0A0A0A', textSecondary: '#555555', input: '#F5F5F5',
   };
 
   return (
