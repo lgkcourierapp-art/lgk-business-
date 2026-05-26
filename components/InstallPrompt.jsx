@@ -7,6 +7,12 @@ export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
 
   useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    }
+  }, [])
+
+  useEffect(() => {
     if (localStorage.getItem('lgk-pwa-installed') || localStorage.getItem('lgk-pwa-dismissed')) return
 
     const ios = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())
