@@ -4,8 +4,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import StatusBadge from '@/components/StatusBadge'
 import Link from 'next/link'
-import { useApp } from '../../../utils/appContext'
-import { formatCity, formatStreetAddress } from '../../../utils/capitalize'
+import { useApp } from '@/utils/appContext'
+import { formatCity, formatStreetAddress } from '@/utils/capitalize'
 
 const REVOLUT_USER = process.env.NEXT_PUBLIC_REVOLUT_USER || ''
 

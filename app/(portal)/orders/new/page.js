@@ -3,13 +3,13 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { supabase as supabaseClient } from '../../../utils/supabase'
+import { supabase as supabaseClient } from '@/utils/supabase'
 import { calculatePrice } from '@/lib/pricing'
 import { distanceBetweenCities } from '@/lib/cities'
-import { useApp } from '../../../utils/appContext'
-import AddressInput from '../../../components/AddressInput'
-import { generateOrderNumber } from '../../../utils/orderNumber'
-import { emailOrderConfirmed } from '../../../utils/emailService'
+import { useApp } from '@/utils/appContext'
+import AddressInput from '@/components/AddressInput'
+import { generateOrderNumber } from '@/utils/orderNumber'
+import { emailOrderConfirmed } from '@/utils/emailService'
 
 export default function NewOrderPage() {
   const router = useRouter()

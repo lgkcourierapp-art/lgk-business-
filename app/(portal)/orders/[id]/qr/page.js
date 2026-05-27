@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import QRCode from 'qrcode'
-import { useApp } from '../../../../utils/appContext'
+import { useApp } from '@/utils/appContext'
 
 export default function QRPage({ params }) {
   const router = useRouter()

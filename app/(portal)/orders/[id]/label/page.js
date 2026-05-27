@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import QRCode from 'qrcode'
-import { useApp } from '../../../../utils/appContext'
-import { parseOrderNumber } from '../../../../utils/orderNumber'
+import { useApp } from '@/utils/appContext'
+import { parseOrderNumber } from '@/utils/orderNumber'
 
 export default function LabelPage({ params }) {
   const router = useRouter()

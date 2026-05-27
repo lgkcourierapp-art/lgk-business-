@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import StatusBadge from '@/components/StatusBadge'
-import { useApp } from '../../utils/appContext'
-import WeatherAlert from '../../components/WeatherAlert'
-import { formatStreetAddress, formatCity } from '../../utils/capitalize'
-import { formatCurrency } from '../../utils/marketConfig'
+import { useApp } from '@/utils/appContext'
+import WeatherAlert from '@/components/WeatherAlert'
+import { formatStreetAddress, formatCity } from '@/utils/capitalize'
+import { formatCurrency } from '@/utils/marketConfig'
 
 function isToday(isoString) {
   if (!isoString) return false
