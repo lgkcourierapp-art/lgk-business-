@@ -1,3 +1,25 @@
+## [1.1.0] — 2026-05-27
+
+### Added
+- Public marketing landing page at root `/`
+  - Non-logged-in visitors see the marketing page; logged-in users redirect to `/dashboard`
+  - Two audience tabs: Restauracja / Firma — hero sub, pricing highlight, and business section switch with the tab
+  - 7 sections: hero · savings calculator · how it works · proof mockups · pricing · trust signals · final CTA
+  - Complete `STRINGS` object (PL + EN), PL default, browser language detection
+  - Savings calculator: interactive slider + static fallback (PLN 20,250 at 50 orders/day)
+  - Single CTA per section · mobile-first responsive
+- `/register` page — new client self-signup
+  - Email + password + business name only (minimum friction)
+  - Pre-fills email from URL `?email=` param
+  - PL error messages — all states: duplicate email, weak password, network error
+  - Creates/updates `profiles` row on registration (upsert on conflict)
+  - Both email-confirm ON and OFF flows handled
+
+### Changed
+- `app/page.js`: replaced redirect-to-login with auth-aware landing page
+
+---
+
 ## [1.0.0] — 2026-05-26
 
 ### Added — Full Platform Build
