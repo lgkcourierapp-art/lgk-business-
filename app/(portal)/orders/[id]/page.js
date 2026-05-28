@@ -33,6 +33,12 @@ export default function OrderPage({ params }) {
   const [reportSubmitted, setReportSubmitted] = useState(false)
   const [csResponseTime, setCsResponseTime] = useState('Within 4 hours during business hours (8am-8pm)')
 
+  const [clientTier, setClientTier] = useState(null)
+  const [fleetDispatchFlag, setFleetDispatchFlag] = useState(false)
+  const [onlineDrivers, setOnlineDrivers] = useState([])
+  const [selectedDriverId, setSelectedDriverId] = useState('')
+  const [assigningDriver, setAssigningDriver] = useState(false)
+
   useEffect(() => {
     supabase.from('platform_settings').select('value').eq('key', 'cs_response_time').single()
       .then(({ data }) => { if (data) setCsResponseTime(data.value) })
@@ -46,6 +52,23 @@ export default function OrderPage({ params }) {
         .eq('id', params.id).eq('client_id', user['id']).single()
       setOrder(data)
       setLoading(false)
+
+      // Fleet dispatch data
+      const [{ data: profRow }, { data: flagRow }] = await Promise.all([
+        supabase.from('profiles').select('client_tier').eq('id', user['id']).single(),
+        supabase.from('feature_flags').select('enabled').eq('name', 'own_fleet_dispatch').single(),
+      ])
+      const tier = profRow?.client_tier ?? 'starter'
+      setClientTier(tier)
+      setFleetDispatchFlag(flagRow?.enabled ?? false)
+      if (tier === 'fleet' && flagRow?.enabled) {
+        const { data: drvs } = await supabase
+          .from('profiles')
+          .select('id, company_name, email, phone')
+          .eq('employer_id', user['id'])
+          .eq('driver_status', 'online')
+        setOnlineDrivers(drvs ?? [])
+      }
     })
   }, [params.id, router])
 
@@ -219,6 +242,58 @@ export default function OrderPage({ params }) {
     </div>
   )
 
+  const assignDriverBlock = clientTier === 'fleet' && fleetDispatchFlag && order.status === 'pending' && (
+    <div style={{ ...cardStyle, marginBottom: 16 }}>
+      <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+        Przypisz kierowcę
+      </div>
+      {onlineDrivers.length > 0 ? (
+        <>
+          <select
+            value={selectedDriverId}
+            onChange={e => setSelectedDriverId(e.target.value)}
+            style={{ width: '100%', padding: '11px 14px', background: colors.bg, border: '1px solid ' + colors.border, borderRadius: 8, color: colors.text, fontSize: 14, marginBottom: 12 }}
+          >
+            <option value="">— Wybierz kierowcę —</option>
+            {onlineDrivers.map(d => (
+              <option key={d['id']} value={d['id']}>
+                {d.company_name || d.email}{d.phone ? ' · ' + d.phone : ''}
+              </option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              disabled={!selectedDriverId || assigningDriver}
+              onClick={async () => {
+                if (!selectedDriverId) return
+                setAssigningDriver(true)
+                await supabase.from('deliveries').update({ courier_id: selectedDriverId }).eq('id', order['id'])
+                setOrder(prev => ({ ...prev, courier_id: selectedDriverId }))
+                setAssigningDriver(false)
+              }}
+              style={{ background: selectedDriverId ? '#D4FF00' : colors.border, color: selectedDriverId ? '#000' : colors.textSecondary, border: 'none', padding: '11px 20px', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: selectedDriverId ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}
+            >
+              {assigningDriver ? 'Przypisywanie…' : 'Przypisz →'}
+            </button>
+          </div>
+        </>
+      ) : (
+        <div style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 12 }}>
+          Brak dostępnych kierowców online.
+        </div>
+      )}
+      <button
+        style={{ background: 'transparent', border: '1px solid ' + colors.border, color: colors.textSecondary, padding: '9px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer', marginTop: 10, fontFamily: 'inherit' }}
+        onClick={async () => {
+          await supabase.from('deliveries').update({ courier_id: null, status: 'pending' }).eq('id', order['id'])
+          setOrder(prev => ({ ...prev, courier_id: null, status: 'pending' }))
+        }}
+      >
+        Zaoferuj sieci LGK →
+      </button>
+    </div>
+  )
+
   const headerRow = (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
       <div>
@@ -311,6 +386,7 @@ export default function OrderPage({ params }) {
               ))}
             </div>
 
+            {assignDriverBlock}
             {addressGrid}
             {priceRow}
             {actionsBlock}
