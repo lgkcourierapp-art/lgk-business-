@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server';
 
+// Public routes — no auth required
+const PUBLIC_ROUTES = new Set(['/', '/login', '/register', '/privacy', '/terms']);
+
 export async function middleware(request) {
-  // Auth is handled client-side by app/admin/layout.js
-  // which checks session + is_admin via the browser Supabase client.
-  // Server-side cookie-based auth would require migrating the entire
-  // platform to @supabase/ssr — deferred until then.
+  const { pathname } = request.nextUrl;
+
+  // Public routes always pass through
+  if (PUBLIC_ROUTES.has(pathname)) return NextResponse.next();
+
+  // All other routes pass through — auth is enforced client-side
+  // (server-side enforcement would require migrating to @supabase/ssr)
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|api/).*)'],
 };
