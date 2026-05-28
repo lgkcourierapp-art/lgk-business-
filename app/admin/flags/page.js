@@ -8,6 +8,17 @@ const M = {
   display: { fontFamily: "'Space Grotesk', sans-serif" },
 };
 
+const GROUPS = [
+  {
+    title: 'Integracje POS',
+    flags: ['gloriaFood_integration', 'gopos_integration'],
+  },
+  {
+    title: 'Zarządzanie flotą',
+    flags: ['own_fleet_dispatch', 'auto_dispatch', 'overflow_to_gig', 'customer_sms_tracking', 'multi_location'],
+  },
+];
+
 function toTitle(name) {
   return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
@@ -117,22 +128,30 @@ export default function AdminFlags() {
         }}>
           <div style={{ ...M.mono, fontSize: '13px', color: '#333' }}>No feature flags configured.</div>
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {flags.map(flag => {
+      ) : (() => {
+          const groupedNames = new Set(GROUPS.flatMap(g => g.flags));
+          const ungrouped = flags.filter(f => !groupedNames.has(f.name));
+
+          const renderFlag = (flag) => {
             const isSaving = saving === flag.name;
             const isAiFlag = flag.name === 'ai_moderation_enabled';
+            const isSmsFlag = flag.name === 'customer_sms_tracking';
 
             return (
               <div key={flag['id']} style={{
-                background: '#141414', border: '1px solid #1E1E1E',
+                background: '#141414',
+                border: isSmsFlag ? '1px solid rgba(255,149,0,0.4)' : '1px solid #1E1E1E',
                 borderRadius: '12px', padding: '20px 22px',
-                borderLeftWidth: isAiFlag ? 3 : 1,
-                borderLeftColor: isAiFlag ? (flag.enabled ? '#00C853' : '#FF9500') : '#1E1E1E',
+                borderLeftWidth: (isAiFlag || isSmsFlag) ? 3 : 1,
+                borderLeftColor: isAiFlag
+                  ? (flag.enabled ? '#00C853' : '#FF9500')
+                  : isSmsFlag
+                  ? '#FF9500'
+                  : '#1E1E1E',
               }}>
 
                 {/* Top row: name + toggle */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: flag.description || isAiFlag ? '12px' : 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: flag.description || isAiFlag || isSmsFlag ? '12px' : 0 }}>
                   <div>
                     <div style={{ ...M.display, fontSize: '15px', fontWeight: 700, color: '#FFF', marginBottom: '2px' }}>
                       {toTitle(flag.name)}
@@ -159,8 +178,22 @@ export default function AdminFlags() {
 
                 {/* Description */}
                 {flag.description && (
-                  <div style={{ ...M.display, fontSize: '13px', color: '#666', marginBottom: isAiFlag ? '12px' : '8px', lineHeight: 1.5 }}>
+                  <div style={{ ...M.display, fontSize: '13px', color: '#666', marginBottom: (isAiFlag || isSmsFlag) ? '12px' : '8px', lineHeight: 1.5 }}>
                     {flag.description}
+                  </div>
+                )}
+
+                {/* SMS cost warning */}
+                {isSmsFlag && (
+                  <div style={{
+                    background: 'rgba(255,149,0,0.06)',
+                    border: '1px solid rgba(255,149,0,0.25)',
+                    borderRadius: '8px', padding: '10px 14px',
+                    marginBottom: '8px',
+                  }}>
+                    <div style={{ ...M.display, fontSize: '12px', color: '#FF9500', lineHeight: 1.6 }}>
+                      Uwaga: każdy SMS kosztuje ~PLN 0.15 (Twilio)
+                    </div>
                   </div>
                 )}
 
@@ -204,9 +237,40 @@ export default function AdminFlags() {
                 )}
               </div>
             );
-          })}
-        </div>
-      )}
+          };
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {GROUPS.map(group => {
+                const groupFlags = group.flags
+                  .map(name => flags.find(f => f.name === name))
+                  .filter(Boolean);
+                if (groupFlags.length === 0) return null;
+                return (
+                  <div key={group.title}>
+                    <div style={{ ...M.mono, fontSize: '10px', color: '#444', letterSpacing: 1, textTransform: 'uppercase', marginBottom: '10px' }}>
+                      {group.title}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {groupFlags.map(renderFlag)}
+                    </div>
+                  </div>
+                );
+              })}
+              {ungrouped.length > 0 && (
+                <div>
+                  <div style={{ ...M.mono, fontSize: '10px', color: '#444', letterSpacing: 1, textTransform: 'uppercase', marginBottom: '10px' }}>
+                    Inne
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {ungrouped.map(renderFlag)}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()
+      }
     </div>
   );
 }
