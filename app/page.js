@@ -10,7 +10,7 @@ const STRINGS = {
     nav_lang_pl: 'PL',
     nav_lang_en: 'EN',
     eyebrow: '📍 Szczecin · Dostawy w Twoim mieście',
-    hero_h1_line1: 'Glovo bierze 30%.',
+    hero_h1_line1: 'Większość platform bierze 25–30%.',
     hero_h1_line2: 'My bierzemy 10%.',
     hero_h1_line3: 'Reszta zostaje u Ciebie.',
     hero_sub_restaurant: 'GPS-verified dostawa z portalem który naprawdę działa — za 10% prowizji, nie 30%.',
@@ -23,10 +23,10 @@ const STRINGS = {
     mock_status: '✓ Dostarczone',
     mock_gps_btn: 'Zdjęcie GPS dostępne',
     calc_title: 'Ile oszczędzasz miesięcznie?',
-    calc_slider_label: 'Liczba zamówień dziennie',
-    calc_monthly_label: 'miesięcznie vs Glovo',
-    calc_annual_label: 'rocznie',
-    calc_fine_print: 'Przy średnim zamówieniu PLN 45 i 30 dniach w miesiącu.',
+    calc_slider_label: 'Zamówień dziennie / Orders per day',
+    calc_monthly_label: 'Oszczędzasz miesięcznie',
+    calc_annual_label: 'Oszczędzasz rocznie',
+    calc_fine_print: 'Przy średniej prowizji 28% vs 10% i PLN 45/zamówienie',
     calc_cta: 'Zacznij oszczędzać →',
     how_title: 'Jak to działa?',
     how_sub: 'Trzy kroki. Żadnej papierologii.',
@@ -51,25 +51,41 @@ const STRINGS = {
     proof_gps_badge: 'GPS zweryfikowane',
     proof_gps_status: '✓ Dostarczone',
     pricing_title: 'Przejrzyste ceny. Bez niespodzianek.',
-    pricing_popular: 'Najpopularniejsze',
-    pricing_col1_title: 'Dostawa',
-    pricing_col1_r1: 'PLN 28 — do 3km',
-    pricing_col1_r2: 'PLN 35 — 3–6km',
-    pricing_col1_r3: 'PLN 42 — 6–10km',
-    pricing_col1_r4: 'PLN 63 — ekspres',
-    pricing_col2_title: 'Restauracje',
-    pricing_col2_r1: '10% prowizji od zamówienia',
-    pricing_col2_r2: '+ opłata za dostawę jak wyżej',
-    pricing_col2_r3: 'Portal restauracyjny w cenie',
-    pricing_col2_vs: 'vs Glovo: 25–30%',
-    pricing_col3_title: 'Portal biznesowy',
-    pricing_col3_r1: '€39 / miesiąc',
-    pricing_col3_r2: 'lub PLN 5 za zlecenie',
-    pricing_col3_r3: 'Nieograniczone zlecenia',
-    pricing_col3_r4: 'Dashboard + faktury + GPS',
-    pricing_col3_r5: 'Anuluj w każdej chwili',
     pricing_highlight: 'Pierwsza dostawa GRATIS · Bez umowy · Anuluj kiedy chcesz',
-    pricing_cta: 'Zacznij za darmo →',
+    tier_starter_title: 'Starter',
+    tier_starter_price: 'PLN 0',
+    tier_starter_period: '/ miesiąc',
+    tier_starter_sub: 'Płacisz tylko za dostawy',
+    tier_starter_r1: 'PLN 32 — do 3km',
+    tier_starter_r2: 'PLN 38 — 3–6km',
+    tier_starter_r3: 'PLN 48 — 6–10km',
+    tier_starter_commission: '12% od zamówienia restauracyjnego',
+    tier_starter_for: 'Mniej niż 30 zamówień miesięcznie',
+    tier_starter_feats: 'GPS proof ✓ · Portal ✓ · Faktury ✓',
+    tier_starter_cta: 'Zacznij za darmo →',
+    tier_business_title: 'Business',
+    tier_business_badge: 'Najpopularniejszy',
+    tier_business_price: 'PLN 169',
+    tier_business_period: '/ miesiąc',
+    tier_business_sub: 'Zwraca się po ~43 zamówieniach',
+    tier_business_r1: 'PLN 28 — do 3km',
+    tier_business_r2: 'PLN 35 — 3–6km',
+    tier_business_r3: 'PLN 42 — 6–10km',
+    tier_business_commission: '10% od zamówienia restauracyjnego',
+    tier_business_for: '30+ zamówień miesięcznie',
+    tier_business_feats: 'Wszystko ze Starter ✓ + Priorytet ✓ + Zapisane adresy ✓',
+    tier_business_cta: 'Zacznij →',
+    tier_fleet_title: 'Fleet',
+    tier_fleet_price: 'PLN 429',
+    tier_fleet_period: '/ miesiąc / lokalizacja',
+    tier_fleet_sub: 'Dla firm z własną flotą kierowców',
+    tier_fleet_r1: 'PLN 28 — do 3km',
+    tier_fleet_r2: 'PLN 35 — 3–6km',
+    tier_fleet_r3: 'PLN 42 — 6–10km',
+    tier_fleet_commission: '10% od zamówienia restauracyjnego',
+    tier_fleet_for: 'Własni kierowcy + duży wolumen',
+    tier_fleet_feats: 'Wszystko z Business ✓ + Kierowcy ✓ + Dispatch ✓ + Overflow ✓',
+    tier_fleet_cta: 'Skontaktuj się',
     trust_local_title: 'Szczecin',
     trust_local_body: 'Działamy w Twoim mieście. Możesz do nas zadzwonić.',
     trust_gdpr_title: 'GDPR',
@@ -93,7 +109,7 @@ const STRINGS = {
     nav_lang_pl: 'PL',
     nav_lang_en: 'EN',
     eyebrow: '📍 Szczecin · Delivery in your city',
-    hero_h1_line1: 'Glovo takes 30%.',
+    hero_h1_line1: 'Most platforms take 25–30%.',
     hero_h1_line2: 'We take 10%.',
     hero_h1_line3: 'You keep the rest.',
     hero_sub_restaurant: 'GPS-verified delivery with a portal that actually works — 10% commission, not 30%.',
@@ -107,9 +123,9 @@ const STRINGS = {
     mock_gps_btn: 'GPS photo available',
     calc_title: 'How much do you save per month?',
     calc_slider_label: 'Orders per day',
-    calc_monthly_label: 'per month vs Glovo',
-    calc_annual_label: 'per year',
-    calc_fine_print: 'Based on PLN 45 average order value and 30 days per month.',
+    calc_monthly_label: 'You save per month',
+    calc_annual_label: 'You save per year',
+    calc_fine_print: 'Based on average commission 28% vs 10% and PLN 45 per order',
     calc_cta: 'Start saving →',
     how_title: 'How it works',
     how_sub: 'Three steps. No paperwork.',
@@ -134,25 +150,41 @@ const STRINGS = {
     proof_gps_badge: 'GPS verified',
     proof_gps_status: '✓ Delivered',
     pricing_title: 'Transparent pricing. No surprises.',
-    pricing_popular: 'Most popular',
-    pricing_col1_title: 'Delivery',
-    pricing_col1_r1: 'PLN 28 — up to 3km',
-    pricing_col1_r2: 'PLN 35 — 3–6km',
-    pricing_col1_r3: 'PLN 42 — 6–10km',
-    pricing_col1_r4: 'PLN 63 — express',
-    pricing_col2_title: 'Restaurants',
-    pricing_col2_r1: '10% commission on order value',
-    pricing_col2_r2: '+ delivery fee as above',
-    pricing_col2_r3: 'Restaurant portal included',
-    pricing_col2_vs: 'vs Glovo: 25–30%',
-    pricing_col3_title: 'Business portal',
-    pricing_col3_r1: '€39 / month',
-    pricing_col3_r2: 'or PLN 5 per order',
-    pricing_col3_r3: 'Unlimited orders',
-    pricing_col3_r4: 'Dashboard + invoices + GPS',
-    pricing_col3_r5: 'Cancel any time',
     pricing_highlight: 'First delivery FREE · No contract · Cancel any time',
-    pricing_cta: 'Get started free →',
+    tier_starter_title: 'Starter',
+    tier_starter_price: 'PLN 0',
+    tier_starter_period: '/ month',
+    tier_starter_sub: 'Pay only for deliveries',
+    tier_starter_r1: 'PLN 32 — up to 3km',
+    tier_starter_r2: 'PLN 38 — 3–6km',
+    tier_starter_r3: 'PLN 48 — 6–10km',
+    tier_starter_commission: '12% on restaurant orders',
+    tier_starter_for: 'Fewer than 30 orders per month',
+    tier_starter_feats: 'GPS proof ✓ · Portal ✓ · Invoices ✓',
+    tier_starter_cta: 'Get started free →',
+    tier_business_title: 'Business',
+    tier_business_badge: 'Most popular',
+    tier_business_price: 'PLN 169',
+    tier_business_period: '/ month',
+    tier_business_sub: 'Pays for itself after ~43 orders',
+    tier_business_r1: 'PLN 28 — up to 3km',
+    tier_business_r2: 'PLN 35 — 3–6km',
+    tier_business_r3: 'PLN 42 — 6–10km',
+    tier_business_commission: '10% on restaurant orders',
+    tier_business_for: '30+ orders per month',
+    tier_business_feats: 'Everything in Starter ✓ + Priority ✓ + Saved addresses ✓',
+    tier_business_cta: 'Get started →',
+    tier_fleet_title: 'Fleet',
+    tier_fleet_price: 'PLN 429',
+    tier_fleet_period: '/ month / location',
+    tier_fleet_sub: 'For businesses with their own driver fleet',
+    tier_fleet_r1: 'PLN 28 — up to 3km',
+    tier_fleet_r2: 'PLN 35 — 3–6km',
+    tier_fleet_r3: 'PLN 42 — 6–10km',
+    tier_fleet_commission: '10% on restaurant orders',
+    tier_fleet_for: 'Own drivers + high volume',
+    tier_fleet_feats: 'Everything in Business ✓ + Drivers ✓ + Dispatch ✓ + Overflow ✓',
+    tier_fleet_cta: 'Contact us',
     trust_local_title: 'Szczecin',
     trust_local_body: 'We deliver in your city. You can call us.',
     trust_gdpr_title: 'GDPR',
@@ -197,7 +229,8 @@ export default function HomePage() {
   }, [router])
 
   const s = STRINGS[lang]
-  const monthlySaving = Math.round(dailyOrders * 45 * 0.20 * 30)
+  // 28% industry average − 10% LGK = 18% saving per order
+  const monthlySaving = Math.round(dailyOrders * 45 * 0.18 * 30)
   const annualSaving = Math.round(monthlySaving * 12)
 
   if (checkingSession) return <div style={{ minHeight: '100vh', background: C.bg }} />
@@ -211,6 +244,12 @@ export default function HomePage() {
   const cardStyle = {
     background: C.cardBg, border: '1px solid ' + C.border,
     borderRadius: 12, padding: 28,
+  }
+
+  const outlineBtnStyle = {
+    display: 'block', textAlign: 'center', padding: '10px 16px',
+    borderRadius: 8, border: '1px solid ' + C.border, color: C.text,
+    textDecoration: 'none', fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
   }
 
   return (
@@ -230,7 +269,8 @@ export default function HomePage() {
           .sec-pad { padding: 52px 20px !important; }
           .final-h1 { font-size: 32px !important; }
           .calc-h2 { font-size: 28px !important; }
-          .calc-amount { font-size: 40px !important; }
+          .calc-boxes { grid-template-columns: 1fr !important; }
+          .calc-amount { font-size: 28px !important; }
         }
       `}</style>
 
@@ -342,17 +382,25 @@ export default function HomePage() {
           <input
             type="range" min={10} max={200} step={5} value={dailyOrders}
             onChange={e => setDailyOrders(Number(e.target.value))}
-            style={{ width: '100%', maxWidth: 480, accentColor: C.accent, cursor: 'pointer', marginBottom: 40 }}
+            style={{ width: '100%', maxWidth: 480, accentColor: C.accent, cursor: 'pointer', marginBottom: 32 }}
           />
 
-          <div className="calc-amount" style={{ fontFamily: "'Fira Code', monospace", fontSize: 52, fontWeight: 700, color: '#fff', lineHeight: 1, marginBottom: 8 }}>
-            PLN {monthlySaving.toLocaleString('pl-PL')}
+          <div className="calc-boxes" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, maxWidth: 480, margin: '0 auto 16px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: '20px 16px' }}>
+              <div style={{ color: '#999', fontSize: 13, marginBottom: 10 }}>{s.calc_monthly_label}</div>
+              <div className="calc-amount" style={{ fontFamily: "'Fira Code', monospace", fontSize: 36, fontWeight: 700, color: '#fff', lineHeight: 1 }}>
+                PLN {monthlySaving.toLocaleString('pl-PL')}
+              </div>
+            </div>
+            <div style={{ background: C.accent, borderRadius: 12, padding: '20px 16px' }}>
+              <div style={{ color: '#555', fontSize: 13, marginBottom: 10 }}>{s.calc_annual_label}</div>
+              <div className="calc-amount" style={{ fontFamily: "'Fira Code', monospace", fontSize: 36, fontWeight: 700, color: C.accentBg, lineHeight: 1 }}>
+                PLN {annualSaving.toLocaleString('pl-PL')}
+              </div>
+            </div>
           </div>
-          <div style={{ color: '#999', fontSize: 18, marginBottom: 6 }}>{s.calc_monthly_label}</div>
-          <div style={{ color: '#666', fontSize: 15, marginBottom: 6 }}>
-            PLN {annualSaving.toLocaleString('pl-PL')} {s.calc_annual_label}
-          </div>
-          <div style={{ color: '#555', fontSize: 13, marginBottom: 40 }}>{s.calc_fine_print}</div>
+
+          <div style={{ color: '#555', fontSize: 13, marginBottom: 40, maxWidth: 480, margin: '0 auto 40px' }}>{s.calc_fine_print}</div>
 
           <a href="/register" style={ctaStyle}>{s.calc_cta}</a>
         </div>
@@ -370,7 +418,7 @@ export default function HomePage() {
               { icon: '📝', title: s.step1_title, body: s.step1_body },
               { icon: '🛵', title: s.step2_title, body: s.step2_body },
               { icon: '📷', title: s.step3_title, body: s.step3_body },
-            ].map((step, i) => (
+            ].map((step) => (
               <div key={step.title} style={cardStyle}>
                 <div style={{ fontSize: 32, marginBottom: 16 }}>{step.icon}</div>
                 <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 10, color: C.text }}>{step.title}</div>
@@ -381,7 +429,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── PROOF (real UI mockups) ── */}
+      {/* ── PROOF ── */}
       <section className="sec-pad" style={{ padding: '80px 24px', background: C.cardBg }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 52 }}>
@@ -446,56 +494,79 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── PRICING ── */}
+      {/* ── PRICING — Starter / Business / Fleet ── */}
       <section className="sec-pad" style={{ padding: '80px 24px', background: C.bg }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 52 }}>
             <h2 style={{ fontSize: 36, fontWeight: 800, marginBottom: 10 }}>{s.pricing_title}</h2>
           </div>
           <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 24 }}>
-            {[
-              {
-                title: s.pricing_col1_title,
-                rows: [s.pricing_col1_r1, s.pricing_col1_r2, s.pricing_col1_r3, s.pricing_col1_r4],
-                highlight: segment === 'business',
-              },
-              {
-                title: s.pricing_col2_title,
-                rows: [s.pricing_col2_r1, s.pricing_col2_r2, s.pricing_col2_r3, s.pricing_col2_vs],
-                highlight: segment === 'restaurant',
-                badge: s.pricing_popular,
-              },
-              {
-                title: s.pricing_col3_title,
-                rows: [s.pricing_col3_r1, s.pricing_col3_r2, s.pricing_col3_r3, s.pricing_col3_r4, s.pricing_col3_r5],
-                highlight: false,
-              },
-            ].map(col => (
-              <div
-                key={col.title}
-                style={{
-                  background: col.highlight ? '#D4FF0008' : C.cardBg,
-                  border: '2px solid ' + (col.highlight ? C.accent : C.border),
-                  borderRadius: 12, padding: 28, position: 'relative',
-                }}
-              >
-                {col.badge && (
-                  <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: C.accent, color: C.text, fontSize: 11, fontWeight: 700, padding: '3px 14px', borderRadius: 20, whiteSpace: 'nowrap' }}>
-                    {col.badge}
-                  </div>
-                )}
-                <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 18 }}>{col.title}</div>
-                {col.rows.map((row, j) => (
-                  <div key={j} style={{ color: C.textSecondary, fontSize: 14, padding: '7px 0', borderBottom: j < col.rows.length - 1 ? '1px solid ' + C.border : 'none' }}>{row}</div>
+
+            {/* STARTER */}
+            <div style={{ background: C.cardBg, border: '1px solid ' + C.border, borderRadius: 12, padding: 28 }}>
+              <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 4 }}>{s.tier_starter_title}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                <span style={{ fontSize: 32, fontWeight: 800 }}>{s.tier_starter_price}</span>
+                <span style={{ color: C.textSecondary, fontSize: 14 }}>{s.tier_starter_period}</span>
+              </div>
+              <div style={{ color: C.textSecondary, fontSize: 13, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid ' + C.border }}>{s.tier_starter_sub}</div>
+              <div style={{ marginBottom: 12 }}>
+                {[s.tier_starter_r1, s.tier_starter_r2, s.tier_starter_r3].map((r, i) => (
+                  <div key={i} style={{ color: C.textSecondary, fontSize: 13, padding: '5px 0', borderBottom: i < 2 ? '1px solid ' + C.border : 'none' }}>{r}</div>
                 ))}
               </div>
-            ))}
+              <div style={{ color: C.textSecondary, fontSize: 13, marginBottom: 6 }}>{s.tier_starter_commission}</div>
+              <div style={{ color: C.textMuted, fontSize: 12, marginBottom: 12 }}>{s.tier_starter_for}</div>
+              <div style={{ color: C.textSecondary, fontSize: 12, marginBottom: 20 }}>{s.tier_starter_feats}</div>
+              <a href="/register" style={outlineBtnStyle}>{s.tier_starter_cta}</a>
+            </div>
+
+            {/* BUSINESS */}
+            <div style={{ background: '#D4FF0008', border: '2px solid ' + C.accent, borderRadius: 12, padding: 28, position: 'relative' }}>
+              <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: C.accent, color: C.text, fontSize: 11, fontWeight: 700, padding: '3px 14px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                {s.tier_business_badge}
+              </div>
+              <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 4 }}>{s.tier_business_title}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                <span style={{ fontSize: 32, fontWeight: 800 }}>{s.tier_business_price}</span>
+                <span style={{ color: C.textSecondary, fontSize: 14 }}>{s.tier_business_period}</span>
+              </div>
+              <div style={{ color: C.textSecondary, fontSize: 13, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid ' + C.border }}>{s.tier_business_sub}</div>
+              <div style={{ marginBottom: 12 }}>
+                {[s.tier_business_r1, s.tier_business_r2, s.tier_business_r3].map((r, i) => (
+                  <div key={i} style={{ color: C.textSecondary, fontSize: 13, padding: '5px 0', borderBottom: i < 2 ? '1px solid ' + C.border : 'none' }}>{r}</div>
+                ))}
+              </div>
+              <div style={{ color: C.textSecondary, fontSize: 13, marginBottom: 6 }}>{s.tier_business_commission}</div>
+              <div style={{ color: C.textMuted, fontSize: 12, marginBottom: 12 }}>{s.tier_business_for}</div>
+              <div style={{ color: C.textSecondary, fontSize: 12, marginBottom: 20 }}>{s.tier_business_feats}</div>
+              <a href="/register" style={{ display: 'block', textAlign: 'center', padding: '10px 16px', borderRadius: 8, background: C.accent, color: C.text, textDecoration: 'none', fontSize: 14, fontWeight: 700, fontFamily: 'inherit' }}>
+                {s.tier_business_cta}
+              </a>
+            </div>
+
+            {/* FLEET */}
+            <div style={{ background: C.cardBg, border: '1px solid ' + C.border, borderRadius: 12, padding: 28 }}>
+              <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 4 }}>{s.tier_fleet_title}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                <span style={{ fontSize: 32, fontWeight: 800 }}>{s.tier_fleet_price}</span>
+                <span style={{ color: C.textSecondary, fontSize: 14 }}>{s.tier_fleet_period}</span>
+              </div>
+              <div style={{ color: C.textSecondary, fontSize: 13, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid ' + C.border }}>{s.tier_fleet_sub}</div>
+              <div style={{ marginBottom: 12 }}>
+                {[s.tier_fleet_r1, s.tier_fleet_r2, s.tier_fleet_r3].map((r, i) => (
+                  <div key={i} style={{ color: C.textSecondary, fontSize: 13, padding: '5px 0', borderBottom: i < 2 ? '1px solid ' + C.border : 'none' }}>{r}</div>
+                ))}
+              </div>
+              <div style={{ color: C.textSecondary, fontSize: 13, marginBottom: 6 }}>{s.tier_fleet_commission}</div>
+              <div style={{ color: C.textMuted, fontSize: 12, marginBottom: 12 }}>{s.tier_fleet_for}</div>
+              <div style={{ color: C.textSecondary, fontSize: 12, marginBottom: 20 }}>{s.tier_fleet_feats}</div>
+              <a href="mailto:lgkcourierapp@gmail.com" style={outlineBtnStyle}>{s.tier_fleet_cta}</a>
+            </div>
+
           </div>
-          <div style={{ background: '#D4FF0010', border: '1px solid #D4FF0040', borderRadius: 10, padding: '16px 24px', textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ background: '#D4FF0010', border: '1px solid #D4FF0040', borderRadius: 10, padding: '16px 24px', textAlign: 'center' }}>
             <span style={{ color: C.textSecondary, fontWeight: 600, fontSize: 14 }}>{s.pricing_highlight}</span>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <a href="/register" style={ctaStyle}>{s.pricing_cta}</a>
           </div>
         </div>
       </section>
