@@ -59,10 +59,10 @@ function formatPLN(amount) {
 
 function relativeTime(isoString) {
   const diff = (Date.now() - new Date(isoString)) / 1000;
-  if (diff < 60) return `${Math.round(diff)} sek. temu`;
-  if (diff < 3600) return `${Math.round(diff / 60)} min temu`;
-  if (diff < 86400) return `${Math.round(diff / 3600)} godz. temu`;
-  return `${Math.round(diff / 86400)} dni temu`;
+  if (diff < 60) return `${Math.round(diff)} sec ago`;
+  if (diff < 3600) return `${Math.round(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.round(diff / 3600)} hours ago`;
+  return `${Math.round(diff / 86400)} days ago`;
 }
 
 const BUCKETS = [
@@ -73,58 +73,58 @@ const BUCKETS = [
     bg: 'rgba(255,59,48,0.08)',
     border: 'rgba(255,59,48,0.2)',
     color: '#FF3B30',
-    bank: '→ Konto VAT · mBank',
-    rule: 'Płatne kwartalnie do US · NIE RUSZAJ',
+    bank: '→ VAT account · mBank',
+    rule: 'Paid quarterly to tax office · DO NOT TOUCH',
   },
   {
     key: 'courier',
-    label: 'Wypłaty kurierów',
+    label: 'Courier payouts',
     icon: '🚴',
     bg: 'rgba(0,123,255,0.08)',
     border: 'rgba(0,123,255,0.2)',
     color: '#007BFF',
-    bank: '→ Konto wypłat · Revolut Business',
-    rule: 'Wypłacane co poniedziałek kurierom',
+    bank: '→ Courier payouts account · Revolut Business',
+    rule: 'Paid every Monday to couriers',
   },
   {
     key: 'stripe',
-    label: 'Opłaty Stripe',
+    label: 'Stripe fees',
     icon: '💳',
     bg: 'rgba(255,149,0,0.08)',
     border: 'rgba(255,149,0,0.2)',
     color: '#FF9500',
-    bank: 'Auto-pobierane przez Stripe',
-    rule: '1.4% + PLN 1.00 za transakcję',
+    bank: 'Auto-deducted by Stripe',
+    rule: '1.4% + PLN 1.00 per transaction',
   },
   {
     key: 'ops',
-    label: 'Operacje',
+    label: 'Operations',
     icon: '⚙️',
     bg: 'rgba(255,255,255,0.03)',
     border: 'rgba(255,255,255,0.08)',
     color: '#888888',
-    bank: '→ Konto operacyjne · mBank',
-    rule: 'Supabase, Vercel, narzędzia, wynagrodzenie',
+    bank: '→ Operations account · mBank',
+    rule: 'Supabase, Vercel, tools, salary',
   },
   {
     key: 'cit',
-    label: 'Rezerwa CIT',
+    label: 'CIT reserve',
     icon: '🧾',
     bg: 'rgba(255,149,0,0.05)',
     border: 'rgba(255,149,0,0.12)',
     color: '#CC7700',
-    bank: '→ Oszczędności CIT · mBank',
-    rule: '9% zysku · płatne rocznie · NIE RUSZAJ',
+    bank: '→ CIT savings · mBank',
+    rule: '9% of profit · paid annually · DO NOT TOUCH',
   },
   {
     key: 'profit',
-    label: 'Zysk LGK',
+    label: 'LGK Profit',
     icon: '📈',
     bg: 'rgba(212,255,0,0.08)',
     border: 'rgba(212,255,0,0.25)',
     color: '#D4FF00',
-    bank: '→ Konto zysku · Revolut Business',
-    rule: 'Reinwestuj co kwartał · Sprawdź przed wydaniem',
+    bank: '→ Profit account · Revolut Business',
+    rule: 'Reinvest quarterly · Check before spending',
     prominent: true,
   },
 ];
@@ -151,7 +151,7 @@ function statusColor(status) {
 
 function sourceLabel(source) {
   if (source === 'gloriaFood') return 'GloriaFood';
-  if (source === 'manual') return 'Ręcznie';
+  if (source === 'manual') return 'Manual';
   return 'Portal';
 }
 
@@ -191,7 +191,7 @@ export default function FinancePage() {
     ]);
 
     setRecentDeliveries(recentRes.data || []);
-    setLastUpdated(new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }));
+    setLastUpdated(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
     setLoading(false);
   }, []);
 
@@ -220,7 +220,7 @@ export default function FinancePage() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: '#0A0A0A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontFamily: "'Fira Code', monospace", fontSize: '13px', color: '#333' }}>ładowanie finansów...</span>
+        <span style={{ fontFamily: "'Fira Code', monospace", fontSize: '13px', color: '#333' }}>loading finances...</span>
       </div>
     );
   }
@@ -231,16 +231,16 @@ export default function FinancePage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
         <div>
-          <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '24px', margin: 0, color: '#FFF' }}>Finanse — Money Buckets</h1>
-          <p style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#888', margin: '4px 0 0' }}>Gdzie idzie każda złotówka · Ten miesiąc</p>
+          <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '24px', margin: 0, color: '#FFF' }}>Finance — Money Buckets</h1>
+          <p style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#888', margin: '4px 0 0' }}>Where every PLN goes · This month</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555' }}>Zaktualizowano {lastUpdated}</span>
+          <span style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555' }}>Updated {lastUpdated}</span>
           <button
             onClick={fetchData}
             style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '8px', padding: '8px 14px', color: '#FFF', fontFamily: "'Space Grotesk', sans-serif", fontSize: '13px', cursor: 'pointer' }}
           >
-            Odśwież
+            Refresh
           </button>
         </div>
       </div>
@@ -248,25 +248,25 @@ export default function FinancePage() {
       {/* SECTION 1 — Top Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
         <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '12px', padding: '18px' }}>
-          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Dostawy ten miesiąc</div>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Deliveries this month</div>
           <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '32px', color: '#FFF' }}>{summary?.total_deliveries || 0}</div>
-          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555', marginTop: '4px' }}>{summary?.completed || 0} ukończonych · {summary?.pending || 0} oczekujących</div>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555', marginTop: '4px' }}>{summary?.completed || 0} completed · {summary?.pending || 0} pending</div>
         </div>
 
         <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '12px', padding: '18px' }}>
-          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Przychód brutto</div>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Gross revenue</div>
           <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '28px', color: '#FFF' }}>{formatPLN(aggregated.total)}</div>
-          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555', marginTop: '4px' }}>Łącznie od klientów</div>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555', marginTop: '4px' }}>Total from clients</div>
         </div>
 
         <div style={{ background: '#1A1A1A', border: `1px solid ${totalProfit > 0 ? '#00C853' : '#FF3B30'}`, borderRadius: '12px', padding: '18px' }}>
-          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Zysk netto LGK</div>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>LGK net profit</div>
           <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '28px', color: totalProfit > 0 ? '#00C853' : '#FF3B30' }}>{formatPLN(totalProfit)}</div>
-          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555', marginTop: '4px' }}>Po wszystkich kosztach i CIT</div>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555', marginTop: '4px' }}>After all costs and tax</div>
         </div>
 
         <div style={{ background: 'rgba(212,255,0,0.04)', border: '1px solid rgba(212,255,0,0.15)', borderRadius: '12px', padding: '18px' }}>
-          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Abonament</div>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Subscriptions</div>
           <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '28px', color: '#D4FF00' }}>{formatPLN(subscriptionRevenue)}</div>
           <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555', marginTop: '4px' }}>{businessCount} Business · {fleetCount} Fleet</div>
         </div>
@@ -274,7 +274,7 @@ export default function FinancePage() {
 
       {/* SECTION 2 — Flow Bar */}
       <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
-        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px', color: '#FFF', marginBottom: '14px' }}>Podział przychodu</div>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px', color: '#FFF', marginBottom: '14px' }}>Revenue split</div>
         {aggregated.total > 0 ? (
           <>
             <div style={{ height: '10px', borderRadius: '5px', display: 'flex', overflow: 'hidden', marginBottom: '14px' }}>
@@ -296,7 +296,7 @@ export default function FinancePage() {
             </div>
           </>
         ) : (
-          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#444' }}>Brak danych za ten miesiąc</div>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#444' }}>No data for this month</div>
         )}
       </div>
 
@@ -318,7 +318,7 @@ export default function FinancePage() {
                 {pct.toFixed(1)}% of gross
               </div>
               <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '0.5px solid #2A2A2A' }}>
-                <div style={{ fontSize: '9px', color: '#555', fontFamily: "'Fira Code', monospace", textTransform: 'uppercase', letterSpacing: '0.5px' }}>KONTO BANKOWE</div>
+                <div style={{ fontSize: '9px', color: '#555', fontFamily: "'Fira Code', monospace", textTransform: 'uppercase', letterSpacing: '0.5px' }}>BANK ACCOUNT</div>
                 <div style={{ fontSize: '11px', color: '#aaa', fontFamily: "'Fira Code', monospace", marginTop: '2px' }}>{b.bank}</div>
               </div>
               <div style={{ fontSize: '10px', color: '#666', fontFamily: "'Fira Code', monospace", marginTop: '4px' }}>{b.rule}</div>
@@ -329,14 +329,14 @@ export default function FinancePage() {
 
       {/* SECTION 4 — Single Delivery Calculator */}
       <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
-        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '16px', color: '#FFF', marginBottom: '4px' }}>Kalkulator pojedynczej dostawy</div>
-        <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#888', marginBottom: '18px' }}>Przesuń suwaki aby zobaczyć podział</div>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '16px', color: '#FFF', marginBottom: '4px' }}>Single delivery calculator</div>
+        <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#888', marginBottom: '18px' }}>Adjust sliders to see the split</div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '20px' }}>
           {[
-            { label: 'Opłata dostawy', value: fee, set: setFee, min: 28, max: 63, step: 1 },
-            { label: 'Prowizja', value: comm, set: setComm, min: 0, max: 12, step: 0.5 },
-            { label: 'Wypłata kuriera', value: cpay, set: setCpay, min: 14, max: 26, step: 1 },
+            { label: 'Delivery fee', value: fee, set: setFee, min: 28, max: 63, step: 1 },
+            { label: 'Commission', value: comm, set: setComm, min: 0, max: 12, step: 0.5 },
+            { label: 'Courier payout', value: cpay, set: setCpay, min: 14, max: 26, step: 1 },
           ].map(({ label, value, set, min, max, step }) => (
             <div key={label}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -363,13 +363,13 @@ export default function FinancePage() {
           </thead>
           <tbody>
             {[
-              { label: 'Klient płaci (brutto)', amount: fee + comm },
-              { label: '↳ VAT (do US)', amount: singleBuckets.vat },
-              { label: '↳ Kurier', amount: singleBuckets.courier },
+              { label: 'Client pays (gross)', amount: fee + comm },
+              { label: '↳ VAT (tax office)', amount: singleBuckets.vat },
+              { label: '↳ Courier', amount: singleBuckets.courier },
               { label: '↳ Stripe', amount: singleBuckets.stripe },
               { label: '↳ Ops', amount: singleBuckets.ops },
-              { label: '↳ CIT rezerwa', amount: singleBuckets.cit },
-              { label: '🟡 LGK zostaje', amount: singleBuckets.profit, highlight: true },
+              { label: '↳ CIT reserve', amount: singleBuckets.cit },
+              { label: '🟡 LGK keeps', amount: singleBuckets.profit, highlight: true },
             ].map(({ label, amount, highlight }) => (
               <tr key={label} style={{ background: highlight ? 'rgba(212,255,0,0.05)' : 'transparent' }}>
                 <td style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: highlight ? '#D4FF00' : '#aaa', padding: '8px 0', borderBottom: '0.5px solid #1A1A1A' }}>{label}</td>
@@ -383,18 +383,18 @@ export default function FinancePage() {
         </table>
         {singleBuckets.profit < 0 && (
           <div style={{ marginTop: '12px', padding: '8px 12px', background: 'rgba(255,59,48,0.1)', border: '1px solid rgba(255,59,48,0.3)', borderRadius: '8px', fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#FF3B30' }}>
-            ⚠ Ta dostawa jest nierentowna
+            ⚠ This delivery is unprofitable
           </div>
         )}
       </div>
 
       {/* SECTION 5 — Volume Projections */}
       <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
-        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '16px', color: '#FFF', marginBottom: '16px' }}>Prognoza miesięczna (średnia dostawa PLN 41)</div>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '16px', color: '#FFF', marginBottom: '16px' }}>Monthly projections (avg delivery PLN 41)</div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              {['Wolumen', 'Profit z dostaw', 'Abonament', 'Łącznie/miesiąc'].map((h, i) => (
+              {['Volume', 'Delivery profit', 'Subscriptions', 'Total/month'].map((h, i) => (
                 <th key={h} style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#555', textAlign: i === 0 ? 'left' : 'right', padding: '6px 0', borderBottom: '1px solid #2A2A2A' }}>{h}</th>
               ))}
             </tr>
@@ -408,7 +408,7 @@ export default function FinancePage() {
               return (
                 <tr key={vol} style={{ background: isClosest ? 'rgba(212,255,0,0.04)' : 'transparent' }}>
                   <td style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: isClosest ? '#D4FF00' : '#aaa', padding: '8px 0', borderBottom: '0.5px solid #1A1A1A' }}>
-                    {vol.toLocaleString('pl-PL')}/mies{isClosest ? ' ←' : ''}
+                    {vol.toLocaleString('en-US')}/mo{isClosest ? ' ←' : ''}
                   </td>
                   <td style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: deliveryProfit > 0 ? '#00C853' : '#FF3B30', textAlign: 'right', padding: '8px 0', borderBottom: '0.5px solid #1A1A1A' }}>{formatPLN(deliveryProfit)}</td>
                   <td style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#D4FF00', textAlign: 'right', padding: '8px 0', borderBottom: '0.5px solid #1A1A1A' }}>{formatPLN(subscriptionRevenue)}</td>
@@ -423,15 +423,15 @@ export default function FinancePage() {
       {/* SECTION 6 — Live Delivery Feed */}
       <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '16px', color: '#FFF' }}>Ostatnie dostawy · live</div>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '16px', color: '#FFF' }}>Recent deliveries · live</div>
           <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00C853', animation: 'pulse 2.5s infinite' }} />
         </div>
-        <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#888', marginBottom: '16px' }}>Aktualizuje się automatycznie</div>
+        <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#888', marginBottom: '16px' }}>Updates automatically</div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
             <thead>
               <tr>
-                {['Zamówienie', 'Źródło', 'Brutto', 'Kurier', 'LGK', 'Status', 'Czas'].map(h => (
+                {['Order', 'Source', 'Gross', 'Courier', 'LGK', 'Status', 'Time'].map(h => (
                   <th key={h} style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#555', textAlign: 'left', padding: '6px 0', borderBottom: '1px solid #2A2A2A' }}>{h}</th>
                 ))}
               </tr>
@@ -449,7 +449,7 @@ export default function FinancePage() {
                     <td style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#888', padding: '7px 0', borderBottom: '0.5px solid #1A1A1A' }}>{d.courier_payout_pln ? formatPLN(d.courier_payout_pln) : '—'}</td>
                     <td
                       style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: lgkProfit > 0 ? '#00C853' : '#FF3B30', padding: '7px 0', borderBottom: '0.5px solid #1A1A1A' }}
-                      title={lgkProfit < 0 ? 'Sprawdź cennik' : ''}
+                      title={lgkProfit < 0 ? 'Check pricing' : ''}
                     >
                       {d.amount_pln ? formatPLN(lgkProfit) : '—'}
                     </td>
@@ -467,31 +467,61 @@ export default function FinancePage() {
 
       {/* SECTION 7 — Bank Account Guide */}
       <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '12px', padding: '20px' }}>
-        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '16px', color: '#FFF', marginBottom: '4px' }}>Struktura kont bankowych</div>
-        <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#888', marginBottom: '16px' }}>Otwórz te konta po rejestracji LGK Holdings Sp. z o.o.</div>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '16px', color: '#FFF', marginBottom: '4px' }}>Bank account structure</div>
+        <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#888', marginBottom: '16px' }}>Open these accounts after registering LGK Holdings Sp. z o.o.</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
           {[
-            { title: 'VAT (mBank — konto firmowe restricted)', zasilić: 'Przy każdej wypłacie Stripe → 18.7% kwoty', wydać: 'Kwartalnie do US (VAT-7K)', saldo: formatPLN(aggregated.vat), color: '#FF3B30' },
-            { title: 'Wypłaty kurierów (Revolut Business)', zasilić: 'Przy każdej dostawie → kwota wypłaty kuriera', wydać: 'Co poniedziałek — bulk payment do kurierów', saldo: formatPLN(aggregated.courier), color: '#007BFF' },
-            { title: 'Rezerwa CIT (mBank — konto oszczędnościowe)', zasilić: '9% zysku przy każdej wypłacie Stripe', wydać: 'Rocznie — CIT-8 (do 31 marca)', saldo: formatPLN(aggregated.cit), color: '#CC7700' },
-            { title: 'Koszty operacyjne (mBank — konto bieżące)', zasilić: 'Stały miesięczny transfer z konta głównego', wydać: 'Na bieżące koszty + wynagrodzenie Briana', saldo: 'PLN 2,000–5,000 bufor', color: '#888888' },
-            { title: 'Zysk LGK (Revolut Business)', zasilić: 'Reszta po napełnieniu pozostałych kont', wydać: 'Przegląd co kwartał — reinwestycja lub dywidenda', saldo: formatPLN(Math.max(0, aggregated.profit)), color: '#D4FF00' },
+            {
+              title: 'VAT (mBank — restricted business account)',
+              topUp: 'On each Stripe payout → 18.7% of amount',
+              spend: 'Quarterly to tax office (VAT-7K)',
+              balance: formatPLN(aggregated.vat),
+              color: '#FF3B30',
+            },
+            {
+              title: 'Courier payouts (Revolut Business)',
+              topUp: 'Per delivery → courier payout amount',
+              spend: 'Every Monday — bulk payment to couriers',
+              balance: formatPLN(aggregated.courier),
+              color: '#007BFF',
+            },
+            {
+              title: 'CIT reserve (mBank — savings account)',
+              topUp: '9% of profit on each Stripe payout',
+              spend: 'Annually — CIT-8 (by 31 March)',
+              balance: formatPLN(aggregated.cit),
+              color: '#CC7700',
+            },
+            {
+              title: 'Operations (mBank — current account)',
+              topUp: 'Fixed monthly transfer from main account',
+              spend: "Running costs + Brian's salary",
+              balance: 'PLN 2,000–5,000 buffer',
+              color: '#888888',
+            },
+            {
+              title: 'LGK Profit (Revolut Business)',
+              topUp: 'Remainder after filling other accounts',
+              spend: 'Quarterly review — reinvest or dividend',
+              balance: formatPLN(Math.max(0, aggregated.profit)),
+              color: '#D4FF00',
+            },
           ].map(acc => (
             <div key={acc.title} style={{ background: '#0D0D0D', border: '0.5px solid #2A2A2A', borderRadius: '10px', padding: '14px' }}>
               <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', color: acc.color, marginBottom: '10px' }}>{acc.title}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
                 <div>
-                  <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Kiedy zasilić</div>
-                  <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#888', marginTop: '2px' }}>{acc.zasilić}</div>
+                  <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>When to fund</div>
+                  <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#888', marginTop: '2px' }}>{acc.topUp}</div>
                 </div>
                 <div>
-                  <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Kiedy wydać</div>
-                  <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#888', marginTop: '2px' }}>{acc.wydać}</div>
+                  <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>When to spend</div>
+                  <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#888', marginTop: '2px' }}>{acc.spend}</div>
                 </div>
               </div>
               <div style={{ borderTop: '0.5px solid #2A2A2A', paddingTop: '8px' }}>
-                <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Szacowane saldo</div>
-                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: acc.color, marginTop: '2px' }}>{acc.saldo}</div>
+                <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Estimated balance</div>
+                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: acc.color, marginTop: '2px' }}>{acc.balance}</div>
               </div>
             </div>
           ))}
