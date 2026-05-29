@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 
 const NAV = [
   { href: '/admin',            label: 'Command',    icon: '⌂',  exact: true },
+  { href: '/admin/finance',    label: 'Finanse',    icon: '💹' },
   { href: '/admin/orders',     label: 'Orders',     icon: '📦' },
   { href: '/admin/couriers',   label: 'Couriers',   icon: '🚴' },
   { href: '/admin/brama',      label: 'Brama',      icon: '🔑' },
