@@ -171,7 +171,7 @@ export default function NewOrderPage() {
         console.warn('Order confirmation email failed:', emailError)
       }
 
-      router.push('/orders/' + orderId + '?pay=1')
+      router.push('/orders/' + orderId + '?created=true')
     } catch (err) {
       setErrors({ submit: 'Something went wrong placing your order. Please try again.' })
     } finally {

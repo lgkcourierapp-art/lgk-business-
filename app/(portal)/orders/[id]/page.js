@@ -21,6 +21,8 @@ const REPORT_CATEGORIES = [
 
 export default function OrderPage({ params }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const justCreated = searchParams.get('created') === 'true'
   const { t, colors, lang } = useApp()
 
   const [order, setOrder] = useState(null)
@@ -369,6 +371,20 @@ export default function OrderPage({ params }) {
             )}
 
             {headerRow}
+
+            {justCreated && (
+              <div style={{ background: 'rgba(0,200,83,0.08)', border: '0.5px solid rgba(0,200,83,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '20px' }}>✓</span>
+                <div>
+                  <p style={{ fontSize: '13px', fontWeight: '500', color: '#00C853', margin: '0 0 2px' }}>
+                    Zlecenie złożone pomyślnie
+                  </p>
+                  <p style={{ fontSize: '11px', color: '#555555', margin: '0' }}>
+                    Kurierzy w pobliżu zostali powiadomieni. Średni czas przyjęcia zlecenia: 3–8 minut.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div style={cardStyle}>
               <div style={{ fontWeight: 700, marginBottom: 20, color: '#D4FF00' }}>{t('timeline')}</div>

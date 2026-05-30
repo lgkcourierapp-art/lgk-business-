@@ -15,6 +15,10 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [loadingAddresses, setLoadingAddresses] = useState(true)
   const [businessType, setBusinessType] = useState('general')
+  const [logoUrl, setLogoUrl] = useState(null)
+  const [signedLogoUrl, setSignedLogoUrl] = useState(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState(null)
   const [integrationFlag, setIntegrationFlag] = useState(false)
   const [existingApiKey, setExistingApiKey] = useState(null)
   const [newRawKey, setNewRawKey] = useState(null)
@@ -29,12 +33,17 @@ export default function SettingsPage() {
 
       const { data: prof } = await supabase
         .from('profiles')
-        .select('company_name, phone, business_type')
+        .select('company_name, phone, business_type, logo_url')
         .eq('id', user['id'])
         .single()
       if (prof) {
         setProfile(p => ({ ...p, company_name: prof.company_name || '', phone: prof.phone || '' }))
         setBusinessType(prof.business_type || 'general')
+        if (prof.logo_url) {
+          setLogoUrl(prof.logo_url)
+          const { data: signedData } = await supabase.storage.from('avatars').createSignedUrl(prof.logo_url, 3600)
+          if (signedData?.signedUrl) setSignedLogoUrl(signedData.signedUrl)
+        }
       }
 
       const { data: addrs } = await supabase
@@ -151,6 +160,30 @@ export default function SettingsPage() {
     }
   }
 
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { setUploadError('Only image files allowed (PNG, JPG, SVG)'); return }
+    if (file.size > 2 * 1024 * 1024) { setUploadError('File too large — max 2MB'); return }
+    setUploadError(null)
+    setUploading(true)
+    try {
+      const ext = file.name.split('.').pop().toLowerCase()
+      const path = user['id'] + '/logo.' + ext
+      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      const { data: signedData } = await supabase.storage.from('avatars').createSignedUrl(path, 3600)
+      if (signedData?.signedUrl) setSignedLogoUrl(signedData.signedUrl)
+      await supabase.from('profiles').update({ logo_url: path }).eq('id', user['id'])
+      setLogoUrl(path)
+      window.dispatchEvent(new Event('lgk-profile-updated'))
+    } catch (err) {
+      setUploadError('Upload failed — please try again')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const cardStyle = { background: colors.card, border: '1px solid ' + colors.border, borderRadius: 12, padding: 24, marginBottom: 16 }
   const inp = (key, placeholder, type = 'text') => (
     <input
@@ -167,6 +200,26 @@ export default function SettingsPage() {
       <main style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px' }}>
 
         <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: colors.text }}>{t('settings')}</h1>
+
+        {/* Company branding */}
+        <div style={cardStyle}>
+          <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Company Branding</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 16 }}>
+            {signedLogoUrl ? (
+              <img src={signedLogoUrl} alt="Company logo" style={{ width: 80, height: 80, objectFit: 'contain', borderRadius: 8, border: '1px solid ' + colors.border, background: '#FFF' }} />
+            ) : (
+              <div style={{ width: 80, height: 80, borderRadius: 8, border: '1px solid ' + colors.border, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, background: colors.bg }}>🏢</div>
+            )}
+            <div>
+              <label style={{ display: 'inline-block', background: '#D4FF00', color: '#000', padding: '10px 20px', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.7 : 1 }}>
+                {uploading ? 'Uploading…' : logoUrl ? 'Change logo' : 'Upload logo'}
+                <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploading} style={{ display: 'none' }} />
+              </label>
+              <div style={{ color: colors.textSecondary, fontSize: 12, marginTop: 8 }}>PNG, JPG or SVG · Max 2MB</div>
+              {uploadError && <div style={{ color: '#FF3B30', fontSize: 12, marginTop: 6 }}>{uploadError}</div>}
+            </div>
+          </div>
+        </div>
 
         {/* Company info */}
         <div style={cardStyle}>
