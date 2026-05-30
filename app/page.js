@@ -10,11 +10,11 @@ const STRINGS = {
     nav_lang_pl: 'PL',
     nav_lang_en: 'EN',
     eyebrow: '📍 Szczecin · Dostawy w Twoim mieście',
-    hero_h1_line1: 'Większość platform bierze 25–30%.',
+    hero_h1_line1: 'Większość platform bierze 25–30% od każdego zamówienia.',
     hero_h1_line2: 'My bierzemy 10%.',
-    hero_h1_line3: 'Reszta zostaje u Ciebie.',
-    hero_sub_restaurant: 'GPS-verified dostawa z portalem który naprawdę działa — za 10% prowizji, nie 30%.',
-    hero_sub_business: 'Wyślij paczkę w Szczecinie za PLN 28. Zdjęcie GPS jako dowód. Bez umowy.',
+    hero_h1_line3: 'Reszta zostaje w Twojej restauracji.',
+    hero_sub_restaurant: 'Twoje jedzenie dociera gorące. Nie dlatego że kurierzy jeżdżą szybciej — dlatego że przyjeżdżają gdy kuchnia jest gotowa. Czas odbioru ustala restauracja, nie algorytm.',
+    hero_sub_business: 'Wyślij paczkę w Szczecinie za PLN 28. Dostajesz zdjęcie GPS kiedy dociera. Nie ma co do tego pytań.',
     hero_cta: 'Zacznij oszczędzać — rejestracja gratis →',
     hero_cta_business: 'Wyślij pierwszą paczkę gratis →',
     hero_login_link: 'Masz już konto? Zaloguj się →',
@@ -30,12 +30,12 @@ const STRINGS = {
     calc_cta: 'Zacznij oszczędzać →',
     how_title: 'Jak to działa?',
     how_sub: 'Trzy kroki. Żadnej papierologii.',
-    step1_title: 'Złóż zlecenie',
-    step1_body: 'Formularz w 2 minuty. Adres odbioru, adres dostawy, kiedy gotowe. Tyle wystarczy.',
-    step2_title: 'Kurier odbiera',
-    step2_body: 'Kurier przyjeżdża gdy zamówienie gotowe. Skanuje QR, potwierdza odbiór GPS. Twoja kuchnia nie czeka.',
-    step3_title: 'Zdjęcie GPS jako dowód',
-    step3_body: 'Każda dostawa fotografowana z GPS i znacznikiem czasu. Żadnych sporów. Żadnych "nie dotarło".',
+    step1_title: 'Składasz zamówienie.',
+    step1_body: 'Formularz online. 2 minuty. Adres odbioru, adres dostawy, kiedy gotowe.',
+    step2_title: 'Kurier przyjeżdża gdy kuchnia gotowa.',
+    step2_body: 'Nie 20 minut za wcześnie. Nie 10 minut za późno. Czas ustala restauracja.',
+    step3_title: 'Klient dostaje zdjęcie GPS.',
+    step3_body: 'Każda dostawa sfotografowana z koordynatami GPS i znacznikiem czasu. Koniec sporów.',
     biz_title: 'Dla każdej firmy w Szczecinie.',
     biz_sub: 'Nie musisz być restauracją. Jeśli wysyłasz paczki w Szczecinie — LGK to obsługuje.',
     biz_retail_title: 'Sklep',
@@ -85,17 +85,18 @@ const STRINGS = {
     tier_fleet_commission: '10% od zamówienia restauracyjnego',
     tier_fleet_for: 'Własni kierowcy + duży wolumen',
     tier_fleet_feats: 'Wszystko z Business ✓ + Kierowcy ✓ + Dispatch ✓ + Overflow ✓',
-    tier_fleet_cta: 'Skontaktuj się',
+    tier_fleet_cta: 'Skontaktuj się z nami',
+    tier_fleet_note: 'Nasz zespół aktywuje opcje Fleet w ciągu 24h',
     trust_local_title: 'Szczecin',
-    trust_local_body: 'Działamy w Twoim mieście. Możesz do nas zadzwonić.',
+    trust_local_body: 'Jesteśmy z Szczecina. Dowozimy w Szczecinie. Możesz do nas zadzwonić.',
     trust_gdpr_title: 'GDPR',
-    trust_gdpr_body: 'Twoje dane należą do Ciebie. Nie sprzedajemy ich nikomu.',
+    trust_gdpr_body: 'Twoje dane klientów należą do Ciebie. Nie sprzedajemy ich, nie analizujemy, nie budujemy na nich własnych produktów.',
     trust_gps_title: 'GPS',
-    trust_gps_body: 'Każda dostawa potwierdzona zdjęciem i współrzędnymi GPS.',
+    trust_gps_body: 'Każda dostawa ma zdjęcie GPS. Nie potwierdzenie statusu. Zdjęcie. Z koordynatami. Z godziną. Dowód który jest dowodem.',
     trust_nocontract_title: 'Bez umowy',
-    trust_nocontract_body: 'Zacznij kiedy chcesz. Skończ kiedy chcesz.',
+    trust_nocontract_body: 'Żadnej umowy. Żadnych minimalnych zamówień. Zacznij kiedy chcesz. Skończ kiedy chcesz.',
     final_h1: 'Pierwsza dostawa gratis.',
-    final_sub: 'Rejestracja zajmuje 3 minuty.',
+    final_sub: 'Nie okres próbny. Pierwsza prawdziwa dostawa, do prawdziwego klienta, z prawdziwym zdjęciem GPS. Gratis. Rejestracja zajmuje 3 minuty.',
     final_input_placeholder: 'twoj@email.com',
     final_cta_btn: 'Zacznij →',
     final_login_link: 'Masz już konto? Zaloguj się →',
@@ -109,11 +110,11 @@ const STRINGS = {
     nav_lang_pl: 'PL',
     nav_lang_en: 'EN',
     eyebrow: '📍 Szczecin · Delivery in your city',
-    hero_h1_line1: 'Most platforms take 25–30%.',
+    hero_h1_line1: 'Most platforms take 25–30% on every order.',
     hero_h1_line2: 'We take 10%.',
-    hero_h1_line3: 'You keep the rest.',
-    hero_sub_restaurant: 'GPS-verified delivery with a portal that actually works — 10% commission, not 30%.',
-    hero_sub_business: 'Send a parcel in Szczecin from PLN 28. GPS photo as proof. No contract.',
+    hero_h1_line3: 'The rest stays in your restaurant.',
+    hero_sub_restaurant: 'Your food arrives hot. Not because couriers drive faster — because they arrive when your kitchen is ready. The pickup time is set by the restaurant, not an algorithm.',
+    hero_sub_business: 'Send a parcel in Szczecin from PLN 28. You get a GPS photo when it arrives. No questions about it.',
     hero_cta: 'Start saving — get started free →',
     hero_cta_business: 'Send your first parcel free →',
     hero_login_link: 'Already have an account? Sign in →',
@@ -129,12 +130,12 @@ const STRINGS = {
     calc_cta: 'Start saving →',
     how_title: 'How it works',
     how_sub: 'Three steps. No paperwork.',
-    step1_title: 'Place an order',
-    step1_body: "Fill in the form in 2 minutes. Pickup, delivery, when it's ready. That's it.",
-    step2_title: 'Courier collects',
-    step2_body: "Courier arrives when the order is ready. Scans QR, confirms pickup with GPS. Your kitchen doesn't wait.",
-    step3_title: 'GPS photo as proof',
-    step3_body: 'Every delivery photographed with GPS and timestamp. No disputes. No "it never arrived".',
+    step1_title: 'You place an order.',
+    step1_body: "Online form. 2 minutes. Pickup, delivery, when it's ready.",
+    step2_title: 'Courier arrives when the kitchen is ready.',
+    step2_body: 'Not 20 minutes early. Not 10 minutes late. The timing is set by the restaurant.',
+    step3_title: 'Customer gets a GPS photo.',
+    step3_body: 'Every delivery photographed with GPS coordinates and timestamp. End of disputes.',
     biz_title: 'For every business in Szczecin.',
     biz_sub: "You don't have to be a restaurant. If you send packages in Szczecin — LGK handles it.",
     biz_retail_title: 'Retail shop',
@@ -185,16 +186,17 @@ const STRINGS = {
     tier_fleet_for: 'Own drivers + high volume',
     tier_fleet_feats: 'Everything in Business ✓ + Drivers ✓ + Dispatch ✓ + Overflow ✓',
     tier_fleet_cta: 'Contact us',
+    tier_fleet_note: 'Our team activates Fleet features within 24h',
     trust_local_title: 'Szczecin',
-    trust_local_body: 'We deliver in your city. You can call us.',
+    trust_local_body: "We're from Szczecin. We deliver in Szczecin. You can call us.",
     trust_gdpr_title: 'GDPR',
-    trust_gdpr_body: "Your data belongs to you. We don't sell it to anyone.",
+    trust_gdpr_body: "Your customer data belongs to you. We don't sell it, we don't analyse it, we don't build other products on it.",
     trust_gps_title: 'GPS',
-    trust_gps_body: 'Every delivery confirmed with a photo and GPS coordinates.',
+    trust_gps_body: 'Every delivery has a GPS photo. Not a status confirmation. A photo. With coordinates. With a timestamp. Proof that is actually proof.',
     trust_nocontract_title: 'No contract',
-    trust_nocontract_body: 'Start when you want. Stop when you want.',
+    trust_nocontract_body: 'No contract. No minimum orders. Start when you want. Stop when you want.',
     final_h1: 'First delivery free.',
-    final_sub: 'Registration takes 3 minutes.',
+    final_sub: 'Not a trial period. The first real delivery, to a real customer, with a real GPS photo. Free. Registration takes 3 minutes.',
     final_input_placeholder: 'your@email.com',
     final_cta_btn: 'Get started →',
     final_login_link: 'Already have an account? Sign in →',
@@ -561,7 +563,8 @@ export default function HomePage() {
               <div style={{ color: C.textSecondary, fontSize: 13, marginBottom: 6 }}>{s.tier_fleet_commission}</div>
               <div style={{ color: C.textMuted, fontSize: 12, marginBottom: 12 }}>{s.tier_fleet_for}</div>
               <div style={{ color: C.textSecondary, fontSize: 12, marginBottom: 20 }}>{s.tier_fleet_feats}</div>
-              <a href="mailto:lgkcourierapp@gmail.com" style={outlineBtnStyle}>{s.tier_fleet_cta}</a>
+              <a href="/register?tier=fleet" style={outlineBtnStyle}>{s.tier_fleet_cta}</a>
+              <div style={{ color: C.textMuted, fontSize: 12, marginTop: 6, textAlign: 'center' }}>{s.tier_fleet_note}</div>
             </div>
 
           </div>
@@ -627,6 +630,43 @@ export default function HomePage() {
           <div style={{ color: '#555', fontSize: 12 }}>{s.footer_email}</div>
         </div>
       </footer>
+
+      {/* ── JSON-LD SCHEMAS ── */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context":"https://schema.org","@type":"LocalBusiness",
+        "name":"LGK Business",
+        "description":"Lokalna dostawa kurierska dla restauracji i firm w Szczecinie. GPS potwierdzenie. 10% prowizji.",
+        "url":"https://lgk-business.vercel.app",
+        "email":"lgkcourierapp@gmail.com",
+        "address":{"@type":"PostalAddress","addressLocality":"Szczecin","addressRegion":"Zachodniopomorskie","addressCountry":"PL"},
+        "geo":{"@type":"GeoCoordinates","latitude":53.4285,"longitude":14.5528},
+        "areaServed":{"@type":"City","name":"Szczecin"},
+        "priceRange":"PLN 28 - PLN 429","openingHours":"Mo-Su 06:00-22:00",
+        "sameAs":["https://lgk-landing.vercel.app"]
+      })}} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context":"https://schema.org","@type":"Service",
+        "name":"Dostawa kurierska dla restauracji i firm",
+        "provider":{"@type":"Organization","name":"LGK Holdings Sp. z o.o.","url":"https://lgk-business.vercel.app"},
+        "description":"Lokalna dostawa kurierska w Szczecinie. 10% prowizji dla restauracji zamiast 25-30%.",
+        "areaServed":{"@type":"City","name":"Szczecin"},
+        "offers":{"@type":"AggregateOffer","lowPrice":"28","highPrice":"429","priceCurrency":"PLN"},
+        "serviceType":"Courier Delivery Service",
+        "availableChannel":{"@type":"ServiceChannel","serviceUrl":"https://lgk-business.vercel.app/register"}
+      })}} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context":"https://schema.org","@type":"FAQPage",
+        "mainEntity":[
+          {"@type":"Question","name":"Ile kosztuje dostawa przez LGK?",
+           "acceptedAnswer":{"@type":"Answer","text":"PLN 28 do 3km, PLN 35 za 3-6km, PLN 42 za 6-10km. Dla restauracji dodatkowo 10% prowizji od wartości zamówienia zamiast branżowych 25-30%."}},
+          {"@type":"Question","name":"Czy muszę podpisać umowę z LGK?",
+           "acceptedAnswer":{"@type":"Answer","text":"Nie. Żadnej umowy, żadnych minimalnych zamówień. Pierwsza dostawa gratis. Anuluj kiedy chcesz."}},
+          {"@type":"Question","name":"Jak wygląda potwierdzenie dostawy?",
+           "acceptedAnswer":{"@type":"Answer","text":"Każda dostawa jest fotografowana z GPS i znacznikiem czasu. Zdjęcie dostępne w Twoim panelu od razu po dostawie."}},
+          {"@type":"Question","name":"Czy LGK dostarcza w całej Polsce?",
+           "acceptedAnswer":{"@type":"Answer","text":"Aktualnie działamy w Szczecinie. Rozszerzamy do kolejnych polskich miast w 2026 roku."}}
+        ]
+      })}} />
     </div>
   )
 }
