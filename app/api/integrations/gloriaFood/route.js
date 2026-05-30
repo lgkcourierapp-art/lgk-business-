@@ -85,6 +85,28 @@ export async function POST(request) {
     )
   }
 
+  console.log('[GloriaFood] Order received:', {
+    timestamp: new Date().toISOString(),
+    clientId,
+    externalOrderId: order_id,
+  })
+
+  // 3b. Idempotency — check for existing order before doing any work
+  const { data: existing } = await supabaseAdmin
+    .from('deliveries')
+    .select('id, order_number')
+    .eq('external_order_id', String(order_id))
+    .maybeSingle()
+
+  if (existing) {
+    return NextResponse.json({
+      success: true,
+      order_number: existing.order_number,
+      message: 'Order already processed',
+      duplicate: true,
+    }, { status: 200 })
+  }
+
   // 4. Get client pickup address
   const { data: profile } = await supabaseAdmin
     .from('profiles')
@@ -133,12 +155,16 @@ export async function POST(request) {
     .single()
 
   if (insertErr) {
-    // Duplicate external_order_id (unique index violation)
+    // Race-condition duplicate — pre-check passed but concurrent insert won
     if (insertErr.code === '23505') {
-      return NextResponse.json({ error: 'Already processed' }, { status: 409 })
+      return NextResponse.json({
+        success: true,
+        message: 'Order already processed',
+        duplicate: true,
+      }, { status: 200 })
     }
-    console.error('[gloriaFood] insert error:', insertErr)
-    return NextResponse.json({ error: 'Internal error', retry: true }, { status: 500 })
+    console.error('[GloriaFood] insert error:', insertErr)
+    return NextResponse.json({ error: 'Internal server error', retry: true }, { status: 500 })
   }
 
   // 7. Audit log (non-fatal)
