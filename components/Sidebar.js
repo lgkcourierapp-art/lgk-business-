@@ -1,6 +1,8 @@
 'use client'
+import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
 
 const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: '⊞' },
@@ -12,6 +14,28 @@ const NAV = [
 
 export default function Sidebar() {
   const path = usePathname()
+  const [signedLogoUrl, setSignedLogoUrl] = useState(null)
+  const [businessName, setBusinessName] = useState('')
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('logo_url, company_name')
+        .eq('id', session.user['id'])
+        .single()
+      if (prof?.company_name) setBusinessName(prof.company_name)
+      if (prof?.logo_url) {
+        const { data } = await supabase.storage.from('avatars').createSignedUrl(prof.logo_url, 3600)
+        if (data?.signedUrl) setSignedLogoUrl(data.signedUrl)
+      }
+    }
+    load()
+    window.addEventListener('lgk-profile-updated', load)
+    return () => window.removeEventListener('lgk-profile-updated', load)
+  }, [])
 
   return (
     <aside style={{
@@ -27,9 +51,15 @@ export default function Sidebar() {
       left: 0,
       zIndex: 200,
     }}>
-      <div style={{ padding: '0 20px 28px', borderBottom: '1px solid #1A1A1A' }}>
-        <span style={{ fontWeight: 900, fontSize: 22, color: '#D4FF00', letterSpacing: 1, fontFamily: "'Fira Code', monospace" }}>L°</span>
-        <span style={{ color: '#555', fontSize: 11, display: 'block', marginTop: 2, letterSpacing: 2, textTransform: 'uppercase' }}>Business</span>
+      <div style={{ padding: '0 20px 28px', borderBottom: '1px solid #1A1A1A', display: 'flex', alignItems: 'center', gap: 10 }}>
+        {signedLogoUrl ? (
+          <img src={signedLogoUrl} alt={businessName || 'Logo'} style={{ height: 32, maxWidth: 120, objectFit: 'contain', borderRadius: 4 }} />
+        ) : (
+          <span style={{ fontWeight: 900, fontSize: 22, color: '#D4FF00', letterSpacing: 1, fontFamily: "'Fira Code', monospace" }}>L°</span>
+        )}
+        {businessName && !signedLogoUrl && (
+          <span style={{ color: '#999', fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{businessName}</span>
+        )}
       </div>
 
       <nav style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>

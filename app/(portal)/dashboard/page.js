@@ -142,10 +142,16 @@ export default function DashboardPage() {
           <span style={{ opacity: 0.5, fontSize: 11, flexShrink: 0 }}>↗</span>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{addrFrom.slice(0, 44)}</span>
         </div>
-        <div style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <div style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: order.status === 'pending' ? '4px' : '14px', display: 'flex', alignItems: 'center', gap: '5px' }}>
           <span style={{ opacity: 0.5, fontSize: 11, flexShrink: 0 }}>📍</span>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{addrTo.slice(0, 44)}</span>
         </div>
+
+        {order.status === 'pending' && (
+          <p style={{ fontSize: '10px', color: '#999999', margin: '0 0 14px', fontStyle: 'italic' }}>
+            Kurierzy powiadomieni · średni czas przyjęcia 3–8 min
+          </p>
+        )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#D4FF00', fontWeight: 700, fontSize: '15px', fontFamily: "'Fira Code', monospace" }}>
@@ -218,19 +224,22 @@ export default function DashboardPage() {
         {loading ? (
           <div style={{ textAlign: 'center', padding: 60, color: colors.textSecondary }}>{t('loading')}</div>
         ) : !loading && orders.length === 0 ? (
-          <div style={{ background: colors.card, border: '2px dashed ' + colors.border, borderRadius: '14px', padding: '48px 24px', textAlign: 'center', marginTop: 24 }}>
-            <div style={{ fontSize: '40px', marginBottom: '14px' }}>📦</div>
-            <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: '20px', fontWeight: 700, color: colors.text, marginBottom: '8px' }}>
+          <div style={{ background: '#F8F8F8', border: '0.5px solid #E8E8E8', borderRadius: '12px', padding: '32px 24px', textAlign: 'center', marginTop: '16px' }}>
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}>📦</div>
+            <p style={{ fontSize: '16px', fontWeight: '500', color: '#0A0A0A', margin: '0 0 6px' }}>
               {lang === 'pl' ? 'Brak aktywnych dostaw' : 'No active deliveries'}
-            </div>
-            <div style={{ color: colors.textSecondary, fontSize: '15px', marginBottom: '24px' }}>
+            </p>
+            <p style={{ fontSize: '13px', color: '#555555', margin: '0 0 20px', lineHeight: '1.6' }}>
               {lang === 'pl'
-                ? 'Złóż pierwsze zlecenie i przydzielimy kuriera w ciągu kilku minut.'
-                : 'Place your first order and we will assign a courier within minutes.'}
-            </div>
-            <a href="/orders/new" style={{ display: 'inline-block', background: '#D4FF00', color: '#000', padding: '14px 32px', borderRadius: '10px', fontWeight: 800, textDecoration: 'none', fontFamily: "'Space Grotesk', system-ui", fontSize: '15px' }}>
-              {lang === 'pl' ? 'Złóż pierwsze zlecenie →' : 'Place your first order →'}
+                ? 'Złóż pierwsze zlecenie i obserwuj jak kurier dostarcza Twój towar z GPS potwierdzeniem.'
+                : 'Place your first order and watch your courier deliver with GPS proof.'}
+            </p>
+            <a href="/orders/new" style={{ display: 'inline-block', background: '#D4FF00', color: '#0A0A0A', fontWeight: '700', fontSize: '14px', padding: '12px 24px', borderRadius: '8px', textDecoration: 'none' }}>
+              {lang === 'pl' ? '+ Złóż pierwsze zlecenie' : '+ Place your first order'}
             </a>
+            <p style={{ fontSize: '11px', color: '#999999', marginTop: '12px' }}>
+              {lang === 'pl' ? 'Pierwsza dostawa gratis · Potwierdzenie GPS w cenie' : 'First delivery free · GPS proof included'}
+            </p>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
