@@ -33,8 +33,9 @@ export default function DeleteAccountSection() {
       }
 
       await supabase.from('audit_log').insert({
-        event: 'account_deleted', actor_id: user['id'],
-        details: { reason: 'user_requested', gdpr_art17: true },
+        event_type: 'account_deleted',
+        user_id: user['id'],
+        metadata: { reason: 'user_requested', gdpr_art17: true },
         created_at: new Date().toISOString()
       })
 

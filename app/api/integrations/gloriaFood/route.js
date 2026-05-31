@@ -178,11 +178,9 @@ export async function POST(request) {
     await supabaseAdmin
       .from('audit_log')
       .insert({
-        action: 'gloriaFood_order_created',
-        actor_id: clientId,
-        target_type: 'delivery',
-        target_id: delivery.id,
-        metadata: { order_id, order_number: orderNumber, source: 'gloriaFood' },
+        event_type: 'gloriaFood_order_created',
+        user_id: clientId,
+        metadata: { order_id, order_number: orderNumber, source: 'gloriaFood', target_type: 'delivery', target_id: delivery.id },
       })
   } catch (auditError) {
     console.error('[GloriaFood] Audit log failed:', { code: auditError.code })
