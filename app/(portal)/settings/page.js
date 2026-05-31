@@ -24,6 +24,12 @@ export default function SettingsPage() {
   const [newRawKey, setNewRawKey] = useState(null)
   const [generatingKey, setGeneratingKey] = useState(false)
   const [copying, setCopying] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteStep, setDeleteStep] = useState(0)
+  const [deleteInput, setDeleteInput] = useState('')
+  const [deleteError, setDeleteError] = useState(null)
+  const CONFIRM_WORD = 'DELETE'
+  const inputMatches = deleteInput === CONFIRM_WORD
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -184,6 +190,87 @@ export default function SettingsPage() {
     }
   }
 
+  const handleLogoDelete = async () => {
+    if (!confirm('Remove your company logo?')) return
+    setDeleting(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not logged in')
+
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('logo_url')
+        .eq('id', user['id'])
+        .single()
+
+      if (prof?.logo_url) {
+        const ext = prof.logo_url.split('.').pop().split('?')[0]
+        await supabase.storage
+          .from('avatars')
+          .remove([`${user['id']}/logo.${ext}`])
+      }
+
+      await supabase
+        .from('profiles')
+        .update({ logo_url: null })
+        .eq('id', user['id'])
+
+      setLogoUrl(null)
+      setSignedLogoUrl(null)
+      window.dispatchEvent(new Event('lgk-profile-updated'))
+    } catch (err) {
+      console.error('Logo delete error:', err)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const closeDeleteModal = () => {
+    setDeleteStep(0)
+    setDeleteInput('')
+    setDeleteError(null)
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!inputMatches) return
+    setDeleteStep(3)
+    setDeleteError(null)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('logo_url')
+        .eq('id', user['id'])
+        .single()
+
+      if (prof?.logo_url) {
+        const ext = prof.logo_url.split('.').pop().split('?')[0]
+        await supabase.storage
+          .from('avatars')
+          .remove([`${user['id']}/logo.${ext}`])
+      }
+
+      await supabase.from('audit_log').insert({
+        event: 'account_deleted',
+        actor_id: user['id'],
+        details: { reason: 'user_requested', gdpr_art17: true },
+        created_at: new Date().toISOString()
+      })
+
+      const { error } = await supabase.rpc('delete_own_account')
+      if (error) throw error
+
+      await supabase.auth.signOut()
+      window.location.href = '/?deleted=true'
+    } catch (err) {
+      console.error('Delete account error:', err)
+      setDeleteError('Something went wrong. Contact lgkcourierapp@gmail.com')
+      setDeleteStep(2)
+    }
+  }
+
   const cardStyle = { background: colors.card, border: '1px solid ' + colors.border, borderRadius: 12, padding: 24, marginBottom: 16 }
   const inp = (key, placeholder, type = 'text') => (
     <input
@@ -204,21 +291,59 @@ export default function SettingsPage() {
         {/* Company branding */}
         <div style={cardStyle}>
           <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Company Branding</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 16 }}>
-            {signedLogoUrl ? (
-              <img src={signedLogoUrl} alt="Company logo" style={{ width: 80, height: 80, objectFit: 'contain', borderRadius: 8, border: '1px solid ' + colors.border, background: '#FFF' }} />
-            ) : (
-              <div style={{ width: 80, height: 80, borderRadius: 8, border: '1px solid ' + colors.border, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, background: colors.bg }}>🏢</div>
-            )}
+          {logoUrl ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <img src={signedLogoUrl || logoUrl}
+                alt="Company logo"
+                style={{ width: '80px', height: '80px',
+                  objectFit: 'contain', borderRadius: '8px',
+                  border: '0.5px solid var(--color-border-tertiary)',
+                  background: 'var(--color-background-secondary)' }} />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center',
+                  gap: '6px',
+                  background: 'var(--color-background-secondary)',
+                  border: '0.5px solid var(--color-border-tertiary)',
+                  color: 'var(--color-text-secondary)', fontSize: '12px',
+                  padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}>
+                  <i className="ti ti-pencil" aria-hidden="true"
+                    style={{ fontSize: '14px' }} />
+                  Change
+                  <input type="file" accept="image/*"
+                    onChange={handleLogoUpload}
+                    style={{ display: 'none' }}
+                    disabled={uploading} />
+                </label>
+                <button onClick={handleLogoDelete} disabled={deleting}
+                  style={{ display: 'inline-flex', alignItems: 'center',
+                    gap: '6px', background: 'transparent',
+                    border: '0.5px solid var(--color-background-danger)',
+                    color: 'var(--color-text-danger)', fontSize: '12px',
+                    padding: '6px 12px', borderRadius: '6px',
+                    cursor: deleting ? 'not-allowed' : 'pointer' }}>
+                  <i className="ti ti-trash" aria-hidden="true"
+                    style={{ fontSize: '14px' }} />
+                  {deleting ? 'Removing...' : 'Remove'}
+                </button>
+              </div>
+              {uploadError && <div style={{ color: '#FF3B30', fontSize: 12 }}>{uploadError}</div>}
+            </div>
+          ) : (
             <div>
-              <label style={{ display: 'inline-block', background: '#D4FF00', color: '#000', padding: '10px 20px', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.7 : 1 }}>
-                {uploading ? 'Uploading…' : logoUrl ? 'Change logo' : 'Upload logo'}
-                <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploading} style={{ display: 'none' }} />
+              <label style={{ display: 'inline-flex', alignItems: 'center',
+                gap: '6px', background: '#D4FF00', color: '#0A0A0A',
+                fontWeight: '600', fontSize: '13px', padding: '8px 16px',
+                borderRadius: '6px', cursor: 'pointer' }}>
+                {uploading ? 'Uploading...' : 'Upload logo'}
+                <input type="file" accept="image/*"
+                  onChange={handleLogoUpload}
+                  style={{ display: 'none' }}
+                  disabled={uploading} />
               </label>
               <div style={{ color: colors.textSecondary, fontSize: 12, marginTop: 8 }}>PNG, JPG or SVG · Max 2MB</div>
               {uploadError && <div style={{ color: '#FF3B30', fontSize: 12, marginTop: 6 }}>{uploadError}</div>}
             </div>
-          </div>
+          )}
         </div>
 
         {/* Company info */}
@@ -441,20 +566,211 @@ export default function SettingsPage() {
         {/* Danger zone */}
         <div style={{ ...cardStyle, border: '1px solid #FF3B3040' }}>
           <div style={{ color: '#FF3B30', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>{t('dangerZone')}</div>
-          <div style={{ color: colors.textSecondary, fontSize: 13, marginBottom: 16 }}>{t('dangerDescription')}</div>
-          <button
-            onClick={async () => {
-              if (!confirm('Are you sure? This cannot be undone.')) return
-              await supabase.auth.signOut()
-              router.push('/login')
-            }}
-            style={{ background: 'transparent', border: '1px solid #FF3B30', color: '#FF3B30', padding: '10px 20px', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
-          >
-            {t('deleteAccount')}
-          </button>
+          <div style={{ borderTop: '0.5px solid var(--color-border-tertiary)',
+            paddingTop: '20px', marginTop: '20px' }}>
+            <p style={{ fontSize: '13px', fontWeight: '500',
+              color: 'var(--color-text-primary)', margin: '0 0 4px' }}>
+              Delete account
+            </p>
+            <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)',
+              margin: '0 0 12px', lineHeight: '1.6' }}>
+              Permanently delete your account and all associated data.
+              This action cannot be undone.
+            </p>
+            <button onClick={() => setDeleteStep(1)}
+              style={{ padding: '8px 16px', borderRadius: '8px',
+                border: '0.5px solid var(--color-border-danger)',
+                background: 'transparent',
+                color: 'var(--color-text-danger)',
+                fontSize: '13px', cursor: 'pointer' }}>
+              Delete account
+            </button>
+          </div>
         </div>
 
       </main>
+
+      {deleteStep > 0 && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.6)',
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: 'var(--color-background-primary)',
+            border: '0.5px solid var(--color-border-tertiary)',
+            borderRadius: '12px', padding: '24px',
+            maxWidth: '440px', width: '100%' }}>
+
+            {/* STEP 1 — Consequences */}
+            {deleteStep === 1 && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center',
+                  gap: '10px', marginBottom: '16px' }}>
+                  <div style={{ width: '36px', height: '36px',
+                    borderRadius: '50%',
+                    background: 'var(--color-background-danger)',
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', flexShrink: 0 }}>
+                    <i className="ti ti-alert-triangle"
+                      style={{ fontSize: '18px',
+                        color: 'var(--color-text-danger)' }}
+                      aria-hidden="true" />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '15px', fontWeight: '500',
+                      color: 'var(--color-text-primary)', margin: 0 }}>
+                      Delete your account
+                    </p>
+                    <p style={{ fontSize: '12px',
+                      color: 'var(--color-text-tertiary)', margin: 0 }}>
+                      This action is permanent and cannot be undone
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ background: 'var(--color-background-danger)',
+                  border: '0.5px solid var(--color-border-danger)',
+                  borderRadius: '8px', padding: '12px 14px',
+                  marginBottom: '20px' }}>
+                  <p style={{ fontSize: '12px', fontWeight: '500',
+                    color: 'var(--color-text-danger)',
+                    margin: '0 0 8px' }}>
+                    The following will be permanently deleted:
+                  </p>
+                  {[
+                    'Your account and login credentials',
+                    'Your company profile and settings',
+                    'All orders and delivery history',
+                    'All GPS proof photos',
+                    'Your saved addresses',
+                    'All invoices and billing records',
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex',
+                      alignItems: 'center', gap: '8px', padding: '3px 0' }}>
+                      <i className="ti ti-x"
+                        style={{ fontSize: '12px',
+                          color: 'var(--color-text-danger)',
+                          flexShrink: 0 }}
+                        aria-hidden="true" />
+                      <span style={{ fontSize: '12px',
+                        color: 'var(--color-text-danger)' }}>
+                        {item}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={closeDeleteModal} style={{
+                    flex: 1, padding: '10px', borderRadius: '8px',
+                    border: '0.5px solid var(--color-border-tertiary)',
+                    background: 'var(--color-background-secondary)',
+                    color: 'var(--color-text-primary)',
+                    fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>
+                    Cancel — keep my account
+                  </button>
+                  <button onClick={() => setDeleteStep(2)} style={{
+                    padding: '10px 16px', borderRadius: '8px',
+                    border: '0.5px solid var(--color-border-tertiary)',
+                    background: 'transparent',
+                    color: 'var(--color-text-secondary)',
+                    fontSize: '13px', cursor: 'pointer' }}>
+                    Continue
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 2 — Type to confirm */}
+            {deleteStep === 2 && (
+              <>
+                <p style={{ fontSize: '15px', fontWeight: '500',
+                  color: 'var(--color-text-primary)', margin: '0 0 6px' }}>
+                  Confirm deletion
+                </p>
+                <p style={{ fontSize: '12px',
+                  color: 'var(--color-text-secondary)',
+                  margin: '0 0 20px', lineHeight: '1.6' }}>
+                  Type{' '}
+                  <strong style={{ color: 'var(--color-text-primary)',
+                    fontFamily: 'var(--font-mono)' }}>DELETE</strong>
+                  {' '}to permanently delete your account.
+                  This cannot be undone.
+                </p>
+
+                <input type="text" value={deleteInput}
+                  onChange={e => setDeleteInput(e.target.value)}
+                  placeholder="Type DELETE here"
+                  autoComplete="off" autoCorrect="off"
+                  autoCapitalize="off" spellCheck={false}
+                  style={{ width: '100%', padding: '10px 12px',
+                    borderRadius: '8px', fontSize: '14px',
+                    fontFamily: 'var(--font-mono)',
+                    border: inputMatches
+                      ? '0.5px solid var(--color-border-danger)'
+                      : '0.5px solid var(--color-border-tertiary)',
+                    background: 'var(--color-background-secondary)',
+                    color: 'var(--color-text-primary)',
+                    marginBottom: '12px', boxSizing: 'border-box',
+                    outline: 'none' }} />
+
+                {deleteError && (
+                  <p style={{ fontSize: '11px',
+                    color: 'var(--color-text-danger)',
+                    margin: '0 0 12px' }}>
+                    {deleteError}
+                  </p>
+                )}
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={closeDeleteModal} style={{
+                    flex: 1, padding: '10px', borderRadius: '8px',
+                    border: '0.5px solid var(--color-border-tertiary)',
+                    background: 'var(--color-background-secondary)',
+                    color: 'var(--color-text-primary)',
+                    fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                  <button onClick={handleDeleteAccount}
+                    disabled={!inputMatches}
+                    style={{ padding: '10px 20px', borderRadius: '8px',
+                      border: 'none', fontSize: '13px', fontWeight: '600',
+                      cursor: inputMatches ? 'pointer' : 'not-allowed',
+                      background: inputMatches
+                        ? '#FF3B30'
+                        : 'var(--color-background-secondary)',
+                      color: inputMatches
+                        ? '#FFFFFF'
+                        : 'var(--color-text-tertiary)',
+                      transition: 'all 0.15s ease' }}>
+                    Delete my account
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 3 — Deleting */}
+            {deleteStep === 3 && (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <i className="ti ti-trash"
+                  style={{ fontSize: '32px',
+                    color: 'var(--color-text-danger)',
+                    marginBottom: '12px', display: 'block' }}
+                  aria-hidden="true" />
+                <p style={{ fontSize: '15px', fontWeight: '500',
+                  color: 'var(--color-text-primary)',
+                  margin: '0 0 6px' }}>
+                  Deleting your account...
+                </p>
+                <p style={{ fontSize: '12px',
+                  color: 'var(--color-text-tertiary)', margin: 0 }}>
+                  Please do not close this window.
+                </p>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
     </div>
   )
 }

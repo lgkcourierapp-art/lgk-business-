@@ -41,6 +41,7 @@ export default function Sidebar() {
     <aside style={{
       width: 220,
       minHeight: '100vh',
+      height: '100%',
       background: '#111111',
       borderRight: '1px solid #1A1A1A',
       display: 'flex',
@@ -104,6 +105,38 @@ export default function Sidebar() {
         }}>
           + New order
         </Link>
+      </div>
+
+      <div style={{
+        marginTop: 'auto',
+        borderTop: '0.5px solid rgba(255,255,255,0.08)',
+        padding: '10px 14px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{
+              background: '#D4FF00', color: '#0A0A0A',
+              fontSize: '10px', fontWeight: '700',
+              padding: '2px 7px', borderRadius: '5px',
+              letterSpacing: '-0.3px', flexShrink: 0,
+            }}>L°</span>
+            <div>
+              <p style={{ fontSize: '10px', fontWeight: '600',
+                color: '#D4FF00', margin: 0, lineHeight: '1.2',
+                letterSpacing: '-0.2px' }}>
+                LGK Courier
+              </p>
+              <p style={{ fontSize: '9px',
+                color: 'rgba(255,255,255,0.25)',
+                margin: 0, lineHeight: '1.2', letterSpacing: '0.3px' }}>
+                Less guessing. More doing.
+              </p>
+            </div>
+          </div>
+          <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.2)', flexShrink: 0 }}>
+            v1.2
+          </span>
+        </div>
       </div>
     </aside>
   )

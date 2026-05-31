@@ -130,7 +130,6 @@ function RegisterForm() {
           id: user['id'],
           email: email,
           company_name: businessName,
-          business_name: businessName,
           business_type: 'general',
           user_type: 'client',
           is_client: true,
