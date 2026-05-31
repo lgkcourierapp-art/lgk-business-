@@ -1,15 +1,18 @@
 import Sidebar from '@/components/Sidebar'
 import BottomNav from '@/components/BottomNav'
+import Header from '@/components/Header'
 
 export default function PortalLayout({ children }) {
   return (
     <>
       <div className="sidebar-wrap"><Sidebar /></div>
       <div className="bottomnav-wrap"><BottomNav /></div>
+      <div className="portal-header-wrap"><Header /></div>
       <div className="portal-content">{children}</div>
       <style>{`
         .sidebar-wrap   { display: block; }
         .bottomnav-wrap { display: none; }
+        .portal-header-wrap { margin-left: 220px; }
         .portal-content {
           margin-left: 220px;
           background: #FFFFFF;
@@ -22,6 +25,7 @@ export default function PortalLayout({ children }) {
         @media (max-width: 768px) {
           .sidebar-wrap   { display: none; }
           .bottomnav-wrap { display: block; }
+          .portal-header-wrap { margin-left: 0; }
           .portal-content { margin-left: 0; padding-bottom: 72px; }
           .portal-bottom-bar { left: 0; bottom: 72px; }
         }
