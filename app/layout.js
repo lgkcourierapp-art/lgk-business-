@@ -45,6 +45,9 @@ export const metadata = {
   },
   icons: { icon: '/icon.png', apple: '/icon.png' },
   manifest: '/manifest.webmanifest',
+  verification: {
+    google: 'BlsaKad1HdIxbJAt-lqBh9N49un9nffZrCeEHYvLkwQ',
+  },
 }
 
 export default function RootLayout({ children }) {
