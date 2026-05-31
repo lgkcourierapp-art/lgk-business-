@@ -168,7 +168,7 @@ export default function NewOrderPage() {
           emailOrderConfirmed(delivery, profile.email, profile.company_name || '').catch(() => {})
         }
       } catch (emailError) {
-        console.warn('Order confirmation email failed:', emailError)
+        console.warn('Order confirmation email failed:', emailError.message)
       }
 
       router.push('/orders/' + orderId + '?created=true')

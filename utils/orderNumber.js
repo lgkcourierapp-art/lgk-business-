@@ -76,7 +76,7 @@ export async function generateOrderNumber(supabase, pickupCity, pickupPostal) {
     const base = `${cityCode}-${zoneCode}-${dateCode}-${seq}`;
     return `${base}-${calculateCheckDigit(base)}`;
   } catch (err) {
-    console.error('Order number error:', err);
+    console.error('Order number error:', err.message);
     const fallback = Date.now().toString().slice(-6);
     const base = `${cityCode}-${zoneCode}-${dateCode}-${fallback}`;
     return `${base}-${calculateCheckDigit(base)}`;

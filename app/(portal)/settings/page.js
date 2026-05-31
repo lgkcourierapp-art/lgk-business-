@@ -144,7 +144,7 @@ export default function SettingsPage() {
         setNewRawKey(raw)
       }
     } catch (err) {
-      console.error('Key generation failed:', err)
+      console.error('Key generation failed:', err.message)
     }
     setGeneratingKey(false)
   }
@@ -219,7 +219,7 @@ export default function SettingsPage() {
       setSignedLogoUrl(null)
       window.dispatchEvent(new Event('lgk-profile-updated'))
     } catch (err) {
-      console.error('Logo delete error:', err)
+      console.error('Logo delete error:', err.message)
     } finally {
       setDeleting(false)
     }
@@ -265,7 +265,7 @@ export default function SettingsPage() {
       await supabase.auth.signOut()
       window.location.href = '/?deleted=true'
     } catch (err) {
-      console.error('Delete account error:', err)
+      console.error('Delete account error:', err.message)
       setDeleteError('Something went wrong. Contact lgkcourierapp@gmail.com')
       setDeleteStep(2)
     }
