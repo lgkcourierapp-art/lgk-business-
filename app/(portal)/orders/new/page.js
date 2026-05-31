@@ -140,6 +140,7 @@ export default function NewOrderPage() {
         form.pickupCity,
         form.pickupPostal
       )
+      const hasStripe = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
       const delivery = {
         id: orderId, order_number: orderId, client_id: u['id'],
         pickup_city: form.pickupCity, pickup_street: form.pickupStreet,
@@ -161,7 +162,7 @@ export default function NewOrderPage() {
         insurance_selected: form.hasInsurance, insurance_fee: form.hasInsurance ? 3 : 0,
         whatsapp_updates: form.wantsWhatsApp, whatsapp_phone: form.wantsWhatsApp ? form.whatsAppPhone : null,
         time_window: isRestaurant ? (readyTime || 'any_time') : form.timeWindow, distance_km: dist, price_total: price.total,
-        price_breakdown: price, status: 'awaiting_payment', country: 'PL',
+        price_breakdown: price, status: hasStripe ? 'awaiting_payment' : 'pending', country: 'PL',
         market_currency: 'PLN', created_at: new Date().toISOString()
       }
       const parsed = DeliverySchema.safeParse({
