@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { supabase as supabaseClient } from '@/utils/supabase'
 import { calculatePrice } from '@/lib/pricing'
 import { distanceBetweenCities } from '@/lib/cities'
 import { useApp } from '@/utils/appContext'
@@ -50,13 +49,13 @@ export default function NewOrderPage() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push('/login'); return }
       setUser(user)
-      const { data: addresses } = await supabaseClient
+      const { data: addresses } = await supabase
         .from('saved_addresses')
         .select('*')
         .eq('client_id', user['id'])
         .order('use_count', { ascending: false })
       setSavedAddresses(addresses || [])
-      const { data: prof } = await supabaseClient
+      const { data: prof } = await supabase
         .from('profiles')
         .select('business_type')
         .eq('id', user['id'])
@@ -125,7 +124,7 @@ export default function NewOrderPage() {
       const { data: { user: u } } = await supabase.auth.getUser()
       if (!u) { router.push('/login'); return }
       const orderId = await generateOrderNumber(
-        supabaseClient,
+        supabase,
         form.pickupCity,
         form.pickupPostal
       )
@@ -159,7 +158,7 @@ export default function NewOrderPage() {
       // Fire-and-forget confirmation email — never blocks order placement
       try {
         const { data: { user: u2 } } = await supabase.auth.getUser()
-        const { data: profile } = await supabaseClient
+        const { data: profile } = await supabase
           .from('profiles')
           .select('email, company_name')
           .eq('id', u2['id'])
@@ -168,7 +167,9 @@ export default function NewOrderPage() {
           emailOrderConfirmed(delivery, profile.email, profile.company_name || '').catch(() => {})
         }
       } catch (emailError) {
-        console.warn('Order confirmation email failed:', emailError.message)
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[DEBUG] Order confirmation email failed:', emailError.message)
+        }
       }
 
       router.push('/orders/' + orderId + '?created=true')
@@ -223,7 +224,7 @@ export default function NewOrderPage() {
                   onClick={async () => {
                     if (!savePickupLabel) return
                     const { data: { user: u } } = await supabase.auth.getUser()
-                    await supabaseClient.from('saved_addresses').insert({
+                    await supabase.from('saved_addresses').insert({
                       client_id: u['id'], label: savePickupLabel, address_type: 'pickup',
                       street: form.pickupStreet, house_number: form.pickupHouse,
                       apartment: form.pickupApartment, postal_code: form.pickupPostal,
@@ -233,7 +234,7 @@ export default function NewOrderPage() {
                       is_default_pickup: savedAddresses.filter(a => a.is_default_pickup).length === 0
                     })
                     setShowSavePickup(false); setSavePickupLabel('')
-                    const { data } = await supabaseClient.from('saved_addresses').select('*').eq('client_id', u['id']).order('use_count', { ascending: false })
+                    const { data } = await supabase.from('saved_addresses').select('*').eq('client_id', u['id']).order('use_count', { ascending: false })
                     setSavedAddresses(data || [])
                   }}
                   className="btn-primary"
@@ -338,7 +339,7 @@ export default function NewOrderPage() {
                   onClick={async () => {
                     if (!saveDeliveryLabel) return
                     const { data: { user: u } } = await supabase.auth.getUser()
-                    await supabaseClient.from('saved_addresses').insert({
+                    await supabase.from('saved_addresses').insert({
                       client_id: u['id'], label: saveDeliveryLabel, address_type: 'delivery',
                       street: form.deliveryStreet, house_number: form.deliveryHouse,
                       apartment: form.deliveryApartment, postal_code: form.deliveryPostal,
@@ -346,7 +347,7 @@ export default function NewOrderPage() {
                       contact_phone: form.deliveryPhone,
                     })
                     setShowSaveDelivery(false); setSaveDeliveryLabel('')
-                    const { data } = await supabaseClient.from('saved_addresses').select('*').eq('client_id', u['id']).order('use_count', { ascending: false })
+                    const { data } = await supabase.from('saved_addresses').select('*').eq('client_id', u['id']).order('use_count', { ascending: false })
                     setSavedAddresses(data || [])
                   }}
                   className="btn-primary"

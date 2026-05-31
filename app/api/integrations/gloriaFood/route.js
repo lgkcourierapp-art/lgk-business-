@@ -173,17 +173,20 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Internal server error', retry: true }, { status: 500 })
   }
 
-  // 7. Audit log (non-fatal)
-  supabaseAdmin
-    .from('audit_log')
-    .insert({
-      action: 'gloriaFood_order_created',
-      actor_id: clientId,
-      target_type: 'delivery',
-      target_id: delivery.id,
-      metadata: { order_id, order_number: orderNumber, source: 'gloriaFood' },
-    })
-    .then(() => {})
+  // 7. Audit log (non-fatal — order already created, don't fail the response)
+  try {
+    await supabaseAdmin
+      .from('audit_log')
+      .insert({
+        action: 'gloriaFood_order_created',
+        actor_id: clientId,
+        target_type: 'delivery',
+        target_id: delivery.id,
+        metadata: { order_id, order_number: orderNumber, source: 'gloriaFood' },
+      })
+  } catch (auditError) {
+    console.error('[GloriaFood] Audit log failed:', { code: auditError.code })
+  }
 
   const origin = request.nextUrl.origin
   const qrUrl = `${origin}/orders/${delivery.id}/qr`

@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '@/lib/supabase'
 
 const REG_STRINGS = {
   pl: {
