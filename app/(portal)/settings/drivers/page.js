@@ -68,8 +68,7 @@ export default function DriversPage() {
         .select('id, email, company_name, phone, driver_status').eq('id', existing['id']).single()
       if (updated) setDrivers(prev => [...prev, updated])
     } else {
-      // Placeholder — log SMS intent, cannot create auth user client-side
-      console.log('[drivers] SMS invite placeholder:', driverName.trim(), driverPhone.trim())
+      // Placeholder — cannot create auth user client-side; user must register first
       setAddError('Kurier musi się najpierw zarejestrować w aplikacji. Poproś go o rejestrację, a następnie dodaj go tutaj po numerze telefonu.')
     }
 

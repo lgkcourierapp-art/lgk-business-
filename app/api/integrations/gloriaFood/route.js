@@ -60,11 +60,15 @@ export async function POST(request) {
   }
 
   // Update last_used_at (non-fatal)
-  supabaseAdmin
-    .from('api_keys')
-    .update({ last_used_at: new Date().toISOString() })
-    .eq('id', keyRow.id)
-    .then(() => {})
+  try {
+    await supabaseAdmin
+      .from('api_keys')
+      .update({ last_used_at: new Date().toISOString() })
+      .eq('id', keyRow.id)
+  } catch (err) {
+    console.error('[GloriaFood] Non-critical error updating last_used_at:', err.message)
+    // Don't throw — order processing continues
+  }
 
   const clientId = keyRow.client_id
 
@@ -85,11 +89,13 @@ export async function POST(request) {
     )
   }
 
-  console.log('[GloriaFood] Order received:', {
-    timestamp: new Date().toISOString(),
-    clientId,
-    externalOrderId: order_id,
-  })
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[GloriaFood] Order received:', {
+      timestamp: new Date().toISOString(),
+      clientId,
+      externalOrderId: order_id,
+    })
+  }
 
   // 3b. Idempotency — check for existing order before doing any work
   const { data: existing } = await supabaseAdmin
@@ -163,7 +169,7 @@ export async function POST(request) {
         duplicate: true,
       }, { status: 200 })
     }
-    console.error('[GloriaFood] insert error:', insertErr)
+    console.error('[GloriaFood] insert error:', insertErr.message)
     return NextResponse.json({ error: 'Internal server error', retry: true }, { status: 500 })
   }
 
