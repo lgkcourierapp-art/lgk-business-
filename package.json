@@ -19,7 +19,8 @@
     "qrcode": "^1.5.4",
     "react": "^18",
     "react-dom": "^18",
-    "serwist": "^9.5.11"
+    "serwist": "^9.5.11",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/react": "19.2.15",
