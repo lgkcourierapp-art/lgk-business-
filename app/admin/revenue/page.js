@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../../utils/supabase';
+import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '../../../utils/marketConfig';
 import { useApp } from '../../../utils/appContext';
 
