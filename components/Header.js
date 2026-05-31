@@ -14,6 +14,8 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [displayName, setDisplayName] = useState('')
   const [hasCompany, setHasCompany] = useState(false)
+  const [businessName, setBusinessName] = useState('')
+  const [signedLogoUrl, setSignedLogoUrl] = useState(null)
   const ref = useRef(null)
 
   const fetchProfile = async () => {
@@ -22,15 +24,22 @@ export default function Header() {
     setUser(session.user);
     const { data: profile } = await supabase
       .from('profiles')
-      .select('company_name, email')
+      .select('company_name, logo_url, email')
       .eq('id', session.user['id'])
       .single();
     if (profile?.company_name && profile.company_name.trim().length > 0) {
       setDisplayName(profile.company_name.trim());
+      setBusinessName(profile.company_name.trim());
       setHasCompany(true);
     } else {
       setDisplayName((session.user.email || '').split('@')[0]);
       setHasCompany(false);
+    }
+    if (profile?.logo_url) {
+      const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(profile.logo_url, 3600);
+      if (signed?.signedUrl) setSignedLogoUrl(signed.signedUrl);
+    } else {
+      setSignedLogoUrl(null);
     }
   };
 
@@ -64,22 +73,41 @@ export default function Header() {
           &#9776;
         </button>
 
-        <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'baseline', gap: '5px' }}>
-          <span style={{
-            fontFamily: "'Space Grotesk', 'Plus Jakarta Sans', system-ui",
-            fontWeight: 900,
-            fontSize: '18px',
-            color: '#D4FF00',
-            letterSpacing: '3px',
-          }}>LGK</span>
-          <span style={{
-            fontFamily: "'Space Grotesk', 'Plus Jakarta Sans', system-ui",
-            fontWeight: 300,
-            fontSize: '9px',
-            color: 'rgba(255,255,255,0.5)',
-            letterSpacing: '6px',
-            textTransform: 'uppercase',
-          }}>COURIER</span>
+        <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {signedLogoUrl ? (
+              <img src={signedLogoUrl}
+                alt={businessName || 'Logo'}
+                style={{ height: '28px', width: 'auto', maxWidth: '80px',
+                  objectFit: 'contain', borderRadius: '5px' }} />
+            ) : (
+              <div style={{ width: '28px', height: '28px', borderRadius: '5px',
+                background: 'rgba(212,255,0,0.12)',
+                border: '0.5px solid rgba(212,255,0,0.2)',
+                display: 'flex', alignItems: 'center',
+                justifyContent: 'center', fontSize: '10px',
+                fontWeight: '700', color: '#D4FF00', flexShrink: 0 }}>
+                {businessName ? businessName.slice(0, 2).toUpperCase() : 'L°'}
+              </div>
+            )}
+            {businessName && (
+              <div>
+                <p style={{ fontSize: '14px', fontWeight: '500',
+                  color: 'var(--color-text-primary)',
+                  margin: 0, lineHeight: '1.2' }}>
+                  {businessName}
+                </p>
+                <p style={{ fontSize: '10px',
+                  color: 'var(--color-text-tertiary)',
+                  margin: 0, lineHeight: '1.2' }}>
+                  Platforma dostaw by{' '}
+                  <span style={{ color: '#D4FF00', fontWeight: '600' }}>
+                    L° LGK
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
         </Link>
 
         <nav style={{ display: 'flex', gap: 8, alignItems: 'center' }} className="desktop-nav">
