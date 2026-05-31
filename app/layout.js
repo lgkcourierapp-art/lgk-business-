@@ -40,6 +40,7 @@ export const metadata = {
     languages: {
       pl: 'https://lgk-business.vercel.app',
       en: 'https://lgk-business.vercel.app?lang=en',
+      uk: 'https://lgk-business.vercel.app?lang=uk',
     },
   },
   icons: { icon: '/icon.png', apple: '/icon.png' },
