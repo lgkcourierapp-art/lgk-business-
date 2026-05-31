@@ -3,12 +3,10 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { VAT_RATE, CIT_RATE, STRIPE_PCT, STRIPE_FIXED_PLN, OPS_PER_DELIVERY_PLN } from '@/lib/constants';
 
-const VAT_RATE = 0.23;
-const CIT_RATE = 0.09;
-const STRIPE_PCT = 0.014;
-const STRIPE_FIXED = 1.0;
-const OPS_PER_DELIVERY = 0.90;
+const STRIPE_FIXED = STRIPE_FIXED_PLN;
+const OPS_PER_DELIVERY = OPS_PER_DELIVERY_PLN;
 
 function calcBuckets(grossRevenue, courierPayout) {
   const vatAmount = grossRevenue - (grossRevenue / (1 + VAT_RATE));

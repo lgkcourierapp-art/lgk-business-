@@ -9,6 +9,18 @@ import { useApp } from '@/utils/appContext'
 import AddressInput from '@/components/AddressInput'
 import { generateOrderNumber } from '@/utils/orderNumber'
 import { emailOrderConfirmed } from '@/utils/emailService'
+import { z } from 'zod'
+
+const DeliverySchema = z.object({
+  pickup_address: z.string().min(5).max(200),
+  delivery_address: z.string().min(5).max(200),
+  recipient_name: z.string().min(2).max(100),
+  recipient_phone: z.string().regex(/^\+?[\d\s\-()]{7,20}$/),
+  time_window: z.string().optional(),
+  order_item_count: z.number().int().min(1).max(99).nullable().optional(),
+  price_total: z.number().min(0).max(10000),
+  source: z.enum(['portal', 'gloriaFood', 'goPOS', 'api']).default('portal'),
+})
 
 export default function NewOrderPage() {
   const router = useRouter()
@@ -152,6 +164,21 @@ export default function NewOrderPage() {
         price_breakdown: price, status: 'awaiting_payment', country: 'PL',
         market_currency: 'PLN', created_at: new Date().toISOString()
       }
+      const parsed = DeliverySchema.safeParse({
+        pickup_address: delivery.pickup_address,
+        delivery_address: delivery.delivery_address,
+        recipient_name: delivery.recipient_name,
+        recipient_phone: delivery.recipient_phone,
+        time_window: delivery.time_window ?? undefined,
+        order_item_count: delivery.order_item_count,
+        price_total: delivery.price_total,
+        source: delivery.source,
+      })
+      if (!parsed.success) {
+        setErrors({ submit: 'Invalid order data. Please check your inputs and try again.' })
+        return
+      }
+
       const { error } = await supabase.from('deliveries').insert(delivery)
       if (error) throw error
 
