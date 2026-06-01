@@ -131,6 +131,11 @@ export default function Sidebar() {
                 margin: 0, lineHeight: '1.2', letterSpacing: '0.3px' }}>
                 Less guessing. More doing.
               </p>
+              <p style={{ fontSize: '9px',
+                color: 'rgba(255,255,255,0.2)',
+                margin: '2px 0 0', letterSpacing: '.3px' }}>
+                Built in Poland 🇵🇱
+              </p>
             </div>
           </div>
           <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.2)', flexShrink: 0 }}>
