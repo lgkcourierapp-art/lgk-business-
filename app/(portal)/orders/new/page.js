@@ -207,6 +207,11 @@ export default function NewOrderPage() {
       })
       if (error) throw error
 
+      try {
+        const prev = parseInt(localStorage.getItem('lgk_order_count') || '0', 10)
+        localStorage.setItem('lgk_order_count', String(prev + 1))
+      } catch {}
+
       // Fire-and-forget confirmation email — never blocks order placement
       try {
         const { data: { user: u2 } } = await supabase.auth.getUser()

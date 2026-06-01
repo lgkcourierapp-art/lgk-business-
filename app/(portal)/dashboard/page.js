@@ -1,6 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import StatusBadge from '@/components/StatusBadge'
@@ -8,7 +8,7 @@ import { useApp } from '@/utils/appContext'
 import WeatherAlert from '@/components/WeatherAlert'
 import { formatStreetAddress, formatCity } from '@/utils/capitalize'
 import { formatCurrency } from '@/utils/marketConfig'
-import InstallPrompt from '@/components/InstallPrompt'
+import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 
 function isToday(isoString) {
   if (!isoString) return false
@@ -25,10 +25,18 @@ export default function DashboardPage() {
   const [lastRefresh, setLastRefresh] = useState(null)
   const [hoveredCard, setHoveredCard] = useState(null)
   const [userId, setUserId] = useState(null)
+  const loginCounted = useRef(false)
 
   const fetchOrders = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
+    if (!loginCounted.current) {
+      loginCounted.current = true
+      try {
+        const prev = parseInt(localStorage.getItem('lgk_login_count') || '0', 10)
+        localStorage.setItem('lgk_login_count', String(prev + 1))
+      } catch {}
+    }
     setUserId(user['id'])
     const { data, error } = await supabase
       .from('deliveries')
@@ -268,7 +276,7 @@ export default function DashboardPage() {
         </div>
         {t('poweredBy')} &middot; lgkcourierapp@gmail.com
       </footer>
-      <InstallPrompt />
+      <PWAInstallPrompt />
     </div>
   )
 }
