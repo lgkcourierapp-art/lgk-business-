@@ -51,12 +51,16 @@ export default function NewOrderPage() {
   const prevTotal = useRef(0)
   const [priceFlash, setPriceFlash] = useState(false)
 
-  const [savedAddresses, setSavedAddresses] = useState([])
-  const [pickupData, setPickupData] = useState({})
-  const [showSavePickup, setShowSavePickup] = useState(false)
-  const [showSaveDelivery, setShowSaveDelivery] = useState(false)
-  const [savePickupLabel, setSavePickupLabel] = useState('')
-  const [saveDeliveryLabel, setSaveDeliveryLabel] = useState('')
+  const [pickupAddress, setPickupAddress] = useState('')
+  const [pickupCity, setPickupCity] = useState('szczecin')
+  const [pickupPostcode, setPickupPostcode] = useState('')
+  const [pickupLat, setPickupLat] = useState(null)
+  const [pickupLng, setPickupLng] = useState(null)
+  const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [deliveryCity, setDeliveryCity] = useState('szczecin')
+  const [deliveryPostcode, setDeliveryPostcode] = useState('')
+  const [deliveryLat, setDeliveryLat] = useState(null)
+  const [deliveryLng, setDeliveryLng] = useState(null)
   const [businessType, setBusinessType] = useState('general')
   const [readyTime, setReadyTime] = useState('')
   const [prepTime, setPrepTime] = useState('')
@@ -81,44 +85,19 @@ export default function NewOrderPage() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push('/login'); return }
       setUser(user)
-      const { data: addresses } = await supabase
-        .from('saved_addresses')
-        .select('*')
-        .eq('client_id', user['id'])
-        .order('use_count', { ascending: false })
-      setSavedAddresses(addresses || [])
       const { data: prof } = await supabase
         .from('profiles')
         .select('business_type')
         .eq('id', user['id'])
         .single()
       if (prof?.business_type) setBusinessType(prof.business_type)
-      const defaultPickup = (addresses || []).find(a => a.is_default_pickup)
-      if (defaultPickup) {
-        const filled = {
-          street: defaultPickup.street || '',
-          house: defaultPickup.house_number || '',
-          apartment: defaultPickup.apartment || '',
-          postal: defaultPickup.postal_code || '',
-          city: defaultPickup.city || '',
-          contactName: defaultPickup.contact_name || '',
-          contactPhone: defaultPickup.contact_phone || '',
-          accessCode: defaultPickup.access_code || '',
-          instructions: defaultPickup.instructions || '',
-        }
-        setPickupData(filled)
-        set('pickupCity', defaultPickup.city); set('pickupStreet', defaultPickup.street)
-        set('pickupHouse', defaultPickup.house_number); set('pickupApartment', defaultPickup.apartment || '')
-        set('pickupPostal', defaultPickup.postal_code || ''); set('pickupContact', defaultPickup.contact_name || '')
-        set('pickupPhone', defaultPickup.contact_phone || ''); set('pickupAccess', defaultPickup.access_code || '')
-      }
     })
   }, [router])
 
-  const dist = distanceBetweenCities(form.pickupCity, form.deliveryCity)
+  const dist = distanceBetweenCities(pickupCity || 'szczecin', deliveryCity || 'szczecin')
   const price = calculatePrice({
     distance: dist, weight: form.weight, timeWindow: form.timeWindow,
-    pickupCity: form.pickupCity, deliveryCity: form.deliveryCity,
+    pickupCity: pickupCity || 'szczecin', deliveryCity: deliveryCity || 'szczecin',
     isCOD: false, isFragile: form.isFragile, hasInsurance: form.hasInsurance
   })
 
@@ -132,13 +111,8 @@ export default function NewOrderPage() {
 
   const validate = () => {
     const e = {}
-    if (!form.pickupStreet) e.pickup = 'Pickup address required'
-    if (!form.pickupCity) e.pickup = 'Pickup city required'
-    if (form.pickupStreet.length > 200) e.pickup = 'Pickup street too long'
-    if (form.pickupAccess.length > 50) e.pickup = 'Access code too long (max 50)'
-    if (form.pickupInstructions.length > 500) e.pickup = 'Pickup instructions too long (max 500)'
-    if (!form.deliveryStreet) e.delivery = 'Delivery address required'
-    if (!form.deliveryCity) e.delivery = 'Delivery city required'
+    if (!pickupAddress) e.pickup = 'Pickup address required'
+    if (!deliveryAddress) e.delivery = 'Delivery address required'
     if (!form.deliveryContact) e.delivery = 'Recipient name required'
     if (form.deliveryContact.length > 100) e.delivery = 'Recipient name too long'
     if (!form.deliveryPhone) e.delivery = 'Recipient phone required'
@@ -163,20 +137,20 @@ export default function NewOrderPage() {
       const hasStripe = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
       const delivery = {
         id: orderId, order_number: orderId, client_id: u['id'],
-        pickup_city: form.pickupCity, pickup_street: form.pickupStreet,
-        pickup_house_number: form.pickupHouse, pickup_apartment: form.pickupApartment,
-        pickup_access_code: form.pickupAccess, pickup_postal_code: form.pickupPostal,
-        pickup_postal: form.pickupPostal,
-        pickup_contact_name: form.pickupContact, pickup_contact_phone: form.pickupPhone,
-        pickup_instructions: isRestaurant ? [courierNote, handlingFlags.join(' · ')].filter(Boolean).join(' | ') : form.pickupInstructions,
-        pickup_notes: isRestaurant ? [courierNote, handlingFlags.join(' · ')].filter(Boolean).join(' | ') : form.pickupInstructions,
+        pickup_city: pickupCity || 'szczecin', pickup_street: pickupAddress,
+        pickup_house_number: '', pickup_apartment: '',
+        pickup_access_code: '', pickup_postal_code: pickupPostcode,
+        pickup_postal: pickupPostcode,
+        pickup_contact_name: '', pickup_contact_phone: '',
+        pickup_instructions: [courierNote, handlingFlags.join(' · ')].filter(Boolean).join(' | '),
+        pickup_notes: [courierNote, handlingFlags.join(' · ')].filter(Boolean).join(' | '),
         order_item_count: isRestaurant ? itemCount : null,
-        pickup_address: form.pickupStreet + ' ' + form.pickupHouse + ', ' + form.pickupCity,
-        delivery_city: form.deliveryCity, delivery_street: form.deliveryStreet,
-        delivery_house_number: form.deliveryHouse, delivery_apartment: form.deliveryApartment,
-        delivery_postal_code: form.deliveryPostal, delivery_contact_name: form.deliveryContact,
+        pickup_address: pickupAddress,
+        delivery_city: deliveryCity || 'szczecin', delivery_street: deliveryAddress,
+        delivery_house_number: '', delivery_apartment: '',
+        delivery_postal_code: deliveryPostcode, delivery_contact_name: form.deliveryContact,
         delivery_contact_phone: form.deliveryPhone, delivery_notes: form.deliveryNotes,
-        delivery_address: form.deliveryStreet + ' ' + form.deliveryHouse + ', ' + form.deliveryCity,
+        delivery_address: deliveryAddress,
         recipient_name: form.deliveryContact, recipient_phone: form.deliveryPhone,
         package_weight: form.weight, is_fragile: form.isFragile,
         insurance_selected: form.hasInsurance, insurance_fee: form.hasInsurance ? 3 : 0,
@@ -253,54 +227,22 @@ export default function NewOrderPage() {
         <div style={cardStyle}>
           <AddressInput
             label={'1. ' + t('pickup')}
-            savedAddresses={savedAddresses.filter(a => a.address_type !== 'delivery')}
-            defaultValues={pickupData}
             placeholder={t('pickupPlaceholder')}
-            onFill={(data) => {
-              set('pickupStreet', data.street || ''); set('pickupHouse', data.house || '')
-              set('pickupApartment', data.apartment || ''); set('pickupPostal', data.postal || '')
-              set('pickupCity', data.city || 'szczecin'); set('pickupContact', data.contactName || '')
-              set('pickupPhone', data.contactPhone || ''); set('pickupAccess', data.accessCode || '')
-              set('pickupInstructions', data.instructions || '')
-              setShowSavePickup(true)
+            addressType="pickup"
+            clientId={user?.['id']}
+            showSaved={true}
+            required={true}
+            onChange={(addr) => {
+              if (!addr) return
+              setPickupAddress(addr.address + ', ' + addr.city)
+              setPickupCity(addr.city?.toLowerCase() || 'szczecin')
+              setPickupPostcode(addr.postcode || '')
+              setPickupLat(addr.lat)
+              setPickupLng(addr.lng)
               setErrors(e => ({ ...e, pickup: undefined }))
             }}
           />
           {errors.pickup && <div style={{ color: '#FF3B30', fontSize: 13, marginTop: 8 }}>{errors.pickup}</div>}
-          {showSavePickup && (
-            <div style={{ marginTop: 16, padding: 12, background: colors.bg, borderRadius: 8, border: '1px solid ' + colors.border }}>
-              <div style={{ color: colors.textSecondary, fontSize: 13, marginBottom: 8 }}>{t('saveAddress')}</div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  placeholder={t('labelPickup')}
-                  value={savePickupLabel}
-                  onChange={e => setSavePickupLabel(e.target.value)}
-                  style={{ flex: 1, padding: 10, background: colors.input, border: '1px solid ' + colors.border, borderRadius: 8, color: colors.text, fontSize: 14, height: 40 }}
-                />
-                <button
-                  onClick={async () => {
-                    if (!savePickupLabel) return
-                    const { data: { user: u } } = await supabase.auth.getUser()
-                    await supabase.from('saved_addresses').insert({
-                      client_id: u['id'], label: savePickupLabel, address_type: 'pickup',
-                      street: form.pickupStreet, house_number: form.pickupHouse,
-                      apartment: form.pickupApartment, postal_code: form.pickupPostal,
-                      city: form.pickupCity, contact_name: form.pickupContact,
-                      contact_phone: form.pickupPhone, access_code: form.pickupAccess,
-                      instructions: form.pickupInstructions,
-                      is_default_pickup: savedAddresses.filter(a => a.is_default_pickup).length === 0
-                    })
-                    setShowSavePickup(false); setSavePickupLabel('')
-                    const { data } = await supabase.from('saved_addresses').select('*').eq('client_id', u['id']).order('use_count', { ascending: false })
-                    setSavedAddresses(data || [])
-                  }}
-                  className="btn-primary"
-                  style={{ height: 40, padding: '0 16px', fontSize: 14 }}
-                >{t('save')}</button>
-                <button onClick={() => setShowSavePickup(false)} style={{ background: 'transparent', border: '1px solid ' + colors.border, padding: '0 16px', borderRadius: 8, color: colors.textSecondary, cursor: 'pointer', fontSize: 14, height: 40 }}>{t('skip')}</button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Restaurant details */}
@@ -370,50 +312,51 @@ export default function NewOrderPage() {
         <div style={cardStyle}>
           <AddressInput
             label={'2. ' + t('delivery')}
-            savedAddresses={savedAddresses.filter(a => a.address_type !== 'pickup')}
             placeholder={t('deliveryPlaceholder')}
-            onFill={(data) => {
-              set('deliveryStreet', data.street || ''); set('deliveryHouse', data.house || '')
-              set('deliveryApartment', data.apartment || ''); set('deliveryPostal', data.postal || '')
-              set('deliveryCity', data.city || 'szczecin'); set('deliveryContact', data.contactName || '')
-              set('deliveryPhone', data.contactPhone || ''); set('deliveryNotes', data.instructions || '')
-              setShowSaveDelivery(true)
+            addressType="delivery"
+            clientId={user?.['id']}
+            showSaved={true}
+            required={true}
+            onChange={(addr) => {
+              if (!addr) return
+              setDeliveryAddress(addr.address + ', ' + addr.city)
+              setDeliveryCity(addr.city?.toLowerCase() || 'szczecin')
+              setDeliveryPostcode(addr.postcode || '')
+              setDeliveryLat(addr.lat)
+              setDeliveryLng(addr.lng)
               setErrors(e => ({ ...e, delivery: undefined }))
             }}
+            onReuseNote={(note) => setCourierNote(note)}
           />
-          {errors.delivery && <div style={{ color: '#FF3B30', fontSize: 13, marginTop: 8 }}>{errors.delivery}</div>}
-          {showSaveDelivery && (
-            <div style={{ marginTop: 16, padding: 12, background: colors.bg, borderRadius: 8, border: '1px solid ' + colors.border }}>
-              <div style={{ color: colors.textSecondary, fontSize: 13, marginBottom: 8 }}>{t('saveRecipient')}</div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  placeholder={t('labelRecipient')}
-                  value={saveDeliveryLabel}
-                  onChange={e => setSaveDeliveryLabel(e.target.value)}
-                  style={{ flex: 1, padding: 10, background: colors.input, border: '1px solid ' + colors.border, borderRadius: 8, color: colors.text, fontSize: 14, height: 40 }}
-                />
-                <button
-                  onClick={async () => {
-                    if (!saveDeliveryLabel) return
-                    const { data: { user: u } } = await supabase.auth.getUser()
-                    await supabase.from('saved_addresses').insert({
-                      client_id: u['id'], label: saveDeliveryLabel, address_type: 'delivery',
-                      street: form.deliveryStreet, house_number: form.deliveryHouse,
-                      apartment: form.deliveryApartment, postal_code: form.deliveryPostal,
-                      city: form.deliveryCity, contact_name: form.deliveryContact,
-                      contact_phone: form.deliveryPhone,
-                    })
-                    setShowSaveDelivery(false); setSaveDeliveryLabel('')
-                    const { data } = await supabase.from('saved_addresses').select('*').eq('client_id', u['id']).order('use_count', { ascending: false })
-                    setSavedAddresses(data || [])
-                  }}
-                  className="btn-primary"
-                  style={{ height: 40, padding: '0 16px', fontSize: 14 }}
-                >{t('save')}</button>
-                <button onClick={() => setShowSaveDelivery(false)} style={{ background: 'transparent', border: '1px solid ' + colors.border, padding: '0 16px', borderRadius: 8, color: colors.textSecondary, cursor: 'pointer', fontSize: 14, height: 40 }}>{t('skip')}</button>
-              </div>
+          {/* Recipient details */}
+          <div style={{ marginTop: 16 }}>
+            <div style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{t('contactSection')}</div>
+            <div style={{ marginBottom: 8 }}>
+              <input
+                placeholder={t('contactName')}
+                value={form.deliveryContact}
+                onChange={e => set('deliveryContact', e.target.value)}
+                style={{ width: '100%', padding: '13px 14px', background: colors.bg, border: '1px solid ' + colors.border, borderRadius: '8px', color: colors.text, fontSize: '16px', boxSizing: 'border-box', WebkitAppearance: 'none', outline: 'none' }}
+              />
             </div>
-          )}
+            <div style={{ marginBottom: 8 }}>
+              <input
+                type="tel"
+                placeholder={t('contactPhone')}
+                value={form.deliveryPhone}
+                onChange={e => set('deliveryPhone', e.target.value)}
+                style={{ width: '100%', padding: '13px 14px', background: colors.bg, border: '1px solid ' + colors.border, borderRadius: '8px', color: colors.text, fontSize: '16px', boxSizing: 'border-box', WebkitAppearance: 'none', outline: 'none' }}
+              />
+            </div>
+            <textarea
+              placeholder={t('deliveryNotes')}
+              value={form.deliveryNotes}
+              onChange={e => set('deliveryNotes', e.target.value)}
+              rows={2}
+              style={{ width: '100%', padding: '13px 14px', background: colors.bg, border: '1px solid ' + colors.border, borderRadius: '8px', color: colors.text, fontSize: '15px', resize: 'none', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
+            />
+          </div>
+          {errors.delivery && <div style={{ color: '#FF3B30', fontSize: 13, marginTop: 8 }}>{errors.delivery}</div>}
         </div>
 
         {/* Section 3: Package */}

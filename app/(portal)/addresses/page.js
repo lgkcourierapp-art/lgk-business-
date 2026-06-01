@@ -33,7 +33,20 @@ export default function AddressesPage() {
       .select('*')
       .eq('client_id', user['id'])
       .order('use_count', { ascending: false })
-    setAddresses(data || [])
+    // Enrich with delivery counts
+    const enriched = await Promise.all(
+      (data || []).map(async (addr) => {
+        const addressStr = [addr.street, addr.house_number].filter(Boolean).join(' ')
+        if (!addressStr) return { ...addr, deliveryCount: 0 }
+        const { count } = await supabase
+          .from('deliveries')
+          .select('id', { count: 'exact', head: true })
+          .eq('client_id', user['id'])
+          .ilike('delivery_address', '%' + addressStr + '%')
+        return { ...addr, deliveryCount: count || 0 }
+      })
+    )
+    setAddresses(enriched)
     setLoading(false)
   }, [router])
 
@@ -123,16 +136,31 @@ export default function AddressesPage() {
                   <div key={addr['id']} style={{ ...cardStyle, borderLeft: addr.is_default_pickup ? '3px solid #D4FF00' : '1px solid ' + colors.border }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 15, color: colors.text, marginBottom: 2 }}>
-                          {addr.label}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
+                          <div style={{ fontWeight: 700, fontSize: 15, color: colors.text }}>{addr.label}</div>
                           {addr.is_default_pickup && (
-                            <span style={{ marginLeft: 8, background: '#D4FF0020', color: '#D4FF00', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>DEFAULT</span>
+                            <span style={{ background: '#D4FF0020', color: '#D4FF00', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>DEFAULT</span>
+                          )}
+                          {addr.deliveryCount >= 11 && (
+                            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 8, background: '#D4FF00', color: '#0A0A0A' }}>VIP</span>
+                          )}
+                          {addr.deliveryCount >= 6 && addr.deliveryCount < 11 && (
+                            <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 8, background: 'rgba(212,255,0,0.15)', color: '#D4FF00' }}>Wierny</span>
+                          )}
+                          {addr.deliveryCount >= 3 && addr.deliveryCount < 6 && (
+                            <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 8, background: 'rgba(212,255,0,0.08)', color: 'rgba(212,255,0,0.7)' }}>Stały</span>
                           )}
                         </div>
                         <div style={{ color: colors.textSecondary, fontSize: 13 }}>
                           {addr.street} {addr.house_number}{addr.apartment ? '/' + addr.apartment : ''}, {addr.city}
+                          {addr.postal_code ? ' · ' + addr.postal_code : ''}
                         </div>
                         {addr.contact_name && <div style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>{addr.contact_name} · {addr.contact_phone}</div>}
+                        <div style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2, opacity: 0.6 }}>
+                          {addr.deliveryCount > 0
+                            ? `${addr.deliveryCount} dostaw · używany ${addr.use_count || 0} razy`
+                            : `Używany ${addr.use_count || 0} razy`}
+                        </div>
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                         {!addr.is_default_pickup && (
