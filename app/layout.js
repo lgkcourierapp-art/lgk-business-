@@ -1,6 +1,5 @@
 import './globals.css'
 import { AppProvider } from '../utils/appContext'
-import InstallPrompt from '../components/InstallPrompt'
 
 export const metadata = {
   metadataBase: new URL('https://lgk-business.vercel.app'),
@@ -43,7 +42,7 @@ export const metadata = {
       uk: 'https://lgk-business.vercel.app?lang=uk',
     },
   },
-  icons: { icon: '/icon.png', apple: '/icon.png' },
+  icons: { icon: '/icons/icon-192.png', apple: '/icons/icon-192.png' },
   manifest: '/manifest.webmanifest',
   verification: {
     google: 'BlsaKad1HdIxbJAt-lqBh9N49un9nffZrCeEHYvLkwQ',
@@ -71,7 +70,6 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <AppProvider>{children}</AppProvider>
-        <InstallPrompt />
       </body>
     </html>
   )
