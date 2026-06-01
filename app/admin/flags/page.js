@@ -10,11 +10,11 @@ const M = {
 
 const GROUPS = [
   {
-    title: 'Integracje POS',
+    title: 'POS Integrations',
     flags: ['gloriaFood_integration', 'gopos_integration'],
   },
   {
-    title: 'Zarządzanie flotą',
+    title: 'Fleet Management',
     flags: ['own_fleet_dispatch', 'auto_dispatch', 'overflow_to_gig', 'customer_sms_tracking', 'multi_location'],
   },
 ];
