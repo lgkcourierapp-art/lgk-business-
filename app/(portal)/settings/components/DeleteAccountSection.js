@@ -6,7 +6,7 @@ import { useApp } from '@/utils/appContext'
 const CONFIRM_WORD = 'DELETE'
 
 export default function DeleteAccountSection() {
-  const { colors } = useApp()
+  const { t, colors } = useApp()
   const [deleteStep, setDeleteStep] = useState(0)
   const [deleteInput, setDeleteInput] = useState('')
   const [deleteError, setDeleteError] = useState(null)
@@ -46,7 +46,7 @@ export default function DeleteAccountSection() {
       window.location.href = '/?deleted=true'
     } catch (err) {
       console.error('Delete account error:', err.message)
-      setDeleteError('Something went wrong. Contact lgkcourierapp@gmail.com')
+      setDeleteError(t('deleteError'))
       setDeleteStep(2)
     }
   }
@@ -56,9 +56,9 @@ export default function DeleteAccountSection() {
       {/* Delete account section — no Danger Zone label */}
       <div style={{ background: colors.card, border: '1px solid #FF3B3040', borderRadius: 12, padding: 24, marginBottom: 16 }}>
         <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.08)', paddingTop: 20 }}>
-          <p style={{ fontSize: 13, fontWeight: 500, color: colors.text, margin: '0 0 4px' }}>Delete account</p>
-          <p style={{ fontSize: 12, color: colors.textSecondary, margin: '0 0 12px', lineHeight: 1.6 }}>Permanently delete your account and all associated data. This action cannot be undone.</p>
-          <button onClick={() => setDeleteStep(1)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #FF3B30', background: 'transparent', color: '#FF3B30', fontSize: 13, cursor: 'pointer' }}>Delete account</button>
+          <p style={{ fontSize: 13, fontWeight: 500, color: colors.text, margin: '0 0 4px' }}>{t('deleteAccount')}</p>
+          <p style={{ fontSize: 12, color: colors.textSecondary, margin: '0 0 12px', lineHeight: 1.6 }}>{t('dangerDescription')}</p>
+          <button onClick={() => setDeleteStep(1)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #FF3B30', background: 'transparent', color: '#FF3B30', fontSize: 13, cursor: 'pointer' }}>{t('deleteAccount')}</button>
         </div>
       </div>
 
@@ -85,13 +85,13 @@ export default function DeleteAccountSection() {
                     <i className="ti ti-alert-triangle" style={{ fontSize: 18, color: '#CC0000' }} aria-hidden="true" />
                   </div>
                   <div>
-                    <p style={{ color: '#111111', fontSize: '16px', fontWeight: '600', margin: 0 }}>Delete your account</p>
-                    <p style={{ color: '#666666', fontSize: '12px', margin: 0 }}>This action is permanent and cannot be undone</p>
+                    <p style={{ color: '#111111', fontSize: '16px', fontWeight: '600', margin: 0 }}>{t('deleteModalTitle')}</p>
+                    <p style={{ color: '#666666', fontSize: '12px', margin: 0 }}>{t('deleteModalSubtitle')}</p>
                   </div>
                 </div>
                 <div style={{ background: '#FFF5F5', border: '1px solid #FFCCCC', borderRadius: 8, padding: '12px 14px', marginBottom: 20 }}>
-                  <p style={{ color: '#CC0000', fontSize: '12px', fontWeight: '500', margin: '0 0 8px' }}>The following will be permanently deleted:</p>
-                  {['Your account and login credentials', 'Your company profile and settings', 'All orders and delivery history', 'All GPS proof photos', 'Your saved addresses', 'All invoices and billing records'].map((item, i) => (
+                  <p style={{ color: '#CC0000', fontSize: '12px', fontWeight: '500', margin: '0 0 8px' }}>{t('deleteModalWillDelete')}</p>
+                  {[t('deleteItem1'), t('deleteItem2'), t('deleteItem3'), t('deleteItem4'), t('deleteItem5'), t('deleteItem6')].map((item, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0' }}>
                       <i className="ti ti-x" style={{ fontSize: 12, color: '#CC0000', flexShrink: 0 }} aria-hidden="true" />
                       <span style={{ color: '#CC0000', fontSize: '12px' }}>{item}</span>
@@ -109,7 +109,7 @@ export default function DeleteAccountSection() {
                     fontSize: '13px',
                     fontWeight: '500',
                     cursor: 'pointer',
-                  }}>Cancel — keep my account</button>
+                  }}>{t('cancelKeepAccount')}</button>
                   <button onClick={() => setDeleteStep(2)} style={{
                     padding: '10px 16px',
                     borderRadius: '8px',
@@ -118,7 +118,7 @@ export default function DeleteAccountSection() {
                     color: '#666666',
                     fontSize: '13px',
                     cursor: 'pointer',
-                  }}>Continue</button>
+                  }}>{t('continueDelete')}</button>
                 </div>
               </>
             )}
@@ -126,15 +126,19 @@ export default function DeleteAccountSection() {
             {/* Step 2 — Type to confirm */}
             {deleteStep === 2 && (
               <>
-                <p style={{ fontSize: 15, fontWeight: 500, color: '#111111', margin: '0 0 6px' }}>Confirm deletion</p>
+                <p style={{ fontSize: 15, fontWeight: 500, color: '#111111', margin: '0 0 6px' }}>{t('confirmDeletion')}</p>
                 <p style={{ fontSize: 12, color: '#666666', margin: '0 0 20px', lineHeight: 1.6 }}>
-                  Type <strong style={{ color: '#111111', fontFamily: 'monospace' }}>DELETE</strong> to permanently delete your account.
+                  {t('typeDeletePrompt').split('DELETE').map((part, i, arr) =>
+                    i < arr.length - 1
+                      ? <>{part}<strong key={i} style={{ color: '#111111', fontFamily: 'monospace' }}>DELETE</strong></>
+                      : part
+                  )}
                 </p>
                 <input
                   type="text"
                   value={deleteInput}
                   onChange={e => setDeleteInput(e.target.value)}
-                  placeholder="Type DELETE here"
+                  placeholder={t('typeDeleteHere')}
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="off"
@@ -165,7 +169,7 @@ export default function DeleteAccountSection() {
                     fontSize: '13px',
                     fontWeight: '500',
                     cursor: 'pointer',
-                  }}>Cancel</button>
+                  }}>{t('cancel')}</button>
                   <button onClick={handleDeleteAccount} disabled={!inputMatches}
                     style={{
                       padding: '10px 20px',
@@ -178,7 +182,7 @@ export default function DeleteAccountSection() {
                       color: inputMatches ? '#FFFFFF' : '#AAAAAA',
                       transition: 'all 0.15s ease',
                     }}>
-                    Delete my account
+                    {t('deleteMyAccount')}
                   </button>
                 </div>
               </>
@@ -188,8 +192,8 @@ export default function DeleteAccountSection() {
             {deleteStep === 3 && (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
                 <i className="ti ti-trash" style={{ fontSize: 32, color: '#CC0000', marginBottom: 12, display: 'block' }} aria-hidden="true" />
-                <p style={{ color: '#111111', fontSize: 15, fontWeight: 500, margin: '0 0 6px' }}>Deleting your account...</p>
-                <p style={{ color: '#666666', fontSize: 12, margin: 0 }}>Please do not close this window.</p>
+                <p style={{ color: '#111111', fontSize: 15, fontWeight: 500, margin: '0 0 6px' }}>{t('deletingAccount')}</p>
+                <p style={{ color: '#666666', fontSize: 12, margin: 0 }}>{t('doNotClose')}</p>
               </div>
             )}
           </div>
