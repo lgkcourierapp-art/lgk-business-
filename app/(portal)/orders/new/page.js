@@ -11,15 +11,35 @@ import { generateOrderNumber } from '@/utils/orderNumber'
 import { emailOrderConfirmed } from '@/utils/emailService'
 import { z } from 'zod'
 
-const DeliverySchema = z.object({
-  pickup_address: z.string().min(5).max(200),
-  delivery_address: z.string().min(5).max(200),
-  recipient_name: z.string().min(2).max(100),
-  recipient_phone: z.string().regex(/^\+?[\d\s\-()]{7,20}$/),
-  time_window: z.string().optional(),
-  order_item_count: z.number().int().min(1).max(99).nullable().optional(),
-  price_total: z.number().min(0).max(10000),
-  source: z.enum(['portal', 'gloriaFood', 'goPOS', 'api']).default('portal'),
+const OrderSchema = z.object({
+  pickup_address: z.string()
+    .min(5, 'Pickup address must be at least 5 characters')
+    .max(200, 'Pickup address too long'),
+  delivery_address: z.string()
+    .min(5, 'Delivery address must be at least 5 characters')
+    .max(200, 'Delivery address too long'),
+  recipient_name: z.string()
+    .min(2, 'Recipient name required')
+    .max(100, 'Recipient name too long'),
+  recipient_phone: z.string()
+    .regex(/^\+?[0-9\s\-]{9,15}$/, 'Invalid phone number format')
+    .optional(),
+  order_item_count: z.number()
+    .int()
+    .min(1, 'At least 1 item required')
+    .max(99, 'Maximum 99 items per order')
+    .optional(),
+  amount_pln: z.number()
+    .min(0, 'Amount cannot be negative')
+    .max(50000, 'Amount exceeds maximum')
+    .optional(),
+  courier_note: z.string()
+    .max(120, 'Courier note maximum 120 characters')
+    .optional(),
+  time_window_start: z.string().optional(),
+  time_window_end: z.string().optional(),
+  is_cod: z.boolean().optional(),
+  is_fragile: z.boolean().optional(),
 })
 
 export default function NewOrderPage() {
@@ -165,22 +185,26 @@ export default function NewOrderPage() {
         price_breakdown: price, status: hasStripe ? 'awaiting_payment' : 'pending', country: 'PL',
         market_currency: 'PLN', created_at: new Date().toISOString()
       }
-      const parsed = DeliverySchema.safeParse({
+      const validated = OrderSchema.safeParse({
         pickup_address: delivery.pickup_address,
         delivery_address: delivery.delivery_address,
         recipient_name: delivery.recipient_name,
-        recipient_phone: delivery.recipient_phone,
-        time_window: delivery.time_window ?? undefined,
-        order_item_count: delivery.order_item_count,
-        price_total: delivery.price_total,
-        source: delivery.source,
+        recipient_phone: delivery.recipient_phone ?? undefined,
+        order_item_count: delivery.order_item_count ?? undefined,
+        amount_pln: price.total,
+        courier_note: courierNote || undefined,
+        is_fragile: form.isFragile || undefined,
       })
-      if (!parsed.success) {
-        setErrors({ submit: 'Invalid order data. Please check your inputs and try again.' })
+      if (!validated.success) {
+        const firstError = validated.error.issues[0]
+        setErrors({ submit: firstError.message })
         return
       }
 
-      const { error } = await supabase.from('deliveries').insert(delivery)
+      const { error } = await supabase.from('deliveries').insert({
+        ...delivery,
+        ...validated.data,
+      })
       if (error) throw error
 
       // Fire-and-forget confirmation email — never blocks order placement
