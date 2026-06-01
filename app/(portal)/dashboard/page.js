@@ -8,6 +8,7 @@ import { useApp } from '@/utils/appContext'
 import WeatherAlert from '@/components/WeatherAlert'
 import { formatStreetAddress, formatCity } from '@/utils/capitalize'
 import { formatCurrency } from '@/utils/marketConfig'
+import InstallPrompt from '@/components/InstallPrompt'
 
 function isToday(isoString) {
   if (!isoString) return false
@@ -267,6 +268,7 @@ export default function DashboardPage() {
         </div>
         {t('poweredBy')} &middot; lgkcourierapp@gmail.com
       </footer>
+      <InstallPrompt />
     </div>
   )
 }

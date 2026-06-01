@@ -71,32 +71,31 @@ export default function InstallPrompt() {
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ color: '#FFF', fontWeight: 700, fontSize: 14, marginBottom: 2 }}>
-          Add LGK Business to home screen
+          LGK Business
         </div>
         {isIOS ? (
           <div style={{ color: '#888', fontSize: 12, lineHeight: 1.5 }}>
-            Tap <strong style={{ color: '#D4FF00' }}>Share</strong> → <strong style={{ color: '#D4FF00' }}>Add to Home Screen</strong>
+            Stuknij <strong style={{ color: '#D4FF00' }}>Udostępnij</strong> → <strong style={{ color: '#D4FF00' }}>Dodaj do ekranu głównego</strong>
           </div>
         ) : (
-          <div style={{ color: '#888', fontSize: 12 }}>Works offline · No App Store needed</div>
+          <div style={{ color: '#888', fontSize: 12 }}>Działa offline · Bez App Store</div>
         )}
       </div>
 
       {!isIOS && (
         <button
           onClick={install}
-          style={{ background: '#D4FF00', color: '#000', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}
+          style={{ background: '#D4FF00', color: '#000', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
         >
-          Install
+          Dodaj do ekranu głównego
         </button>
       )}
 
       <button
         onClick={dismiss}
-        style={{ background: 'transparent', border: 'none', color: '#555', fontSize: 20, cursor: 'pointer', padding: 4, flexShrink: 0, lineHeight: 1 }}
-        aria-label="Dismiss"
+        style={{ background: '#333', border: 'none', color: '#AAA', fontSize: 12, cursor: 'pointer', padding: '8px 12px', borderRadius: 8, flexShrink: 0, fontWeight: 600 }}
       >
-        ×
+        Nie teraz
       </button>
     </div>
   )
