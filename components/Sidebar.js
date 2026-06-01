@@ -132,7 +132,7 @@ export default function Sidebar() {
                 Less guessing. More doing.
               </p>
               <p style={{ fontSize: '9px',
-                color: 'rgba(255,255,255,0.2)',
+                color: 'rgba(255,255,255,0.35)',
                 margin: '2px 0 0', letterSpacing: '.3px' }}>
                 Built in Poland 🇵🇱
               </p>
