@@ -6,7 +6,7 @@ import { useApp } from '@/utils/appContext'
 const CONFIRM_WORD = 'DELETE'
 
 export default function DeleteAccountSection() {
-  const { t, colors } = useApp()
+  const { colors } = useApp()
   const [deleteStep, setDeleteStep] = useState(0)
   const [deleteInput, setDeleteInput] = useState('')
   const [deleteError, setDeleteError] = useState(null)
@@ -51,51 +51,74 @@ export default function DeleteAccountSection() {
     }
   }
 
-  const btn = (onClick, label, style) => (
-    <button onClick={onClick} style={{ padding: '10px', borderRadius: 8, border: '0.5px solid var(--color-border-tertiary)', background: 'var(--color-background-secondary)', color: 'var(--color-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', ...style }}>{label}</button>
-  )
-
   return (
     <>
-      {/* Danger zone card */}
+      {/* Delete account section — no Danger Zone label */}
       <div style={{ background: colors.card, border: '1px solid #FF3B3040', borderRadius: 12, padding: 24, marginBottom: 16 }}>
-        <div style={{ color: '#FF3B30', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>{t('dangerZone')}</div>
-        <div style={{ borderTop: '0.5px solid var(--color-border-tertiary)', paddingTop: 20, marginTop: 20 }}>
-          <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)', margin: '0 0 4px' }}>Delete account</p>
-          <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', margin: '0 0 12px', lineHeight: 1.6 }}>Permanently delete your account and all associated data. This action cannot be undone.</p>
-          <button onClick={() => setDeleteStep(1)} style={{ padding: '8px 16px', borderRadius: 8, border: '0.5px solid var(--color-border-danger)', background: 'transparent', color: 'var(--color-text-danger)', fontSize: 13, cursor: 'pointer' }}>Delete account</button>
+        <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.08)', paddingTop: 20 }}>
+          <p style={{ fontSize: 13, fontWeight: 500, color: colors.text, margin: '0 0 4px' }}>Delete account</p>
+          <p style={{ fontSize: 12, color: colors.textSecondary, margin: '0 0 12px', lineHeight: 1.6 }}>Permanently delete your account and all associated data. This action cannot be undone.</p>
+          <button onClick={() => setDeleteStep(1)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #FF3B30', background: 'transparent', color: '#FF3B30', fontSize: 13, cursor: 'pointer' }}>Delete account</button>
         </div>
       </div>
 
       {/* Deletion modal */}
       {deleteStep > 0 && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: 'var(--color-background-primary)', border: '0.5px solid var(--color-border-tertiary)', borderRadius: 12, padding: 24, maxWidth: 440, width: '100%' }}>
+          {/* Modal card — ALWAYS white, never theme-dependent */}
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '14px',
+            padding: '28px 24px',
+            maxWidth: '440px',
+            width: '100%',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+            position: 'relative',
+            zIndex: 1001,
+          }}>
 
             {/* Step 1 — Consequences */}
             {deleteStep === 1 && (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-background-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <i className="ti ti-alert-triangle" style={{ fontSize: 18, color: 'var(--color-text-danger)' }} aria-hidden="true" />
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FFF0F0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <i className="ti ti-alert-triangle" style={{ fontSize: 18, color: '#CC0000' }} aria-hidden="true" />
                   </div>
                   <div>
-                    <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--color-text-primary)', margin: 0 }}>Delete your account</p>
-                    <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: 0 }}>This action is permanent and cannot be undone</p>
+                    <p style={{ color: '#111111', fontSize: '16px', fontWeight: '600', margin: 0 }}>Delete your account</p>
+                    <p style={{ color: '#666666', fontSize: '12px', margin: 0 }}>This action is permanent and cannot be undone</p>
                   </div>
                 </div>
-                <div style={{ background: 'var(--color-background-danger)', border: '0.5px solid var(--color-border-danger)', borderRadius: 8, padding: '12px 14px', marginBottom: 20 }}>
-                  <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-danger)', margin: '0 0 8px' }}>The following will be permanently deleted:</p>
+                <div style={{ background: '#FFF5F5', border: '1px solid #FFCCCC', borderRadius: 8, padding: '12px 14px', marginBottom: 20 }}>
+                  <p style={{ color: '#CC0000', fontSize: '12px', fontWeight: '500', margin: '0 0 8px' }}>The following will be permanently deleted:</p>
                   {['Your account and login credentials', 'Your company profile and settings', 'All orders and delivery history', 'All GPS proof photos', 'Your saved addresses', 'All invoices and billing records'].map((item, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0' }}>
-                      <i className="ti ti-x" style={{ fontSize: 12, color: 'var(--color-text-danger)', flexShrink: 0 }} aria-hidden="true" />
-                      <span style={{ fontSize: 12, color: 'var(--color-text-danger)' }}>{item}</span>
+                      <i className="ti ti-x" style={{ fontSize: 12, color: '#CC0000', flexShrink: 0 }} aria-hidden="true" />
+                      <span style={{ color: '#CC0000', fontSize: '12px' }}>{item}</span>
                     </div>
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {btn(closeDeleteModal, 'Cancel — keep my account', { flex: 1 })}
-                  {btn(() => setDeleteStep(2), 'Continue', { background: 'transparent', border: '0.5px solid var(--color-border-tertiary)', color: 'var(--color-text-secondary)' })}
+                  <button onClick={closeDeleteModal} style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid #E0E0E0',
+                    background: '#F5F5F5',
+                    color: '#333333',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                  }}>Cancel — keep my account</button>
+                  <button onClick={() => setDeleteStep(2)} style={{
+                    padding: '10px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid #E0E0E0',
+                    background: '#FFFFFF',
+                    color: '#666666',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                  }}>Continue</button>
                 </div>
               </>
             )}
@@ -103,18 +126,58 @@ export default function DeleteAccountSection() {
             {/* Step 2 — Type to confirm */}
             {deleteStep === 2 && (
               <>
-                <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--color-text-primary)', margin: '0 0 6px' }}>Confirm deletion</p>
-                <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', margin: '0 0 20px', lineHeight: 1.6 }}>
-                  Type <strong style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>DELETE</strong> to permanently delete your account.
+                <p style={{ fontSize: 15, fontWeight: 500, color: '#111111', margin: '0 0 6px' }}>Confirm deletion</p>
+                <p style={{ fontSize: 12, color: '#666666', margin: '0 0 20px', lineHeight: 1.6 }}>
+                  Type <strong style={{ color: '#111111', fontFamily: 'monospace' }}>DELETE</strong> to permanently delete your account.
                 </p>
-                <input type="text" value={deleteInput} onChange={e => setDeleteInput(e.target.value)} placeholder="Type DELETE here"
-                  autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-mono)', border: inputMatches ? '0.5px solid var(--color-border-danger)' : '0.5px solid var(--color-border-tertiary)', background: 'var(--color-background-secondary)', color: 'var(--color-text-primary)', marginBottom: 12, boxSizing: 'border-box', outline: 'none' }} />
-                {deleteError && <p style={{ fontSize: 11, color: 'var(--color-text-danger)', margin: '0 0 12px' }}>{deleteError}</p>}
+                <input
+                  type="text"
+                  value={deleteInput}
+                  onChange={e => setDeleteInput(e.target.value)}
+                  placeholder="Type DELETE here"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontFamily: 'monospace',
+                    border: '1.5px solid #E0E0E0',
+                    background: '#FAFAFA',
+                    color: '#111111',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    marginBottom: 12,
+                  }}
+                />
+                {deleteError && <p style={{ fontSize: 11, color: '#CC0000', margin: '0 0 12px' }}>{deleteError}</p>}
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {btn(closeDeleteModal, 'Cancel', { flex: 1 })}
+                  <button onClick={closeDeleteModal} style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid #E0E0E0',
+                    background: '#F5F5F5',
+                    color: '#333333',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                  }}>Cancel</button>
                   <button onClick={handleDeleteAccount} disabled={!inputMatches}
-                    style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600, cursor: inputMatches ? 'pointer' : 'not-allowed', background: inputMatches ? '#FF3B30' : 'var(--color-background-secondary)', color: inputMatches ? '#FFFFFF' : 'var(--color-text-tertiary)', transition: 'all 0.15s ease' }}>
+                    style={{
+                      padding: '10px 20px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      cursor: inputMatches ? 'pointer' : 'not-allowed',
+                      background: inputMatches ? '#FF3B30' : '#F0F0F0',
+                      color: inputMatches ? '#FFFFFF' : '#AAAAAA',
+                      transition: 'all 0.15s ease',
+                    }}>
                     Delete my account
                   </button>
                 </div>
@@ -124,9 +187,9 @@ export default function DeleteAccountSection() {
             {/* Step 3 — Deleting */}
             {deleteStep === 3 && (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <i className="ti ti-trash" style={{ fontSize: 32, color: 'var(--color-text-danger)', marginBottom: 12, display: 'block' }} aria-hidden="true" />
-                <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--color-text-primary)', margin: '0 0 6px' }}>Deleting your account...</p>
-                <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: 0 }}>Please do not close this window.</p>
+                <i className="ti ti-trash" style={{ fontSize: 32, color: '#CC0000', marginBottom: 12, display: 'block' }} aria-hidden="true" />
+                <p style={{ color: '#111111', fontSize: 15, fontWeight: 500, margin: '0 0 6px' }}>Deleting your account...</p>
+                <p style={{ color: '#666666', fontSize: 12, margin: 0 }}>Please do not close this window.</p>
               </div>
             )}
           </div>
