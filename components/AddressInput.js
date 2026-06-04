@@ -1,37 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-
-const SZCZECIN_BBOX = '14.39,53.35,14.61,53.50'
-
-const searchPhoton = async (query) => {
-  if (!query || query.length < 3) return []
-  try {
-    const url = `https://photon.komoot.io/api/?q=${
-      encodeURIComponent(query + ' Szczecin')
-    }&limit=5&lang=pl&bbox=${SZCZECIN_BBOX}`
-    const res = await fetch(url)
-    if (!res.ok) return []
-    const data = await res.json()
-    return (data.features || [])
-      .filter(f =>
-        f.properties?.city === 'Szczecin' ||
-        f.properties?.county?.includes('Szczecin')
-      )
-      .map(f => {
-        const p = f.properties
-        return {
-          street: p.street || p.name || '',
-          houseNumber: p.housenumber || '',
-          postcode: p.postcode || '',
-          city: p.city || 'Szczecin',
-          lat: f.geometry?.coordinates?.[1] || null,
-          lng: f.geometry?.coordinates?.[0] || null,
-        }
-      })
-      .filter(r => r.street)
-  } catch { return [] }
-}
+import { searchAddresses } from '@/lib/addressSearch'
 
 const parsePolishAddress = (raw) => {
   if (!raw || raw.length < 5) return null
@@ -122,7 +92,7 @@ export default function AddressInput({
     if (!val || val.length < 3) { setSuggestions([]); setLoadingSuggestions(false); return }
     setLoadingSuggestions(true)
     debounceRef.current = setTimeout(async () => {
-      const results = await searchPhoton(val)
+      const results = await searchAddresses(val, 'pl')
       setSuggestions(results)
       setLoadingSuggestions(false)
     }, 300)
@@ -348,7 +318,7 @@ export default function AddressInput({
                   </button>
                 ))}
                 <div style={{ padding: '5px 14px', background: 'var(--color-background-primary)', borderTop: '0.5px solid var(--color-border-tertiary, #E0E0E0)' }}>
-                  <span style={{ color: 'var(--color-text-tertiary)', fontSize: '10px' }}>OpenStreetMap · Photon · bez klucza API</span>
+                  <span style={{ color: 'var(--color-text-tertiary)', fontSize: '10px' }}>HERE Maps · Photon fallback</span>
                 </div>
               </div>
             )}
