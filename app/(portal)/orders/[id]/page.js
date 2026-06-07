@@ -40,6 +40,7 @@ export default function OrderPage({ params }) {
   const [onlineDrivers, setOnlineDrivers] = useState([])
   const [selectedDriverId, setSelectedDriverId] = useState('')
   const [assigningDriver, setAssigningDriver] = useState(false)
+  const [proofSignedUrl, setProofSignedUrl] = useState(null)
 
   useEffect(() => {
     supabase.from('platform_settings').select('value').eq('key', 'cs_response_time').single()
@@ -95,6 +96,14 @@ export default function OrderPage({ params }) {
     return () => supabase.removeChannel(channel)
   }, [params.id])
 
+  useEffect(() => {
+    if (!order?.proof_photo_path) return
+    supabase.storage
+      .from('proof-photos')
+      .createSignedUrl(order.proof_photo_path, 86400)
+      .then(({ data }) => { if (data?.signedUrl) setProofSignedUrl(data.signedUrl) })
+  }, [order?.proof_photo_path])
+
   if (loading) return (
     <div style={{ minHeight: '100vh', background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4FF00', fontSize: 18, fontWeight: 700 }}>
       {t('loading')}
@@ -106,8 +115,10 @@ export default function OrderPage({ params }) {
     </div>
   )
 
-  const isPaid = order.status !== 'awaiting_payment'
+  const isPaid = order.status !== 'awaiting_payment' && order.payment_status !== 'awaiting'
+  const isPaymentAwaiting = order.payment_status === 'awaiting'
   const isDelivered = order.status === 'delivered'
+  const proofPhotoUrl = proofSignedUrl || (order.proof_photo_url?.startsWith('https://') ? order.proof_photo_url : null)
 
   const submitReport = async () => {
     if (!reportCategory) return
@@ -173,7 +184,28 @@ export default function OrderPage({ params }) {
 
   const actionsBlock = (
     <div style={{ marginTop: 24 }}>
-      {!isPaid && (
+      {isPaymentAwaiting && (
+        <div style={{ marginBottom: 16, background: colors.card, border: '1px solid ' + colors.border, borderRadius: 12, padding: 20 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: colors.text, marginBottom: 12 }}>
+            💳 {order.payment_method === 'bank_transfer' ? 'Przelew bankowy' : 'Płatność online'}
+          </div>
+          {order.payment_method !== 'bank_transfer' ? (
+            <>
+              <a href={revolutUrl} target="_blank" rel="noreferrer"
+                style={{ display: 'block', background: '#D4FF00', color: '#000', padding: '16px 24px', borderRadius: 10, fontWeight: 900, textDecoration: 'none', fontSize: 16, textAlign: 'center', marginBottom: 8 }}>
+                {t('payNow')} — {priceFormatted} →
+              </a>
+              <div style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center' }}>{t('alreadyPaid')}</div>
+            </>
+          ) : (
+            <div style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.6 }}>
+              <div>Tytuł: <strong style={{ color: colors.text }}>LGK {displayId}</strong></div>
+              <div style={{ fontSize: 12, marginTop: 4, opacity: 0.7 }}>Kwota: {priceFormatted} · Płatność wymagana przed wysyłką</div>
+            </div>
+          )}
+        </div>
+      )}
+      {!isPaid && !isPaymentAwaiting && (
         <div style={{ marginBottom: 16 }}>
           <a href={revolutUrl} target="_blank" rel="noreferrer"
             style={{ display: 'block', background: '#D4FF00', color: '#000', padding: '18px 24px', borderRadius: 12, fontWeight: 900, textDecoration: 'none', fontSize: 18, textAlign: 'center', marginBottom: 8 }}>
@@ -202,10 +234,16 @@ export default function OrderPage({ params }) {
       )}
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', borderTop: '1px solid ' + colors.border, paddingTop: 12 }}>
         {isDelivered && (
-          <button onClick={() => window.print()}
-            style={{ background: 'none', border: 'none', color: colors.textSecondary, fontSize: 13, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
-            {t('invoiceDownload')}
-          </button>
+          <>
+            <a href={'/orders/' + order['id'] + '/receipt'}
+              style={{ background: 'none', border: 'none', color: colors.textSecondary, fontSize: 13, cursor: 'pointer', padding: 0, textDecoration: 'underline', fontFamily: 'inherit', display: 'inline' }}>
+              🖨️ Potwierdzenie dostawy (PDF)
+            </a>
+            <button onClick={() => window.print()}
+              style={{ background: 'none', border: 'none', color: colors.textSecondary, fontSize: 13, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+              {t('invoiceDownload')}
+            </button>
+          </>
         )}
         <button onClick={() => setShowReportForm(!showReportForm)}
           style={{ background: 'none', border: 'none', color: colors.textSecondary, fontSize: 13, cursor: 'pointer', padding: 0, textDecoration: 'underline', marginLeft: 'auto' }}>
@@ -325,16 +363,22 @@ export default function OrderPage({ params }) {
             {order.proof_photo_url ? (
               <div style={{ background: colors.card, border: '1px solid #00C85360', borderRadius: 16, padding: 28, marginBottom: 24, boxShadow: '0 2px 16px rgba(0,200,83,0.08)' }}>
                 <div style={{ fontWeight: 700, marginBottom: 16, color: '#00C853', fontSize: 18 }}>{t('proofOfDelivery')}</div>
-                {order.proof_photo_url?.startsWith('https://') && (
-                  <img src={order.proof_photo_url} alt="Proof" style={{ width: '100%', borderRadius: 8, marginBottom: 16 }} />
+                {proofPhotoUrl && (
+                  <img src={proofPhotoUrl} alt="Proof" style={{ width: '100%', borderRadius: 8, marginBottom: 16 }} />
+                )}
+                {order.signature_url && (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Podpis odbiorcy</div>
+                    <img src={order.signature_url} alt="Signature" style={{ maxWidth: 200, height: 80, objectFit: 'contain', border: '1px solid ' + colors.border, borderRadius: 6 }} />
+                  </div>
                 )}
                 {order.gps_proof && !isNaN(Number(order.gps_proof.lat)) && !isNaN(Number(order.gps_proof.lng)) && (
                   <div style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 12, fontFamily: "'Fira Code', monospace" }}>
                     GPS: {Number(order.gps_proof.lat).toFixed(6)}, {Number(order.gps_proof.lng).toFixed(6)}
                   </div>
                 )}
-                {order.proof_photo_url?.startsWith('https://') && (
-                  <a href={order.proof_photo_url} download style={{ background: '#00C853', color: '#000', padding: '10px 20px', borderRadius: 8, fontWeight: 700, textDecoration: 'none', fontSize: 14, display: 'inline-block' }}>{t('downloadProof')}</a>
+                {proofPhotoUrl && (
+                  <a href={proofPhotoUrl} download style={{ background: '#00C853', color: '#000', padding: '10px 20px', borderRadius: 8, fontWeight: 700, textDecoration: 'none', fontSize: 14, display: 'inline-block' }}>{t('downloadProof')}</a>
                 )}
               </div>
             ) : (
