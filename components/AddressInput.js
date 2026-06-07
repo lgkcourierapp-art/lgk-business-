@@ -115,6 +115,7 @@ export default function AddressInput({
   const [customerInfo, setCustomerInfo] = useState(null)
   const debounceRef = useRef(null)
   const containerRef = useRef(null)
+  const [searchDone, setSearchDone] = useState(false)
 
   useEffect(() => {
     if (!clientId || !showSaved) { setMode('search'); return }
@@ -143,9 +144,15 @@ export default function AddressInput({
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  const acceptTyped = () => {
+    if (searchText.trim().length < 3) return
+    selectAddress({ address: searchText.trim(), city: 'Szczecin', postcode: '', lat: null, lng: null }, true)
+  }
+
   const handleSearchChange = (e) => {
     const val = e.target.value
     setSearchText(val)
+    setSearchDone(false)
     clearTimeout(debounceRef.current)
     if (!val || val.length < 3) { setSuggestions([]); setLoadingSuggestions(false); return }
     setLoadingSuggestions(true)
@@ -153,7 +160,19 @@ export default function AddressInput({
       const results = await searchAddresses(val, lang)
       setSuggestions(results)
       setLoadingSuggestions(false)
+      setSearchDone(true)
     }, 300)
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (suggestions.length > 0) {
+        handleSelectSuggestion(suggestions[0])
+      } else if (searchText.trim().length >= 3) {
+        acceptTyped()
+      }
+    }
   }
 
   const handlePaste = (e) => {
@@ -343,6 +362,7 @@ export default function AddressInput({
             <input
               value={searchText}
               onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
               onPaste={handlePaste}
               placeholder={placeholder || defaultPlaceholder}
               autoComplete="off"
@@ -382,6 +402,20 @@ export default function AddressInput({
               </div>
             )}
           </div>
+          {searchText.length >= 3 && suggestions.length === 0 && !loadingSuggestions && (
+            <button
+              onMouseDown={(e) => { e.preventDefault(); acceptTyped() }}
+              style={{
+                display: 'block', width: '100%', marginTop: '6px',
+                padding: '9px 12px', borderRadius: '8px', border: 'none',
+                background: 'rgba(212,255,0,0.12)', color: '#D4FF00',
+                fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                textAlign: 'left', fontFamily: 'inherit',
+              }}
+            >
+              ✓ {lang === 'pl' ? 'Użyj:' : 'Use:'} {searchText}
+            </button>
+          )}
           <div style={{ color: 'var(--color-text-tertiary, #9CA3AF)', fontSize: '11px', marginTop: '6px' }}>
             {a.hint}
           </div>
