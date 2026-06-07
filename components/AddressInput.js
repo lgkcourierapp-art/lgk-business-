@@ -2,6 +2,62 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { searchAddresses } from '@/lib/addressSearch'
+import { useApp } from '@/utils/appContext'
+
+const ADDR_STRINGS = {
+  pl: {
+    loading: '…',
+    searching: 'szukam…',
+    use: 'Użyj →',
+    otherPickup: 'Inny adres odbioru',
+    otherDelivery: 'Inny adres dostawy',
+    hint: 'Pisz aby szukać lub wklej pełny adres (Ctrl+V / ⌘V)',
+    savedAddresses: '← Zapisane adresy',
+    change: 'Zmień',
+    orders1: 'zamówienie',
+    orders2_4: 'zamówienia',
+    orders5: 'zamówień',
+    total: 'łącznie',
+    lastOrder: 'Ostatnie zamówienie:',
+    prevNote: 'Poprzednia notatka:',
+    useNote: 'Użyj ↑',
+    deliveredBefore: 'Dostarczyłeś tu już wcześniej.',
+    savePermanent: 'Zapisać jako stały odbiorca?',
+    saveLabelPlaceholder: 'Np. "Jan Kowalski", "Restaurant Morska"',
+    save: 'Zapisz',
+    notNow: 'Nie teraz',
+    never: 'Nigdy',
+    vip: 'VIP',
+    regularLong: 'Stały klient',
+    loyalLong: 'Wierny klient',
+  },
+  en: {
+    loading: '…',
+    searching: 'searching…',
+    use: 'Use →',
+    otherPickup: 'Different pickup address',
+    otherDelivery: 'Different delivery address',
+    hint: 'Type to search or paste full address (Ctrl+V / ⌘V)',
+    savedAddresses: '← Saved addresses',
+    change: 'Change',
+    orders1: 'order',
+    orders2_4: 'orders',
+    orders5: 'orders',
+    total: 'total',
+    lastOrder: 'Last order:',
+    prevNote: 'Previous note:',
+    useNote: 'Use ↑',
+    deliveredBefore: 'You have delivered here before.',
+    savePermanent: 'Save as a regular recipient?',
+    saveLabelPlaceholder: '"Jan Kowalski" or "Restaurant Marina"',
+    save: 'Save',
+    notNow: 'Not now',
+    never: 'Never',
+    vip: 'VIP',
+    regularLong: 'Regular',
+    loyalLong: 'Loyal',
+  },
+}
 
 const parsePolishAddress = (raw) => {
   if (!raw || raw.length < 5) return null
@@ -34,7 +90,7 @@ const hashAddress = (addr) =>
 
 export default function AddressInput({
   label,
-  placeholder = 'Zacznij pisać lub wklej adres...',
+  placeholder,
   addressType = 'delivery',
   clientId,
   showSaved = true,
@@ -42,6 +98,10 @@ export default function AddressInput({
   onChange,
   onReuseNote,
 }) {
+  const { lang } = useApp()
+  const a = ADDR_STRINGS[lang === 'pl' ? 'pl' : 'en']
+  const defaultPlaceholder = lang === 'pl' ? 'Zacznij pisać lub wklej adres...' : 'Start typing or paste address...'
+
   const [savedAddresses, setSavedAddresses] = useState([])
   const [mode, setMode] = useState('loading')
   const [selected, setSelected] = useState(null)
@@ -56,7 +116,6 @@ export default function AddressInput({
   const debounceRef = useRef(null)
   const containerRef = useRef(null)
 
-  // Load saved addresses on mount
   useEffect(() => {
     if (!clientId || !showSaved) { setMode('search'); return }
     supabase
@@ -74,7 +133,6 @@ export default function AddressInput({
       })
   }, [clientId, showSaved, addressType])
 
-  // Close suggestions on outside click
   useEffect(() => {
     const handler = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -92,7 +150,7 @@ export default function AddressInput({
     if (!val || val.length < 3) { setSuggestions([]); setLoadingSuggestions(false); return }
     setLoadingSuggestions(true)
     debounceRef.current = setTimeout(async () => {
-      const results = await searchAddresses(val, 'pl')
+      const results = await searchAddresses(val, lang)
       setSuggestions(results)
       setLoadingSuggestions(false)
     }, 300)
@@ -149,13 +207,11 @@ export default function AddressInput({
     }
     selectAddress(addrObj, false)
 
-    // Increment use_count (fire and forget)
     supabase.from('saved_addresses')
       .update({ use_count: (addr.use_count || 0) + 1 })
       .eq('id', addr['id'])
       .then(() => {})
 
-    // Load order history for customer recognition
     if (!clientId || !addressStr) return
     const { data: history } = await supabase
       .from('deliveries')
@@ -170,9 +226,9 @@ export default function AddressInput({
     const totalValue = history.reduce((s, d) => s + (d.amount_pln || 0), 0)
     const lastOrder = history[0]?.created_at
     const lastNote = history[0]?.courier_note || ''
-    const badge = orderCount >= 11 ? 'VIP'
-      : orderCount >= 6 ? 'Wierny klient'
-      : orderCount >= 3 ? 'Stały klient'
+    const badge = orderCount >= 11 ? a.vip
+      : orderCount >= 6 ? a.loyalLong
+      : orderCount >= 3 ? a.regularLong
       : null
     setCustomerInfo({ orderCount, totalValue, lastOrder, lastNote, badge })
   }
@@ -198,8 +254,8 @@ export default function AddressInput({
         .eq('client_id', clientId).order('use_count', { ascending: false })
       const all = data || []
       const filtered = addressType === 'pickup'
-        ? all.filter(a => a.address_type !== 'delivery')
-        : all.filter(a => a.address_type !== 'pickup')
+        ? all.filter(x => x.address_type !== 'delivery')
+        : all.filter(x => x.address_type !== 'pickup')
       setSavedAddresses(filtered)
     } catch (err) {
       console.error('Save address error:', err)
@@ -218,6 +274,13 @@ export default function AddressInput({
     onChange?.(null)
   }
 
+  const orderCountLabel = (n) => {
+    if (lang !== 'pl') return n + ' ' + (n === 1 ? a.orders1 : a.orders2_4)
+    if (n === 1) return n + ' ' + a.orders1
+    if (n >= 2 && n <= 4) return n + ' ' + a.orders2_4
+    return n + ' ' + a.orders5
+  }
+
   const inputBase = {
     width: '100%', padding: '12px 14px',
     background: 'var(--color-background-primary, #FAFAFA)',
@@ -229,17 +292,14 @@ export default function AddressInput({
 
   return (
     <div ref={containerRef}>
-      {/* Label */}
       <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: '15px', marginBottom: '10px' }}>
         {label}{required && <span style={{ color: '#FF3B30', marginLeft: 2 }}>*</span>}
       </div>
 
-      {/* Loading */}
       {mode === 'loading' && (
-        <div style={{ color: 'var(--color-text-tertiary)', fontSize: 13, padding: '8px 0', opacity: 0.6 }}>…</div>
+        <div style={{ color: 'var(--color-text-tertiary)', fontSize: 13, padding: '8px 0', opacity: 0.6 }}>{a.loading}</div>
       )}
 
-      {/* Saved addresses list */}
       {mode === 'saved' && (
         <div>
           {savedAddresses.slice(0, 5).map(addr => (
@@ -261,7 +321,7 @@ export default function AddressInput({
                   {addr.street} {addr.house_number}{addr.apartment ? '/' + addr.apartment : ''}, {addr.city}
                 </div>
               </div>
-              <span style={{ color: '#D4FF00', fontWeight: 700, fontSize: '12px', flexShrink: 0 }}>Użyj →</span>
+              <span style={{ color: '#D4FF00', fontWeight: 700, fontSize: '12px', flexShrink: 0 }}>{a.use}</span>
             </button>
           ))}
           <button
@@ -272,12 +332,11 @@ export default function AddressInput({
               color: 'var(--color-text-secondary)', cursor: 'pointer', fontSize: '13px', textAlign: 'left',
             }}
           >
-            ✏️ {addressType === 'pickup' ? 'Inny adres odbioru' : 'Inny adres dostawy'}
+            ✏️ {addressType === 'pickup' ? a.otherPickup : a.otherDelivery}
           </button>
         </div>
       )}
 
-      {/* Search mode */}
       {mode === 'search' && (
         <div>
           <div style={{ position: 'relative' }}>
@@ -285,13 +344,13 @@ export default function AddressInput({
               value={searchText}
               onChange={handleSearchChange}
               onPaste={handlePaste}
-              placeholder={placeholder}
+              placeholder={placeholder || defaultPlaceholder}
               autoComplete="off"
               style={inputBase}
             />
             {loadingSuggestions && (
               <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#D4FF00', fontSize: 11 }}>
-                szukam…
+                {a.searching}
               </div>
             )}
             {suggestions.length > 0 && (
@@ -323,24 +382,22 @@ export default function AddressInput({
               </div>
             )}
           </div>
-          <div style={{ color: 'var(--color-text-tertiary)', fontSize: '11px', marginTop: '6px' }}>
-            Pisz aby szukać lub wklej pełny adres (Ctrl+V / ⌘V)
+          <div style={{ color: 'var(--color-text-tertiary, #9CA3AF)', fontSize: '11px', marginTop: '6px' }}>
+            {a.hint}
           </div>
           {savedAddresses.length > 0 && (
             <button
               onClick={() => setMode('saved')}
               style={{ background: 'transparent', border: 'none', color: 'var(--color-text-secondary)', fontSize: '12px', cursor: 'pointer', padding: '6px 0', textDecoration: 'underline' }}
             >
-              ← Zapisane adresy
+              {a.savedAddresses}
             </button>
           )}
         </div>
       )}
 
-      {/* Selected mode */}
       {mode === 'selected' && selected && (
         <div>
-          {/* Selected tile */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: '10px',
             padding: '12px 14px',
@@ -359,11 +416,10 @@ export default function AddressInput({
               onClick={reset}
               style={{ background: 'transparent', border: 'none', color: 'var(--color-text-secondary)', fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}
             >
-              Zmień
+              {a.change}
             </button>
           </div>
 
-          {/* Customer recognition panel */}
           {customerInfo && customerInfo.orderCount >= 2 && (
             <div style={{
               background: 'rgba(212,255,0,0.04)',
@@ -375,25 +431,22 @@ export default function AddressInput({
                 {customerInfo.badge && (
                   <span style={{
                     fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px',
-                    background: customerInfo.badge === 'VIP' ? '#D4FF00' : 'rgba(212,255,0,0.15)',
-                    color: customerInfo.badge === 'VIP' ? '#0A0A0A' : '#D4FF00',
+                    background: customerInfo.badge === a.vip ? '#D4FF00' : 'rgba(212,255,0,0.15)',
+                    color: customerInfo.badge === a.vip ? '#0A0A0A' : '#D4FF00',
                     letterSpacing: '.3px',
                   }}>
                     {customerInfo.badge}
                   </span>
                 )}
                 <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-                  {customerInfo.orderCount}{' '}
-                  {customerInfo.orderCount === 1 ? 'zamówienie'
-                    : customerInfo.orderCount < 5 ? 'zamówienia'
-                    : 'zamówień'}
-                  {customerInfo.totalValue > 0 && ` · PLN ${customerInfo.totalValue.toFixed(0)} łącznie`}
+                  {orderCountLabel(customerInfo.orderCount)}
+                  {customerInfo.totalValue > 0 && ` · PLN ${customerInfo.totalValue.toFixed(0)} ${a.total}`}
                 </span>
               </div>
 
               {customerInfo.lastOrder && (
                 <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>
-                  Ostatnie zamówienie: {new Date(customerInfo.lastOrder).toLocaleDateString('pl-PL')}
+                  {a.lastOrder} {new Date(customerInfo.lastOrder).toLocaleDateString(lang === 'pl' ? 'pl-PL' : 'en-GB')}
                 </span>
               )}
 
@@ -403,20 +456,19 @@ export default function AddressInput({
                     fontSize: '11px', color: 'var(--color-text-tertiary)',
                     flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
-                    Poprzednia notatka: &quot;{customerInfo.lastNote}&quot;
+                    {a.prevNote} &quot;{customerInfo.lastNote}&quot;
                   </span>
                   <button
                     onClick={() => onReuseNote?.(customerInfo.lastNote)}
                     style={{ fontSize: '10px', fontWeight: '600', color: '#D4FF00', background: 'transparent', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '2px 6px' }}
                   >
-                    Użyj ↑
+                    {a.useNote}
                   </button>
                 </div>
               )}
             </div>
           )}
 
-          {/* Smart save prompt — shown on 2nd use of same address */}
           {showSavePrompt && (
             <div style={{
               marginTop: '10px',
@@ -425,17 +477,17 @@ export default function AddressInput({
               borderRadius: '8px', padding: '12px 14px',
             }}>
               <p style={{ fontSize: '13px', fontWeight: '500', color: 'var(--color-text-primary)', margin: '0 0 4px' }}>
-                Dostarczyłeś tu już wcześniej.
+                {a.deliveredBefore}
               </p>
               <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: '0 0 10px' }}>
-                Zapisać jako stały odbiorca?
+                {a.savePermanent}
               </p>
 
               <input
                 type="text"
                 value={saveLabel}
                 onChange={e => setSaveLabel(e.target.value)}
-                placeholder='Np. "Jan Kowalski", "Restaurant Morska"'
+                placeholder={a.saveLabelPlaceholder}
                 style={{
                   width: '100%', padding: '8px 10px', borderRadius: '6px',
                   border: '0.5px solid var(--color-border-tertiary)',
@@ -457,7 +509,7 @@ export default function AddressInput({
                     cursor: saveLabel.trim() ? 'pointer' : 'not-allowed',
                   }}
                 >
-                  {savingAddress ? '...' : 'Zapisz'}
+                  {savingAddress ? '...' : a.save}
                 </button>
                 <button
                   onClick={() => setShowSavePrompt(false)}
@@ -468,7 +520,7 @@ export default function AddressInput({
                     fontSize: '12px', cursor: 'pointer',
                   }}
                 >
-                  Nie teraz
+                  {a.notNow}
                 </button>
                 <button
                   onClick={() => {
@@ -481,7 +533,7 @@ export default function AddressInput({
                     fontSize: '11px', cursor: 'pointer',
                   }}
                 >
-                  Nigdy
+                  {a.never}
                 </button>
               </div>
             </div>
