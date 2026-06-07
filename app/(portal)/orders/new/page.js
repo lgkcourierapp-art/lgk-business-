@@ -251,16 +251,15 @@ export default function NewOrderPage() {
       const pickupDeadline = new Date(Date.now() + 30 * 60 * 1000)
 
       const pickupCity = profile?.pickup_address?.split(',').pop()?.trim() || 'Szczecin'
-      const orderId = await generateOrderNumber(supabase, pickupCity, '')
+      const orderNumber = await generateOrderNumber(supabase, pickupCity, '')
 
       const deliveryFull = [form.deliveryAddress, form.deliveryApartment]
         .filter(Boolean).join(', ')
 
-      const { error: insertError } = await supabase
+      const { data: order, error: insertError } = await supabase
         .from('deliveries')
         .insert({
-          id: orderId,
-          order_number: orderId,
+          order_number: orderNumber,
           client_id: user['id'],
           status: 'pending',
           order_source: 'portal',
@@ -299,6 +298,8 @@ export default function NewOrderPage() {
           market_currency: 'PLN',
           created_at: new Date().toISOString(),
         })
+        .select()
+        .single()
 
       if (insertError) throw insertError
 
@@ -310,7 +311,7 @@ export default function NewOrderPage() {
           .single()
         if (prof?.email) {
           emailOrderConfirmed(
-            { id: orderId, order_number: orderId, price_total: price, pickup_address: form.pickupAddress, delivery_address: deliveryFull },
+            { id: order['id'], order_number: orderNumber, price_total: price, pickup_address: form.pickupAddress, delivery_address: deliveryFull },
             prof.email,
             prof.company_name || ''
           ).catch(() => {})
@@ -318,7 +319,7 @@ export default function NewOrderPage() {
       } catch {}
 
       try { sessionStorage.removeItem(SESSION_KEY) } catch {}
-      router.push('/orders/' + orderId + '?created=true')
+      router.push('/orders/' + order['id'] + '?created=true')
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.')
       setSubmitting(false)

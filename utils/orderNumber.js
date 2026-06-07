@@ -72,7 +72,7 @@ export async function generateOrderNumber(supabase, pickupCity, pickupPostal) {
   try {
     const { data, error } = await supabase.rpc('get_next_order_sequence');
     if (error) throw error;
-    const seq = String(data).padStart(5, '0');
+    const seq = String(data || 1).padStart(5, '0');
     const base = `${cityCode}-${zoneCode}-${dateCode}-${seq}`;
     return `${base}-${calculateCheckDigit(base)}`;
   } catch (err) {
