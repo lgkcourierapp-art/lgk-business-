@@ -128,6 +128,7 @@ export default function NewOrderPage() {
   const s = STRINGS[appLang === 'pl' ? 'pl' : 'en']
   const [step, setStep] = useState(1)
   const [profile, setProfile] = useState(null)
+  const [showPickupOverride, setShowPickupOverride] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
@@ -158,6 +159,9 @@ export default function NewOrderPage() {
     deliveryNotes: '',
     deliveryPref: 'asap',
     paymentMethod: 'revolut',
+    pickupAddressOverride: '',
+    pickupLatOverride: null,
+    pickupLngOverride: null,
   })
 
   const setField = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
@@ -250,7 +254,11 @@ export default function NewOrderPage() {
       const estimatedDelivery = new Date(estimatedPickup.getTime() + 40 * 60 * 1000)
       const pickupDeadline = new Date(Date.now() + 30 * 60 * 1000)
 
-      const pickupCity = profile?.pickup_address?.split(',').pop()?.trim() || 'Szczecin'
+      const effectivePickupAddress = form.pickupAddressOverride || profile?.pickup_address || form.pickupAddress
+      const effectivePickupLat = form.pickupLatOverride ?? form.pickupLat ?? profile?.pickup_lat
+      const effectivePickupLng = form.pickupLngOverride ?? form.pickupLng ?? profile?.pickup_lng
+
+      const pickupCity = effectivePickupAddress?.split(',').pop()?.trim() || 'Szczecin'
       const orderNumber = await generateOrderNumber(supabase, pickupCity, '')
 
       const deliveryFull = [form.deliveryAddress, form.deliveryApartment]
@@ -270,9 +278,9 @@ export default function NewOrderPage() {
           is_fragile: form.isFragile,
           is_refrigerated: form.isRefrigerated,
           requires_signature: form.requiresSignature,
-          pickup_address: form.pickupAddress,
-          pickup_lat: form.pickupLat || profile?.pickup_lat,
-          pickup_lng: form.pickupLng || profile?.pickup_lng,
+          pickup_address: effectivePickupAddress,
+          pickup_lat: effectivePickupLat,
+          pickup_lng: effectivePickupLng,
           pickup_contact_name: profile?.pickup_contact_name || '',
           pickup_contact_phone: profile?.pickup_contact_phone || '',
           pickup_notes: form.pickupNotes || '',
@@ -504,22 +512,50 @@ export default function NewOrderPage() {
         {step === 2 && (
           <div style={{ marginTop: 20 }}>
             <div style={cardStyle}>
-              <AddressInput
-                label={form.pickupAddress ? s.pickup_prefilled : s.pickup_address}
-                placeholder={s.pickup_address_placeholder}
-                addressType="pickup"
-                clientId={profile?.['id']}
-                showSaved={true}
-                required={true}
-                onChange={(addr) => {
-                  if (!addr) return
-                  setField('pickupAddress', [addr.address, addr.city].filter(Boolean).join(', '))
-                  setField('pickupLat', addr.lat)
-                  setField('pickupLng', addr.lng)
-                  setFieldErrors(e => ({ ...e, pickupAddress: undefined }))
-                }}
-              />
-              {fieldErr('pickupAddress')}
+              {/* Read-only card from profile */}
+              <div style={{ border: '0.5px solid ' + colors.border, borderRadius: 8, padding: '12px 14px', background: colors.bg, marginBottom: 12 }}>
+                <p style={{ fontSize: 10, color: colors.textSecondary, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {appLang === 'pl' ? 'Adres odbioru (z profilu)' : 'Pickup address (from profile)'}
+                </p>
+                <p style={{ fontSize: 14, fontWeight: 500, margin: '0 0 2px', color: colors.text }}>
+                  {profile?.pickup_address || (appLang === 'pl' ? 'Brak adresu — uzupełnij w ustawieniach' : 'No address — add in settings')}
+                </p>
+                {profile?.pickup_contact_name && (
+                  <p style={{ fontSize: 12, color: colors.textSecondary, margin: 0 }}>
+                    {profile.pickup_contact_name}{profile.pickup_contact_phone ? ' · ' + profile.pickup_contact_phone : ''}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowPickupOverride(v => !v)}
+                  style={{ fontSize: 11, color: '#2563EB', background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}
+                >
+                  {showPickupOverride
+                    ? (appLang === 'pl' ? '↑ Użyj adresu z profilu' : '↑ Use profile address')
+                    : (appLang === 'pl' ? 'Użyj innego adresu dla tego zamówienia' : 'Use different address for this order')}
+                </button>
+              </div>
+              {showPickupOverride && (
+                <div style={{ marginBottom: 4 }}>
+                  <AddressInput
+                    label={appLang === 'pl' ? 'Inny adres odbioru' : 'Different pickup address'}
+                    placeholder={s.pickup_address_placeholder}
+                    addressType="pickup"
+                    clientId={profile?.['id']}
+                    showSaved={false}
+                    required={false}
+                    onChange={(addr) => {
+                      if (!addr) { setField('pickupAddressOverride', ''); setField('pickupLatOverride', null); setField('pickupLngOverride', null); return }
+                      setField('pickupAddressOverride', [addr.address, addr.city].filter(Boolean).join(', '))
+                      setField('pickupLatOverride', addr.lat)
+                      setField('pickupLngOverride', addr.lng)
+                    }}
+                  />
+                  <p style={{ fontSize: 11, color: colors.textSecondary, margin: '4px 0 0' }}>
+                    {appLang === 'pl' ? 'Dotyczy tylko tego zamówienia. Nie zmienia adresu w profilu.' : 'This order only. Does not change your profile address.'}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div style={cardStyle}>

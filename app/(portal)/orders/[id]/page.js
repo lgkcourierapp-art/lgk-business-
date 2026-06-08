@@ -6,6 +6,7 @@ import StatusBadge from '@/components/StatusBadge'
 import Link from 'next/link'
 import { useApp } from '@/utils/appContext'
 import { formatCity, formatStreetAddress } from '@/utils/capitalize'
+import { calculateMismatchSurcharge, getSizeById } from '@/lib/packageSizes'
 
 const REVOLUT_USER = process.env.NEXT_PUBLIC_REVOLUT_USER || ''
 
@@ -41,6 +42,8 @@ export default function OrderPage({ params }) {
   const [selectedDriverId, setSelectedDriverId] = useState('')
   const [assigningDriver, setAssigningDriver] = useState(false)
   const [proofSignedUrl, setProofSignedUrl] = useState(null)
+  const [mismatchCountdown, setMismatchCountdown] = useState(null)
+  const [mismatchSubmitting, setMismatchSubmitting] = useState(false)
 
   useEffect(() => {
     supabase.from('platform_settings').select('value').eq('key', 'cs_response_time').single()
@@ -90,6 +93,10 @@ export default function OrderPage({ params }) {
             }
             return { ...prev, ...payload.new }
           })
+          if (payload.new.status === 'size_mismatch_pending') {
+            setStatusFlash(true)
+            setTimeout(() => setStatusFlash(false), 1000)
+          }
         }
       )
       .subscribe()
@@ -103,6 +110,50 @@ export default function OrderPage({ params }) {
       .createSignedUrl(order.proof_photo_path, 86400)
       .then(({ data }) => { if (data?.signedUrl) setProofSignedUrl(data.signedUrl) })
   }, [order?.proof_photo_path])
+
+  useEffect(() => {
+    if (order?.status !== 'size_mismatch_pending' || !order?.mismatch_reported_at) {
+      setMismatchCountdown(null)
+      return
+    }
+    const tick = () => {
+      const elapsed = (Date.now() - new Date(order.mismatch_reported_at).getTime()) / 1000
+      const remaining = Math.max(0, 300 - Math.floor(elapsed))
+      setMismatchCountdown(remaining)
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [order?.status, order?.mismatch_reported_at])
+
+  const handleMismatchApprove = async () => {
+    if (!order || mismatchSubmitting) return
+    setMismatchSubmitting(true)
+    const surcharge = calculateMismatchSurcharge(
+      order.package_type || 'standard',
+      order.reported_size || order.package_type || 'standard',
+      order.amount_pln || order.price_total || 0
+    )
+    await supabase.from('deliveries').update({
+      status: 'assigned',
+      size_mismatch_resolved: 'approved',
+      size_mismatch_surcharge: surcharge,
+      price_total: (order.price_total || 0) + surcharge,
+      amount_pln: (order.amount_pln || order.price_total || 0) + surcharge,
+    }).eq('id', order['id'])
+    setMismatchSubmitting(false)
+  }
+
+  const handleMismatchCancel = async () => {
+    if (!order || mismatchSubmitting) return
+    setMismatchSubmitting(true)
+    await supabase.from('deliveries').update({
+      status: 'cancelled',
+      size_mismatch_resolved: 'cancelled',
+      size_mismatch_fee: 15,
+    }).eq('id', order['id'])
+    setMismatchSubmitting(false)
+  }
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4FF00', fontSize: 18, fontWeight: 700 }}>
@@ -153,6 +204,85 @@ export default function OrderPage({ params }) {
 
   const fmt = ts => ts ? new Date(ts).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : null
   const cardStyle = { background: colors.card, border: '1px solid ' + colors.border, borderRadius: 12, padding: 20, marginBottom: 16 }
+
+  const declaredSize = getSizeById(order.package_type || 'standard')
+  const reportedSize = getSizeById(order.reported_size || order.package_type || 'standard')
+  const mismatchSurcharge = calculateMismatchSurcharge(
+    order.package_type || 'standard',
+    order.reported_size || order.package_type || 'standard',
+    order.amount_pln || order.price_total || 0
+  )
+  const mismatchMinutes = mismatchCountdown !== null ? Math.floor(mismatchCountdown / 60) : 0
+  const mismatchSeconds = mismatchCountdown !== null ? mismatchCountdown % 60 : 0
+  const mismatchExpired = mismatchCountdown === 0
+
+  const mismatchBanner = order.status === 'size_mismatch_pending' && (
+    <div style={{ background: '#FF950015', border: '2px solid #FF9500', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <div style={{ color: '#FF9500', fontWeight: 900, fontSize: 16, marginBottom: 2 }}>
+            ⚠️ {lang === 'pl' ? 'Niezgodność rozmiaru paczki' : 'Package size mismatch'}
+          </div>
+          <div style={{ color: colors.textSecondary, fontSize: 12 }}>
+            {lang === 'pl' ? 'Kurier zgłosił inny rozmiar niż zadeklarowany.' : 'Courier reported a different size than declared.'}
+          </div>
+        </div>
+        {mismatchCountdown !== null && (
+          <div style={{ background: mismatchExpired ? '#FF3B3020' : '#FF950020', border: '1px solid ' + (mismatchExpired ? '#FF3B30' : '#FF9500'), borderRadius: 8, padding: '6px 12px', textAlign: 'center' }}>
+            <div style={{ color: mismatchExpired ? '#FF3B30' : '#FF9500', fontWeight: 900, fontFamily: "'Fira Code', monospace", fontSize: 20 }}>
+              {mismatchExpired ? (lang === 'pl' ? 'WYGASŁO' : 'EXPIRED') : String(mismatchMinutes).padStart(2, '0') + ':' + String(mismatchSeconds).padStart(2, '0')}
+            </div>
+            {!mismatchExpired && <div style={{ color: colors.textSecondary, fontSize: 10 }}>{lang === 'pl' ? 'pozostało' : 'remaining'}</div>}
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+        <div style={{ background: colors.card, border: '1px solid ' + colors.border, borderRadius: 8, padding: '10px 14px' }}>
+          <div style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>{lang === 'pl' ? 'Zadeklarowany' : 'Declared'}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: colors.text }}>{declaredSize?.icon} {lang === 'pl' ? declaredSize?.labelPL : declaredSize?.labelEN}</div>
+        </div>
+        <div style={{ color: '#FF9500', fontWeight: 700, fontSize: 18 }}>→</div>
+        <div style={{ background: '#FF950015', border: '1px solid #FF9500', borderRadius: 8, padding: '10px 14px' }}>
+          <div style={{ fontSize: 10, color: '#FF9500', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>{lang === 'pl' ? 'Faktyczny' : 'Actual'}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: colors.text }}>{reportedSize?.icon} {lang === 'pl' ? reportedSize?.labelPL : reportedSize?.labelEN}</div>
+        </div>
+      </div>
+
+      {mismatchSurcharge > 0 && (
+        <div style={{ background: colors.card, border: '1px solid ' + colors.border, borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: colors.text }}>
+          {lang === 'pl'
+            ? `Dopłata za korektę rozmiaru: PLN ${mismatchSurcharge}`
+            : `Size correction surcharge: PLN ${mismatchSurcharge}`}
+        </div>
+      )}
+
+      {!mismatchExpired && !mismatchSubmitting && (
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={handleMismatchApprove}
+            style={{ flex: 1, background: '#D4FF00', color: '#000', border: 'none', padding: '13px 16px', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            {lang === 'pl' ? `Zatwierdź — dopłata PLN ${mismatchSurcharge}` : `Approve — pay PLN ${mismatchSurcharge} surcharge`}
+          </button>
+          <button
+            onClick={handleMismatchCancel}
+            style={{ background: 'transparent', color: '#FF3B30', border: '1px solid #FF3B30', padding: '13px 16px', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+          >
+            {lang === 'pl' ? 'Anuluj (PLN 15)' : 'Cancel (PLN 15)'}
+          </button>
+        </div>
+      )}
+      {mismatchSubmitting && (
+        <div style={{ color: colors.textSecondary, fontSize: 14 }}>{lang === 'pl' ? 'Przetwarzanie…' : 'Processing…'}</div>
+      )}
+      {mismatchExpired && !mismatchSubmitting && (
+        <div style={{ color: '#FF3B30', fontSize: 13, fontWeight: 600 }}>
+          {lang === 'pl' ? 'Czas minął. Zlecenie zostanie anulowane automatycznie.' : 'Time expired. Order will be cancelled automatically.'}
+        </div>
+      )}
+    </div>
+  )
 
   const addressGrid = (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
@@ -400,6 +530,7 @@ export default function OrderPage({ params }) {
               ))}
             </div>
 
+            {mismatchBanner}
             {addressGrid}
             {priceRow}
             {actionsBlock}
@@ -446,6 +577,7 @@ export default function OrderPage({ params }) {
               ))}
             </div>
 
+            {mismatchBanner}
             {assignDriverBlock}
             {addressGrid}
             {priceRow}
