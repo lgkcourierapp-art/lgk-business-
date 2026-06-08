@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { searchAddresses } from '@/lib/addressSearch'
+import { searchAddresses, cleanQuery } from '@/lib/addressSearch'
 import { useApp } from '@/utils/appContext'
 
 const ADDR_STRINGS = {
@@ -145,8 +145,10 @@ export default function AddressInput({
   }, [])
 
   const acceptTyped = () => {
-    if (searchText.trim().length < 3) return
-    selectAddress({ address: searchText.trim(), city: 'Szczecin', postcode: '', lat: null, lng: null }, true)
+    if (searchText.trim().length < 2) return
+    const cleaned = cleanQuery(searchText.trim())
+    const displayValue = cleaned.length >= 2 ? cleaned : searchText.trim()
+    selectAddress({ address: displayValue, city: 'Szczecin', postcode: '', lat: null, lng: null }, true)
   }
 
   const handleSearchChange = (e) => {
@@ -154,7 +156,8 @@ export default function AddressInput({
     setSearchText(val)
     setSearchDone(false)
     clearTimeout(debounceRef.current)
-    if (!val || val.length < 3) { setSuggestions([]); setLoadingSuggestions(false); return }
+    if (val.trim()) onChange?.({ address: val.trim(), city: 'Szczecin', postcode: '', lat: null, lng: null })
+    if (!val || val.length < 2) { setSuggestions([]); setLoadingSuggestions(false); return }
     setLoadingSuggestions(true)
     debounceRef.current = setTimeout(async () => {
       const results = await searchAddresses(val, lang)
@@ -169,7 +172,7 @@ export default function AddressInput({
       e.preventDefault()
       if (suggestions.length > 0) {
         handleSelectSuggestion(suggestions[0])
-      } else if (searchText.trim().length >= 3) {
+      } else if (searchText.trim().length >= 2) {
         acceptTyped()
       }
     }
@@ -210,8 +213,11 @@ export default function AddressInput({
   }
 
   const handleSelectSuggestion = (s) => {
-    const addressStr = [s.street, s.houseNumber].filter(Boolean).join(' ')
-    selectAddress({ address: addressStr, city: s.city || 'Szczecin', postcode: s.postcode || '', lat: s.lat, lng: s.lng }, true)
+    const displayValue = [s.street, s.houseNumber].filter(Boolean).join(' ').trim()
+    setSearchText(displayValue || s.label)
+    setSuggestions([])
+    setSearchDone(false)
+    onChange?.({ address: displayValue || s.label, city: s.city || 'Szczecin', postcode: s.postcode || '', lat: s.lat, lng: s.lng })
   }
 
   const handleSelectSaved = async (addr) => {
@@ -287,7 +293,7 @@ export default function AddressInput({
     setSelected(null)
     setCustomerInfo(null)
     setShowSavePrompt(false)
-    setSearchText('')
+    setSearchText(selected?.address || '')
     setSuggestions([])
     setMode(savedAddresses.length > 0 ? 'saved' : 'search')
     onChange?.(null)
@@ -404,7 +410,7 @@ export default function AddressInput({
               </div>
             )}
           </div>
-          {searchText.length >= 3 && suggestions.length === 0 && !loadingSuggestions && searchDone && (
+          {searchText.length >= 2 && suggestions.length === 0 && !loadingSuggestions && searchDone && (
             <div style={{ padding: '10px 12px', fontSize: 13, color: '#9CA3AF', fontStyle: 'italic' }}>
               {lang === 'pl'
                 ? 'Brak wyników — wpisz pełny adres ręcznie'
