@@ -27,7 +27,7 @@ export default function PortalLayout({ children }) {
           .bottomnav-wrap { display: block; }
           .portal-header-wrap { margin-left: 0; }
           .portal-content { margin-left: 0; padding-bottom: 72px; }
-          .portal-bottom-bar { left: 0; bottom: 72px; }
+          .portal-bottom-bar { left: 0; bottom: 72px !important; }
         }
 
         @media print {
