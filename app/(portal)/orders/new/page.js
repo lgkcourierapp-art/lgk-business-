@@ -4,8 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AddressInput from '@/components/AddressInput'
-import { PACKAGE_SIZES, getSizeById, calculatePrice, estimateBasePrice } from '@/lib/packageSizes'
-import { generateOrderNumber } from '@/utils/orderNumber'
+import { PACKAGE_SIZES, getSizeById, calculatePrice, estimateBasePrice, getRoadDistanceKm, haversineDistance } from '@/lib/packageSizes'
 import { emailOrderConfirmed } from '@/utils/emailService'
 import { useApp } from '@/utils/appContext'
 import { t } from '@/lib/strings'
@@ -140,6 +139,8 @@ export default function NewOrderPage() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [price, setPrice] = useState(null)
   const [orderMode, setOrderMode] = useState('parcel')
+  const [roadDistanceKm, setRoadDistanceKm] = useState(null)
+  const [fetchingDistance, setFetchingDistance] = useState(false)
 
   const [form, setForm] = useState({
     packageSize: 'standard',
@@ -221,18 +222,21 @@ export default function NewOrderPage() {
   }, [router])
 
   useEffect(() => {
+    const pickupLat = form.pickupLat || profile?.pickup_lat
+    const pickupLng = form.pickupLng || profile?.pickup_lng
+    const distanceKm = roadDistanceKm ||
+      (form.deliveryLat && pickupLat
+        ? haversineDistance(pickupLat, pickupLng, form.deliveryLat, form.deliveryLng)
+        : null)
     const calculated = calculatePrice({
       sizeId: form.packageSize,
-      pickupLat: form.pickupLat || profile?.pickup_lat,
-      pickupLng: form.pickupLng || profile?.pickup_lng,
-      deliveryLat: form.deliveryLat,
-      deliveryLng: form.deliveryLng,
+      distanceKm,
       isFragile: form.isFragile,
       isRefrigerated: form.isRefrigerated,
     })
     setPrice(calculated)
   }, [
-    form.packageSize, form.deliveryLat, form.deliveryLng,
+    roadDistanceKm, form.packageSize, form.deliveryLat,
     form.isFragile, form.isRefrigerated,
     form.pickupLat, form.pickupLng,
     profile,
@@ -255,6 +259,40 @@ export default function NewOrderPage() {
     }
     return errs
   }, [step, form, s])
+
+  const generateOrderNumber = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_next_order_sequence')
+      if (!error && data) {
+        const year = new Date().getFullYear()
+        return `SZ-${String(data).padStart(4, '0')}-${year}`
+      }
+    } catch {}
+    return `SZ-${Date.now().toString(36).toUpperCase()}`
+  }
+
+  const handleDeliveryChange = (addr) => {
+    if (!addr) return
+    setField('deliveryAddress', [addr.address, addr.city].filter(Boolean).join(', '))
+    setField('deliveryStreet', addr.street || addr.address || '')
+    setField('deliveryCity', addr.city || 'Szczecin')
+    setField('deliveryPostcode', addr.postcode || '')
+    setField('deliveryLat', addr.lat)
+    setField('deliveryLng', addr.lng)
+    setFieldErrors(e => ({ ...e, deliveryAddress: undefined }))
+    if (addr.lat && addr.lng) {
+      const pickupLat = form.pickupLat || profile?.pickup_lat
+      const pickupLng = form.pickupLng || profile?.pickup_lng
+      if (pickupLat && pickupLng) {
+        setFetchingDistance(true)
+        getRoadDistanceKm(pickupLat, pickupLng, addr.lat, addr.lng, process.env.NEXT_PUBLIC_HERE_API_KEY)
+          .then(km => { setRoadDistanceKm(km); setFetchingDistance(false) })
+          .catch(() => setFetchingDistance(false))
+      }
+    } else {
+      setRoadDistanceKm(null)
+    }
+  }
 
   const handleNext = () => {
     const errs = validateStep()
@@ -282,8 +320,7 @@ export default function NewOrderPage() {
       const effectivePickupLat = form.pickupLatOverride ?? form.pickupLat ?? profile?.pickup_lat
       const effectivePickupLng = form.pickupLngOverride ?? form.pickupLng ?? profile?.pickup_lng
 
-      const pickupCity = effectivePickupAddress?.split(',').pop()?.trim() || 'Szczecin'
-      const orderNumber = await generateOrderNumber(supabase, pickupCity, '')
+      const orderNumber = await generateOrderNumber()
 
       const deliveryFull = [form.deliveryAddress, form.deliveryApartment]
         .filter(Boolean).join(', ')
@@ -323,6 +360,7 @@ export default function NewOrderPage() {
           recipient_phone: form.recipientPhone,
           amount_pln: price,
           price_total: price,
+          distance_km: roadDistanceKm,
           time_window: form.deliveryPref,
           estimated_pickup_at: estimatedPickup.toISOString(),
           estimated_delivery_at: estimatedDelivery.toISOString(),
@@ -678,7 +716,7 @@ export default function NewOrderPage() {
               {fieldErr('recipientPhone')}
               {form.recipientPhone && !fieldErrors.recipientPhone && (
                 <p style={{ fontSize: 11, color: colors.textSecondary, marginTop: 4, marginBottom: 0 }}>
-                  {form.recipientName || '...'} {s.sms_note}
+                  {form.recipientName ? `${form.recipientName} ${s.sms_note}` : s.sms_note}
                 </p>
               )}
             </div>
@@ -691,17 +729,18 @@ export default function NewOrderPage() {
                 clientId={profile?.['id']}
                 showSaved={true}
                 required={true}
-                onChange={(addr) => {
-                  if (!addr) return
-                  setField('deliveryAddress', [addr.address, addr.city].filter(Boolean).join(', '))
-                  setField('deliveryStreet', addr.address || '')
-                  setField('deliveryCity', addr.city || 'Szczecin')
-                  setField('deliveryPostcode', addr.postcode || '')
-                  setField('deliveryLat', addr.lat)
-                  setField('deliveryLng', addr.lng)
-                  setFieldErrors(e => ({ ...e, deliveryAddress: undefined }))
-                }}
+                onChange={handleDeliveryChange}
               />
+              {fetchingDistance && (
+                <p style={{ fontSize: 12, color: '#9CA3AF', margin: '4px 0 0' }}>
+                  {appLang === 'pl' ? 'Obliczanie trasy...' : 'Calculating route...'}
+                </p>
+              )}
+              {roadDistanceKm && !fetchingDistance && (
+                <p style={{ fontSize: 12, color: colors.textSecondary, margin: '4px 0 0' }}>
+                  {appLang === 'pl' ? `Trasa: ${roadDistanceKm.toFixed(1)} km drogi` : `Route: ${roadDistanceKm.toFixed(1)} km by road`}
+                </p>
+              )}
               {fieldErr('deliveryAddress')}
 
               <label style={labelStyle}>{s.apartment}</label>
@@ -775,9 +814,14 @@ export default function NewOrderPage() {
                 PLN {price ?? '—'}
               </div>
               <div style={{ color: colors.textSecondary, fontSize: 12 }}>{s.eta_note}</div>
+              {roadDistanceKm && (
+                <div style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
+                  {appLang === 'pl' ? `Trasa: ${roadDistanceKm.toFixed(1)} km drogi` : `Route: ${roadDistanceKm.toFixed(1)} km by road`}
+                </div>
+              )}
               {form.recipientPhone && (
                 <div style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
-                  {form.recipientName} {s.sms_note}
+                  {form.recipientName ? `${form.recipientName} ${s.sms_note}` : s.sms_note}
                 </div>
               )}
             </div>
