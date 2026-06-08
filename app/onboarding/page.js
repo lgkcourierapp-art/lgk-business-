@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AddressInput from '@/components/AddressInput'
+import { resolveLang } from '@/lib/lang'
 
 const STRINGS = {
   pl: {
@@ -69,7 +70,7 @@ const STRINGS = {
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const [lang, setLang] = useState('pl')
+  const [lang, setLang] = useState(() => resolveLang(null))
   const s = STRINGS[lang]
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
@@ -83,7 +84,7 @@ export default function OnboardingPage() {
     pickupLng: null,
     pickupContactName: '',
     pickupContactPhone: '',
-    language: 'pl',
+    language: resolveLang(null),
   })
 
   const setField = (k, v) => setForm(prev => ({ ...prev, [k]: v }))

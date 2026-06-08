@@ -1,7 +1,8 @@
 'use client';
 import { createContext, useContext, useState, useEffect } from 'react';
+import { resolveLang, SUPPORTED_LANGS } from '@/lib/lang';
 
-const AppContext = createContext({ t: k => k, lang: 'en', toggleLang: () => {}, colors: {} });
+const AppContext = createContext({ t: k => k, lang: 'pl', toggleLang: () => {}, colors: {} });
 
 export const TRANSLATIONS = {
   en: {
@@ -269,30 +270,98 @@ export const TRANSLATIONS = {
     weatherWindNote: 'Zabezpiecz paczki na rowerze cargo',
     weatherColdNote: 'Zasięg baterii e-roweru zmniejszony — planuj krótsze trasy',
     weatherHotNote: 'Weź dodatkową wodę — dbaj o nawodnienie',
-  }
+  },
+
+  uk: {
+    // Nav & layout
+    dashboard: 'Панель', newOrder: 'Нове замовлення', settings: 'Налаштування', logOut: 'Вийти',
+    poweredBy: 'Powered by LGK Courier',
+    // Dashboard
+    activeDeliveries: 'Активні доставки', pendingOrders: 'Очікуючі замовлення', completedToday: 'Завершено сьогодні',
+    orderHistory: 'Історія замовлень', track: 'Відстежити', reorder: 'Повторити', viewProof: 'Переглянути підтвердження',
+    viewDetails: 'Деталі',
+    noActive: 'Немає активних доставок', noPending: 'Немає очікуючих замовлень', noCompleted: 'Немає завершених доставок сьогодні',
+    searchOrders: 'Пошук замовлень...', allOrders: 'Всі замовлення', thisMonth: 'Цей місяць',
+    totalSpent: 'Всього витрачено', avgDelivery: 'Сер. час доставки',
+    loading: 'Завантаження...', refresh: '⟳ Оновити', updated: 'Оновлено', autoRefreshNote: 'автооновлення кожні 30с',
+    // Order card
+    from: 'ВІД', to: 'ДО', deliveredAt: 'Доставлено о', eta: 'ETA',
+    // Status labels
+    status_awaiting_payment: 'Очікує оплати', status_pending: 'Очікує', status_assigned: 'Призначено',
+    status_collected: 'Забрано', status_in_transit: 'В дорозі', status_delivered: 'Доставлено', status_cancelled: 'Скасовано',
+    // Settings
+    companyInfo: 'Інформація про компанію', billing: 'Оплата', notifications: 'Сповіщення',
+    saveChanges: 'Зберегти зміни', deleteAccount: 'Видалити акаунт', saving: 'Збереження...', saved: 'Збережено ✓',
+    language: 'Мова', theme: 'Тема', dark: 'Темна', light: 'Світла',
+    savedAddresses: 'Збережені адреси', noSavedAddresses: 'Немає збережених адрес.',
+    setDefault: 'Встановити за замовчуванням', delete: 'Видалити',
+    // Order form
+    placingOrder: 'Розміщення...', placeOrder: 'Розмістити замовлення', pickup: 'Забір', delivery: 'Доставка',
+    package: 'Пакет', options: 'Опції', priceBreakdown: 'Деталі ціни', total: 'Разом',
+    insurance: 'Страхування пакету', insuranceNote: 'Покриває втрату або пошкодження до 500 PLN',
+    fragile: 'Крихкий пакет', asap: 'Негайно (1-2 год.)', sameDay: 'Того ж дня (до 18:00)', scheduled: 'Заплановано',
+    weight: 'Вага', timeWindow: 'Час виконання', whatsappUpdates: 'Оновлення WhatsApp',
+    sameAsPickup: 'Та сама адреса, що й для забору', contactName: "Ім'я та прізвище", contactPhone: 'Контактний телефон',
+    specialInstructions: 'Спеціальні інструкції (необов\'язково)', deliveryNotes: 'Примітки до доставки',
+    accessCode: 'Код доступу / брама (необов\'язково)', dimensions: 'Розміри (необов\'язково)',
+    distanceLabel: 'Відстань', addOns: 'Додатки', cityRate: 'Міська ставка', timeWindowLine: 'Часове вікно',
+    save: 'Зберегти', skip: 'Пропустити',
+    // Order detail
+    awaitingPaymentTitle: 'Необхідна оплата', awaitingPaymentDesc: 'Ваше замовлення зарезервовано. Здійсніть оплату.',
+    payNow: 'Сплатити зараз', alreadyPaid: 'Вже оплатили? Підтвердження може зайняти 1-2 хв.',
+    payViaRevolut: 'Сплатити через Revolut', payWithRevolut: 'Сплатити через Revolut',
+    printLabel: 'Друкувати', showToCourier: 'Показати кур\'єру',
+    reportProblem: 'Повідомити про проблему', timeline: 'Хронологія',
+    orderPlaced: 'Замовлення розміщено', assignedCourier: 'Кур\'єр призначений',
+    collected: 'Пакет забрано', inTransit: 'В дорозі', delivered: 'Доставлено',
+    proofOfDelivery: 'Підтвердження доставки', downloadProof: 'Завантажити підтвердження',
+    orderNotFound: 'Замовлення не знайдено', orderPrefix: 'Замовлення',
+    // Auth
+    signIn: 'Увійти', signUp: 'Створити акаунт', email: 'Email', password: 'Пароль',
+    companyName: 'Назва компанії', noAccount: 'Немає акаунту?', haveAccount: 'Є акаунт?',
+    pleaseWait: 'Зачекайте...', resetPassword: 'Скинути пароль',
+    backToSignIn: '← Назад до входу', forgotPassword: 'Забули пароль?',
+    termsAgreement: 'Входячи, ви погоджуєтесь з нашими', termsLink: 'Умовами', privacyLink: 'Політикою конфіденційності',
+    // Misc
+    ordersThisMonth: 'Замовлення цього місяця', min: 'хв',
+    awaitingPayment: 'Очікує оплати', confirmPayment: 'Підтвердити отримання оплати',
+    packageReady: 'Пакет готовий до забору',
+    preparePackage: 'Підготуйте пакет до приїзду кур\'єра',
+    weatherGood: 'Гарні умови сьогодні', weatherAlert: 'Погодне попередження',
+    weatherLoading: 'Завантаження погоди...',
+    weatherRainNote: 'Захистіть крихкі пакети від дощу',
+    weatherWindNote: 'Закріпіть пакети на вантажному велосипеді',
+    weatherColdNote: 'Знижений заряд акумулятора — плануйте коротші маршрути',
+    weatherHotNote: 'Візьміть воду — слідкуйте за гідратацією',
+  },
 };
 
 export function AppProvider({ children }) {
-  const [lang, setLang] = useState('en');
-
-  useEffect(() => {
-    const stored = localStorage.getItem('lgk_lang');
-    if (stored) setLang(stored);
-    else if (navigator.language?.startsWith('pl')) setLang('pl');
-  }, []);
+  const [lang, setLangState] = useState(() => {
+    if (typeof window === 'undefined') return 'pl';
+    try {
+      const stored = localStorage.getItem('lgk_lang');
+      if (stored && SUPPORTED_LANGS.includes(stored)) return stored;
+    } catch {}
+    return resolveLang(null);
+  });
 
   useEffect(() => {
     document.documentElement.setAttribute('lang', lang);
   }, [lang]);
 
-  const toggleLang = () => {
-    const next = lang === 'en' ? 'pl' : 'en';
-    setLang(next);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lgk_lang', next);
-    }
-    document.documentElement.setAttribute('lang', next);
+  const setLang = (newLang) => {
+    if (!SUPPORTED_LANGS.includes(newLang)) return;
+    setLangState(newLang);
+    try { localStorage.setItem('lgk_lang', newLang); } catch {}
+    document.documentElement.setAttribute('lang', newLang);
     window.dispatchEvent(new Event('lgk-lang-change'));
+  };
+
+  const toggleLang = () => {
+    const order = ['pl', 'en', 'uk'];
+    const next = order[(order.indexOf(lang) + 1) % order.length];
+    setLang(next);
   };
 
   const t = (key) => TRANSLATIONS[lang]?.[key] ?? TRANSLATIONS['en'][key] ?? key;
@@ -303,7 +372,7 @@ export function AppProvider({ children }) {
   };
 
   return (
-    <AppContext.Provider value={{ lang, toggleLang, t, colors }}>
+    <AppContext.Provider value={{ lang, setLang, toggleLang, t, colors }}>
       {children}
     </AppContext.Provider>
   );
