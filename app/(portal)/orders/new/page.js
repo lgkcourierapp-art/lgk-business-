@@ -8,6 +8,7 @@ import { PACKAGE_SIZES, getSizeById, calculatePrice, estimateBasePrice } from '@
 import { generateOrderNumber } from '@/utils/orderNumber'
 import { emailOrderConfirmed } from '@/utils/emailService'
 import { useApp } from '@/utils/appContext'
+import { t } from '@/lib/strings'
 
 const STRINGS = {
   pl: {
@@ -124,8 +125,8 @@ const SESSION_KEY = 'lgk_new_order_form'
 
 export default function NewOrderPage() {
   const router = useRouter()
-  const { colors, lang: appLang } = useApp()
-  const s = STRINGS[appLang === 'pl' ? 'pl' : 'en']
+  const { colors, lang: appLang, setLang } = useApp()
+  const s = STRINGS[appLang] || STRINGS.en
   const [step, setStep] = useState(1)
   const [profile, setProfile] = useState(null)
   const [showPickupOverride, setShowPickupOverride] = useState(false)
@@ -133,6 +134,7 @@ export default function NewOrderPage() {
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
   const [price, setPrice] = useState(null)
+  const [orderMode, setOrderMode] = useState('parcel')
 
   const [form, setForm] = useState({
     packageSize: 'standard',
@@ -182,11 +184,16 @@ export default function NewOrderPage() {
       if (!user) { router.push('/login'); return }
       const { data } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, pickup_address, pickup_lat, pickup_lng, pickup_contact_name, pickup_contact_phone, business_type, language, onboarding_completed')
         .eq('id', user['id'])
         .single()
       if (data) {
         setProfile(data)
+        if (data.language) setLang(data.language)
+        if (data.business_type === 'restaurant') {
+          setOrderMode('restaurant')
+          setForm(prev => ({ ...prev, readyTime: '15min' }))
+        }
         if (data.pickup_address) {
           setForm(prev => ({
             ...prev,
@@ -246,10 +253,13 @@ export default function NewOrderPage() {
     setSubmitting(true)
     setError('')
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[NewOrder] submit', { form, orderMode, price })
+      }
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      const readyMinutes = { now: 15, '30min': 30, '1hr': 60, custom: 90 }[form.readyTime] || 15
+      const readyMinutes = { now: 15, '15min': 15, '30min': 30, '1hr': 60, custom: 90 }[form.readyTime] || 15
       const estimatedPickup = new Date(Date.now() + readyMinutes * 60 * 1000)
       const estimatedDelivery = new Date(estimatedPickup.getTime() + 40 * 60 * 1000)
       const pickupDeadline = new Date(Date.now() + 30 * 60 * 1000)
@@ -333,6 +343,20 @@ export default function NewOrderPage() {
       setSubmitting(false)
     }
   }
+
+  const readyTimes = orderMode === 'restaurant'
+    ? [
+        { id: '15min', label: t(appLang, 'order.ready15') },
+        { id: '30min', label: t(appLang, 'order.ready30') },
+        { id: '1hr', label: t(appLang, 'order.ready1hr') },
+        { id: 'custom', label: t(appLang, 'order.readyCustom') },
+      ]
+    : [
+        { id: 'now', label: t(appLang, 'order.readyNow') },
+        { id: '30min', label: t(appLang, 'order.ready30') },
+        { id: '1hr', label: t(appLang, 'order.ready1hr') },
+        { id: 'custom', label: t(appLang, 'order.readyCustom') },
+      ]
 
   const cardStyle = {
     background: colors.card,
@@ -515,10 +539,10 @@ export default function NewOrderPage() {
               {/* Read-only card from profile */}
               <div style={{ border: '0.5px solid ' + colors.border, borderRadius: 8, padding: '12px 14px', background: colors.bg, marginBottom: 12 }}>
                 <p style={{ fontSize: 10, color: colors.textSecondary, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  {appLang === 'pl' ? 'Adres odbioru (z profilu)' : 'Pickup address (from profile)'}
+                  {t(appLang, orderMode === 'restaurant' ? 'order.pickupRestaurant' : 'order.pickupFromProfile')}
                 </p>
                 <p style={{ fontSize: 14, fontWeight: 500, margin: '0 0 2px', color: colors.text }}>
-                  {profile?.pickup_address || (appLang === 'pl' ? 'Brak adresu — uzupełnij w ustawieniach' : 'No address — add in settings')}
+                  {profile?.pickup_address || t(appLang, 'order.noAddress')}
                 </p>
                 {profile?.pickup_contact_name && (
                   <p style={{ fontSize: 12, color: colors.textSecondary, margin: 0 }}>
@@ -531,14 +555,14 @@ export default function NewOrderPage() {
                   style={{ fontSize: 11, color: '#2563EB', background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}
                 >
                   {showPickupOverride
-                    ? (appLang === 'pl' ? '↑ Użyj adresu z profilu' : '↑ Use profile address')
-                    : (appLang === 'pl' ? 'Użyj innego adresu dla tego zamówienia' : 'Use different address for this order')}
+                    ? t(appLang, 'order.useProfileAddress')
+                    : t(appLang, 'order.changePickup')}
                 </button>
               </div>
               {showPickupOverride && (
                 <div style={{ marginBottom: 4 }}>
                   <AddressInput
-                    label={appLang === 'pl' ? 'Inny adres odbioru' : 'Different pickup address'}
+                    label={t(appLang, 'order.differentPickup')}
                     placeholder={s.pickup_address_placeholder}
                     addressType="pickup"
                     clientId={profile?.['id']}
@@ -552,16 +576,22 @@ export default function NewOrderPage() {
                     }}
                   />
                   <p style={{ fontSize: 11, color: colors.textSecondary, margin: '4px 0 0' }}>
-                    {appLang === 'pl' ? 'Dotyczy tylko tego zamówienia. Nie zmienia adresu w profilu.' : 'This order only. Does not change your profile address.'}
+                    {t(appLang, 'order.orderOnly')}
                   </p>
                 </div>
               )}
             </div>
 
+            {orderMode === 'restaurant' && (
+              <p style={{ fontSize: 12, color: colors.textSecondary, margin: '0 0 12px', padding: '10px 14px', background: '#D4FF0010', borderRadius: 8, border: '1px solid #D4FF0030' }}>
+                {t(appLang, 'order.restaurantNote')}
+              </p>
+            )}
+
             <div style={cardStyle}>
               <label style={{ ...labelStyle, marginTop: 0 }}>{s.ready_label}</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {s.ready_times.map(rt => (
+                {readyTimes.map(rt => (
                   <button
                     key={rt['id']}
                     type="button"
@@ -611,7 +641,9 @@ export default function NewOrderPage() {
         {step === 3 && (
           <div style={{ marginTop: 20 }}>
             <div style={cardStyle}>
-              <label style={{ ...labelStyle, marginTop: 0 }}>{s.recipient_name}</label>
+              <label style={{ ...labelStyle, marginTop: 0 }}>
+                {orderMode === 'restaurant' ? t(appLang, 'order.restaurantRecipient') : s.recipient_name}
+              </label>
               <input
                 type="text"
                 value={form.recipientName}

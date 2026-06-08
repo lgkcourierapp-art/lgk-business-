@@ -64,7 +64,7 @@ function SaveButton({ saving, saved, onClick, s }) {
 
 export default function AddressesSection({ user }) {
   const { colors, lang } = useApp()
-  const s = STRINGS[lang === 'pl' ? 'pl' : 'en']
+  const s = STRINGS[lang] || STRINGS.en
 
   // pickup
   const [pickupAddress, setPickupAddress] = useState('')
@@ -75,17 +75,20 @@ export default function AddressesSection({ user }) {
   const [editingPickup, setEditingPickup] = useState(false)
   const [savingPickup, setSavingPickup] = useState(false)
   const [savedPickup, setSavedPickup] = useState(false)
+  const [errorPickup, setErrorPickup] = useState('')
 
   // registered
   const [registeredAddress, setRegisteredAddress] = useState('')
   const [savingRegistered, setSavingRegistered] = useState(false)
   const [savedRegistered, setSavedRegistered] = useState(false)
+  const [errorRegistered, setErrorRegistered] = useState('')
 
   // correspondence
   const [correspondenceAddress, setCorrespondenceAddress] = useState('')
   const [correspondenceSame, setCorrespondenceSame] = useState(false)
   const [savingCorrespondence, setSavingCorrespondence] = useState(false)
   const [savedCorrespondence, setSavedCorrespondence] = useState(false)
+  const [errorCorrespondence, setErrorCorrespondence] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -110,39 +113,65 @@ export default function AddressesSection({ user }) {
   const savePickup = async () => {
     if (!user) return
     setSavingPickup(true)
-    await supabase.from('profiles').update({
-      pickup_address: pickupAddress,
-      pickup_lat: pickupLat,
-      pickup_lng: pickupLng,
-      pickup_contact_name: pickupContactName,
-      pickup_contact_phone: pickupContactPhone,
-    }).eq('id', user['id'])
-    window.dispatchEvent(new Event('lgk-profile-updated'))
-    setSavingPickup(false)
-    setSavedPickup(true)
-    setEditingPickup(false)
-    setTimeout(() => setSavedPickup(false), 3000)
+    setErrorPickup('')
+    try {
+      const { error } = await supabase.from('profiles').update({
+        pickup_address: pickupAddress,
+        pickup_lat: pickupLat,
+        pickup_lng: pickupLng,
+        pickup_contact_name: pickupContactName,
+        pickup_contact_phone: pickupContactPhone,
+        updated_at: new Date().toISOString(),
+      }).eq('id', user['id'])
+      if (error) throw error
+      window.dispatchEvent(new Event('lgk-profile-updated'))
+      setSavedPickup(true)
+      setEditingPickup(false)
+      setTimeout(() => setSavedPickup(false), 3000)
+    } catch (err) {
+      setErrorPickup(err.message || 'Save failed')
+    } finally {
+      setSavingPickup(false)
+    }
   }
 
   const saveRegistered = async () => {
     if (!user) return
     setSavingRegistered(true)
-    await supabase.from('profiles').update({ registered_address: registeredAddress }).eq('id', user['id'])
-    setSavingRegistered(false)
-    setSavedRegistered(true)
-    setTimeout(() => setSavedRegistered(false), 3000)
+    setErrorRegistered('')
+    try {
+      const { error } = await supabase.from('profiles').update({
+        registered_address: registeredAddress,
+        updated_at: new Date().toISOString(),
+      }).eq('id', user['id'])
+      if (error) throw error
+      setSavedRegistered(true)
+      setTimeout(() => setSavedRegistered(false), 3000)
+    } catch (err) {
+      setErrorRegistered(err.message || 'Save failed')
+    } finally {
+      setSavingRegistered(false)
+    }
   }
 
   const saveCorrespondence = async () => {
     if (!user) return
     setSavingCorrespondence(true)
-    await supabase.from('profiles').update({
-      correspondence_address: correspondenceSame ? registeredAddress : correspondenceAddress,
-      correspondence_same_as_registered: correspondenceSame,
-    }).eq('id', user['id'])
-    setSavingCorrespondence(false)
-    setSavedCorrespondence(true)
-    setTimeout(() => setSavedCorrespondence(false), 3000)
+    setErrorCorrespondence('')
+    try {
+      const { error } = await supabase.from('profiles').update({
+        correspondence_address: correspondenceSame ? registeredAddress : correspondenceAddress,
+        correspondence_same_as_registered: correspondenceSame,
+        updated_at: new Date().toISOString(),
+      }).eq('id', user['id'])
+      if (error) throw error
+      setSavedCorrespondence(true)
+      setTimeout(() => setSavedCorrespondence(false), 3000)
+    } catch (err) {
+      setErrorCorrespondence(err.message || 'Save failed')
+    } finally {
+      setSavingCorrespondence(false)
+    }
   }
 
   const card = { background: colors.card, border: '1px solid ' + colors.border, borderRadius: 12, padding: 24, marginBottom: 16 }
@@ -229,6 +258,7 @@ export default function AddressesSection({ user }) {
         )}
 
         <SaveButton saving={savingPickup} saved={savedPickup} onClick={savePickup} s={s} />
+        {errorPickup && <p style={{ color: '#FF3B30', fontSize: 12, marginTop: 6, marginBottom: 0 }}>{errorPickup}</p>}
       </div>
 
       <div style={{ borderTop: '1px solid ' + colors.border, marginBottom: 20 }} />
@@ -244,6 +274,7 @@ export default function AddressesSection({ user }) {
           style={input}
         />
         <SaveButton saving={savingRegistered} saved={savedRegistered} onClick={saveRegistered} s={s} />
+        {errorRegistered && <p style={{ color: '#FF3B30', fontSize: 12, marginTop: 6, marginBottom: 0 }}>{errorRegistered}</p>}
       </div>
 
       <div style={{ borderTop: '1px solid ' + colors.border, marginBottom: 20 }} />
@@ -279,6 +310,7 @@ export default function AddressesSection({ user }) {
         )}
 
         <SaveButton saving={savingCorrespondence} saved={savedCorrespondence} onClick={saveCorrespondence} s={s} />
+        {errorCorrespondence && <p style={{ color: '#FF3B30', fontSize: 12, marginTop: 6, marginBottom: 0 }}>{errorCorrespondence}</p>}
       </div>
     </div>
   )

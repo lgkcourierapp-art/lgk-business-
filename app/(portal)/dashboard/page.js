@@ -50,6 +50,20 @@ export default function DashboardPage() {
   }, [router])
 
   useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      const { data } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', user['id'])
+        .single()
+      if (data && data.onboarding_completed === false) {
+        router.push('/onboarding')
+      }
+    })
+  }, [router])
+
+  useEffect(() => {
     fetchOrders()
     const interval = setInterval(fetchOrders, 30000)
     return () => clearInterval(interval)
