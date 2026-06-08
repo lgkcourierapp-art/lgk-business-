@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useApp } from '@/utils/appContext'
 import BrandingSection from './components/BrandingSection'
+import AddressesSection from './components/AddressesSection'
 import IntegrationsSection from './components/IntegrationsSection'
 import DeleteAccountSection from './components/DeleteAccountSection'
 
@@ -50,6 +51,7 @@ export default function SettingsPage() {
         <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: colors.text }}>{t('settings')}</h1>
 
         <BrandingSection user={user} />
+        <AddressesSection user={user} />
 
         {/* Saved Addresses */}
         <div style={card}>

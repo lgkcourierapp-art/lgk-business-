@@ -382,8 +382,8 @@ export default function AddressInput({
               }}>
                 {suggestions.map((s, i) => (
                   <button
-                    key={i}
-                    onMouseDown={() => handleSelectSuggestion(s)}
+                    key={s.label + i}
+                    onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(s) }}
                     style={{
                       display: 'block', width: '100%', padding: '10px 14px',
                       background: 'transparent', border: 'none',
@@ -392,8 +392,10 @@ export default function AddressInput({
                       color: 'var(--color-text-primary)',
                     }}
                   >
-                    <div style={{ fontWeight: 600, fontSize: '13px' }}>{s.street} {s.houseNumber}</div>
-                    <div style={{ color: 'var(--color-text-secondary)', fontSize: '11px' }}>{s.postcode} {s.city}</div>
+                    <div style={{ fontWeight: 500, fontSize: '13px', whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.4 }}>
+                      📍 {s.label || [s.street, s.houseNumber].filter(Boolean).join(' ')}
+                    </div>
+                    {s.city && <div style={{ color: 'var(--color-text-secondary)', fontSize: '11px', marginTop: 2 }}>{s.postcode ? s.postcode + ' ' : ''}{s.city}</div>}
                   </button>
                 ))}
                 <div style={{ padding: '5px 14px', background: 'var(--color-background-primary)', borderTop: '0.5px solid var(--color-border-tertiary, #E0E0E0)' }}>
@@ -402,19 +404,12 @@ export default function AddressInput({
               </div>
             )}
           </div>
-          {searchText.length >= 3 && suggestions.length === 0 && !loadingSuggestions && (
-            <button
-              onMouseDown={(e) => { e.preventDefault(); acceptTyped() }}
-              style={{
-                display: 'block', width: '100%', marginTop: '6px',
-                padding: '9px 12px', borderRadius: '8px', border: 'none',
-                background: 'rgba(212,255,0,0.12)', color: '#D4FF00',
-                fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                textAlign: 'left', fontFamily: 'inherit',
-              }}
-            >
-              ✓ {lang === 'pl' ? 'Użyj:' : 'Use:'} {searchText}
-            </button>
+          {searchText.length >= 3 && suggestions.length === 0 && !loadingSuggestions && searchDone && (
+            <div style={{ padding: '10px 12px', fontSize: 13, color: '#9CA3AF', fontStyle: 'italic' }}>
+              {lang === 'pl'
+                ? 'Brak wyników — wpisz pełny adres ręcznie'
+                : 'No results — type the full address manually'}
+            </div>
           )}
           <div style={{ color: 'var(--color-text-tertiary, #9CA3AF)', fontSize: '11px', marginTop: '6px' }}>
             {a.hint}
