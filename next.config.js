@@ -24,7 +24,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co https://openweathermap.org",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://*.sentry.io",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://*.sentry.io https://autocomplete.search.hereapi.com https://geocode.search.hereapi.com https://photon.komoot.io",
               "worker-src 'self'",
               "frame-ancestors 'none'",
             ].join('; '),
