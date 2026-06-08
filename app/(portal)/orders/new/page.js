@@ -57,6 +57,8 @@ const STRINGS = {
     payment_revolut: '💳 Karta / BLIK przez Revolut',
     payment_bank: '🏦 Przelew bankowy',
     payment_note: 'Płatność wymagana przed wysyłką. Link do płatności pojawi się po złożeniu zamówienia.',
+    submit_revolut: '💳 Złóż i zapłać przez Revolut',
+    submit_bank: '🏦 Złóż i zapłać przelewem',
     summary_package: 'Paczka',
     summary_pickup: 'Odbiór',
     summary_delivery: 'Dostawa',
@@ -111,6 +113,8 @@ const STRINGS = {
     payment_revolut: '💳 Card / BLIK via Revolut',
     payment_bank: '🏦 Bank transfer',
     payment_note: 'Payment required before dispatch. Payment link shown after order.',
+    submit_revolut: '💳 Place order & pay via Revolut',
+    submit_bank: '🏦 Place order & pay by transfer',
     summary_package: 'Package',
     summary_pickup: 'Pickup',
     summary_delivery: 'Delivery',
@@ -122,6 +126,7 @@ const STRINGS = {
 }
 
 const SESSION_KEY = 'lgk_new_order_form'
+const STEP_KEY = 'lgk_new_order_step'
 
 export default function NewOrderPage() {
   const router = useRouter()
@@ -172,12 +177,21 @@ export default function NewOrderPage() {
     try {
       const saved = sessionStorage.getItem(SESSION_KEY)
       if (saved) setForm(JSON.parse(saved))
+      const savedStep = sessionStorage.getItem(STEP_KEY)
+      if (savedStep) {
+        const n = parseInt(savedStep, 10)
+        if (n >= 1 && n <= 4) setStep(n)
+      }
     } catch {}
   }, [])
 
   useEffect(() => {
     try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(form)) } catch {}
   }, [form])
+
+  useEffect(() => {
+    try { sessionStorage.setItem(STEP_KEY, step.toString()) } catch {}
+  }, [step])
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -336,7 +350,7 @@ export default function NewOrderPage() {
         }
       } catch {}
 
-      try { sessionStorage.removeItem(SESSION_KEY) } catch {}
+      try { sessionStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(STEP_KEY) } catch {}
       router.push('/orders/' + order['id'] + '?created=true')
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.')
@@ -771,19 +785,39 @@ export default function NewOrderPage() {
             <div style={cardStyle}>
               <label style={{ ...labelStyle, marginTop: 0 }}>{s.payment_title}</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[
-                  { id: 'revolut', label: s.payment_revolut },
-                  { id: 'bank_transfer', label: s.payment_bank },
-                ].map(pm => (
-                  <button
-                    key={pm['id']}
-                    type="button"
-                    onClick={() => setField('paymentMethod', pm['id'])}
-                    style={pillStyle(form.paymentMethod === pm['id'])}
+                <button
+                  type="button"
+                  onClick={() => setField('paymentMethod', 'revolut')}
+                  style={pillStyle(form.paymentMethod === 'revolut')}
+                >
+                  {s.payment_revolut}
+                </button>
+                {form.paymentMethod === 'revolut' && (
+                  <a
+                    href={process.env.NEXT_PUBLIC_REVOLUT_LINK || 'https://revolut.me/lgkcourier'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    style={{ fontSize: 12, color: '#2563EB', paddingLeft: 10, textDecoration: 'underline' }}
                   >
-                    {pm.label}
-                  </button>
-                ))}
+                    revolut.me/lgkcourier →
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setField('paymentMethod', 'bank_transfer')}
+                  style={pillStyle(form.paymentMethod === 'bank_transfer')}
+                >
+                  {s.payment_bank}
+                </button>
+                {form.paymentMethod === 'bank_transfer' && (
+                  <div style={{ fontSize: 12, color: colors.textSecondary, paddingLeft: 10, lineHeight: 1.6 }}>
+                    <div style={{ fontFamily: 'monospace' }}>
+                      IBAN: {process.env.NEXT_PUBLIC_BANK_IBAN || '— widoczny po złożeniu zamówienia'}
+                    </div>
+                    <div>Ref: numer zamówienia — widoczny po złożeniu</div>
+                  </div>
+                )}
               </div>
               <p style={{ fontSize: 12, color: colors.textSecondary, marginTop: 10, marginBottom: 0 }}>
                 {s.payment_note}
@@ -829,7 +863,11 @@ export default function NewOrderPage() {
               className="btn-primary"
               style={{ flex: 1, height: 48, fontSize: 15, opacity: submitting ? 0.6 : 1 }}
             >
-              {submitting ? s.submitting : s.submit}
+              {submitting
+                ? s.submitting
+                : form.paymentMethod === 'bank_transfer'
+                ? s.submit_bank
+                : s.submit_revolut}
             </button>
           )}
         </div>
