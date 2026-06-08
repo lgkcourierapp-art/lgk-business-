@@ -8,7 +8,15 @@ export default function PortalLayout({ children }) {
       <div className="sidebar-wrap"><Sidebar /></div>
       <div className="bottomnav-wrap"><BottomNav /></div>
       <div className="portal-header-wrap"><Header /></div>
-      <div className="portal-content">{children}</div>
+      <div className="portal-content">
+        {children}
+        <footer style={{ borderTop: '1px solid #E5E5E5', padding: '20px 24px', marginTop: 40, display: 'flex', flexWrap: 'wrap', gap: '8px 20px', alignItems: 'center', color: '#888', fontSize: 12 }}>
+          <span>© 2026 LGK Holdings Sp. z o.o.</span>
+          <a href="/terms" style={{ color: '#888', textDecoration: 'none' }} onMouseOver={undefined} onFocus={undefined}>Terms of Service v1.3</a>
+          <a href="/privacy" style={{ color: '#888', textDecoration: 'none' }}>Privacy Policy</a>
+          <a href="mailto:lgkcourierapp@gmail.com" style={{ color: '#888', textDecoration: 'none' }}>lgkcourierapp@gmail.com</a>
+        </footer>
+      </div>
       <style>{`
         .sidebar-wrap   { display: block; }
         .bottomnav-wrap { display: none; }
