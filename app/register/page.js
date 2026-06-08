@@ -292,9 +292,9 @@ function RegisterForm() {
 
           <p style={{ textAlign: 'center', fontSize: 12, color: '#999', lineHeight: 1.6 }}>
             {r.legal}{' '}
-            <a href="/terms" style={{ color: '#555', textDecoration: 'underline' }}>{r.legal_terms}</a>
+            <a href="/terms" target="_blank" style={{ color: '#2563EB', textDecoration: 'underline' }}>{r.legal_terms}</a>
             {' '}{r.legal_and}{' '}
-            <a href="/privacy" style={{ color: '#555', textDecoration: 'underline' }}>{r.legal_privacy}</a>.
+            <a href="/privacy" target="_blank" style={{ color: '#2563EB', textDecoration: 'underline' }}>{r.legal_privacy}</a>.
           </p>
 
         </form>
