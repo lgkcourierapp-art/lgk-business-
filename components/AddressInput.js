@@ -44,7 +44,7 @@ export default function AddressInput({
         if (!user || cancelled) return
         const { data } = await supabase
           .from('saved_addresses')
-          .select('id, label, contact_name, contact_phone, street, house_number, postal_code, city, notes, delivery_count')
+          .select('id, label, recipient_name, recipient_phone, street, house_number, postal_code, city, notes, delivery_count')
           .eq('client_id', user['id'])
           .order('delivery_count', { ascending: false, nullsFirst: false })
           .limit(20)
@@ -64,13 +64,13 @@ export default function AddressInput({
     const q = query.toLowerCase()
     return savedAddresses.filter(a =>
       a.street?.toLowerCase().includes(q) ||
-      a.contact_name?.toLowerCase().includes(q) ||
+      a.recipient_name?.toLowerCase().includes(q) ||
       a.label?.toLowerCase().includes(q) ||
       a.city?.toLowerCase().includes(q)
     ).slice(0, 3).map(a => {
       const addr = [a.street, a.house_number && a.house_number !== a.street ? a.house_number : null].filter(Boolean).join(' ')
       return {
-        label:         a.contact_name ? `${a.contact_name} — ${addr}` : addr,
+        label:         a.recipient_name ? `${a.recipient_name} — ${addr}` : addr,
         street:        a.street || '',
         houseNumber:   a.house_number || '',
         postcode:      a.postal_code || '',
@@ -79,8 +79,8 @@ export default function AddressInput({
         lng:           a.lng ?? null,
         isSaved:       true,
         savedId:       a['id'],
-        recipientName:  a.contact_name || null,
-        recipientPhone: a.contact_phone || null,
+        recipientName:  a.recipient_name || null,
+        recipientPhone: a.recipient_phone || null,
         notes:         a.notes || null,
       }
     })
