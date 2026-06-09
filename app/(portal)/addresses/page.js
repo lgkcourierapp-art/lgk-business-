@@ -122,15 +122,33 @@ export default function AddressesPage() {
   const save = async () => {
     if (!editing.label || !editing.street || !editing.city) return
     setSaving(true)
-    const payload = { ...editing, client_id: userId }
-    if (editing['id']) {
-      await supabase.from('saved_addresses').update(payload).eq('id', editing['id'])
-    } else {
-      await supabase.from('saved_addresses').insert(payload)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const payload = {
+        client_id:       user['id'],
+        label:           editing.label?.trim() || null,
+        street:          editing.street?.trim() || null,
+        house_number:    editing.house_number?.trim() || null,
+        apartment:       editing.apartment?.trim() || null,
+        postal_code:     editing.postal_code?.trim() || null,
+        city:            editing.city?.trim() || 'Szczecin',
+        recipient_name:  editing.recipient_name?.trim() || null,
+        recipient_phone: editing.recipient_phone?.trim() || null,
+        notes:           editing.notes?.trim() || null,
+        address_type:    editing.address_type || 'delivery',
+        is_default_pickup: editing.is_default_pickup || false,
+      }
+      if (editing['id']) {
+        await supabase.from('saved_addresses').update(payload).eq('id', editing['id'])
+      } else {
+        await supabase.from('saved_addresses').insert({ ...payload, delivery_count: 0, use_count: 0 })
+      }
+    } finally {
+      setSaving(false)
+      setEditing(null)
+      fetchAddresses()
     }
-    setSaving(false)
-    setEditing(null)
-    fetchAddresses()
   }
 
   // ─── Delete ──────────────────────────────────────────────────────────────
