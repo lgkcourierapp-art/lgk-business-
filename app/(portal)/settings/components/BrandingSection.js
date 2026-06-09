@@ -103,7 +103,7 @@ export default function BrandingSection({ user }) {
       style={{ width: '100%', padding: '12px 14px', background: colors.input, border: '1px solid ' + colors.border, borderRadius: 8, color: colors.text, fontSize: 15, boxSizing: 'border-box', WebkitAppearance: 'none' }} />
   )
   const sectionLabel = (label) => (
-    <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>{label}</div>
+    <div style={{ color: '#374151', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>{label}</div>
   )
 
   return (

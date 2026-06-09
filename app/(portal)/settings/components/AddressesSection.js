@@ -175,7 +175,7 @@ export default function AddressesSection({ user }) {
   }
 
   const card = { background: colors.card, border: '1px solid ' + colors.border, borderRadius: 12, padding: 24, marginBottom: 16 }
-  const sectionLabel = { color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }
+  const sectionLabel = { color: '#374151', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }
   const subLabel = { color: colors.text, fontWeight: 700, fontSize: 14, marginBottom: 4 }
   const desc = { color: colors.textSecondary, fontSize: 12, marginBottom: 12 }
   const input = {

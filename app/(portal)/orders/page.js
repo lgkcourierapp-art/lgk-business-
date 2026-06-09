@@ -152,8 +152,8 @@ export default function OrdersPage() {
                 padding: '8px 16px',
                 borderRadius: 20,
                 border: '1px solid ' + (filter === tab['id'] ? '#D4FF00' : colors.border),
-                background: filter === tab['id'] ? '#D4FF0015' : colors.card,
-                color: filter === tab['id'] ? '#D4FF00' : colors.textSecondary,
+                background: filter === tab['id'] ? '#D4FF00' : colors.card,
+                color: filter === tab['id'] ? '#0A0A0A' : colors.textSecondary,
                 fontWeight: filter === tab['id'] ? 700 : 400,
                 fontSize: 13,
                 cursor: 'pointer',
@@ -168,7 +168,7 @@ export default function OrdersPage() {
 
         {/* List */}
         {loading ? (
-          <div style={{ color: '#D4FF00', textAlign: 'center', padding: 40, fontWeight: 700 }}>
+          <div style={{ color: '#111827', textAlign: 'center', padding: 40, fontWeight: 700 }}>
             {lang === 'pl' ? 'Ładowanie...' : 'Loading...'}
           </div>
         ) : filtered.length === 0 ? (
@@ -203,7 +203,7 @@ export default function OrdersPage() {
                           flexShrink: 0,
                           boxShadow: dot.pulse ? '0 0 0 2px ' + dot.color + '40' : 'none',
                         }} />
-                        <span style={{ fontFamily: "'Fira Code', monospace", fontSize: 12, color: '#D4FF00', fontWeight: 700 }}>
+                        <span style={{ fontFamily: "'Fira Code', monospace", fontSize: 12, color: '#111827', fontWeight: 700 }}>
                           {shortId}
                         </span>
                         <StatusBadge status={order.status} />
@@ -216,8 +216,8 @@ export default function OrdersPage() {
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: '#D4FF00', fontFamily: "'Fira Code', monospace" }}>
-                        PLN {(order.price_total || 0).toFixed(0)}
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#111827', fontFamily: "'Fira Code', monospace" }}>
+                        PLN {(order.price_total || 0).toFixed(2)}
                       </div>
                       <div style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
                         {fmt(order.delivered_at || order.created_at)}

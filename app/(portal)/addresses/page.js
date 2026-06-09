@@ -546,7 +546,7 @@ export default function AddressesPage() {
               { title: lang === 'pl' ? 'Adresy dostawy' : 'Delivery addresses', list: deliveryAddresses },
             ].map(({ title, list }) => list.length > 0 && (
               <div key={title} style={{ marginBottom: 28 }}>
-                <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>{title}</div>
+                <div style={{ color: '#374151', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>{title}</div>
                 {list.map(addr => {
                   const fullAddress = [
                     addr.street,

@@ -87,7 +87,7 @@ export default function DriversPage() {
   const inp = { width: '100%', padding: '11px 14px', background: colors.input ?? '#F5F5F5', border: '1px solid ' + colors.border, borderRadius: 8, color: colors.text, fontSize: 14, boxSizing: 'border-box', fontFamily: 'inherit' }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4FF00', fontSize: 18, fontWeight: 700 }}>
+    <div style={{ minHeight: '100vh', background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111827', fontSize: 18, fontWeight: 700 }}>
       Ładowanie…
     </div>
   )
@@ -101,7 +101,7 @@ export default function DriversPage() {
           <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8, color: colors.text }}>Coming soon</div>
           <div style={{ color: colors.textSecondary, fontSize: 14 }}>
             Własna flota kierowców jest dostępna w planie Fleet.<br />
-            Skontaktuj się: <a href="mailto:lgkcourierapp@gmail.com" style={{ color: '#D4FF00' }}>lgkcourierapp@gmail.com</a>
+            Skontaktuj się: <a href="mailto:lgkcourierapp@gmail.com" style={{ color: '#2563EB' }}>lgkcourierapp@gmail.com</a>
           </div>
         </div>
       </main>
@@ -116,7 +116,7 @@ export default function DriversPage() {
 
         {/* Driver list */}
         <div style={cardStyle}>
-          <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
+          <div style={{ color: '#374151', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
             Twoi kierowcy ({drivers.length})
           </div>
           {drivers.length === 0 ? (
@@ -139,7 +139,7 @@ export default function DriversPage() {
 
         {/* Add driver */}
         <div style={cardStyle}>
-          <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Dodaj kierowcę</div>
+          <div style={{ color: '#374151', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Dodaj kierowcę</div>
           <form onSubmit={handleAddDriver}>
             <div style={{ marginBottom: 12 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: colors.textSecondary, marginBottom: 5 }}>Imię i nazwisko</label>
@@ -163,7 +163,7 @@ export default function DriversPage() {
 
         {/* Overflow toggle */}
         <div style={cardStyle}>
-          <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Przepełnienie do sieci LGK</div>
+          <div style={{ color: '#374151', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Przepełnienie do sieci LGK</div>
           <div style={{ color: colors.textSecondary, fontSize: 13, marginBottom: 16 }}>
             Gdy Twoi kierowcy są niedostępni, zamówienia trafiają automatycznie do kurierów LGK.
           </div>

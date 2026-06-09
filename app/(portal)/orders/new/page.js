@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AddressInput from '@/components/AddressInput'
-import { PACKAGE_SIZES, getSizeById, calculatePrice, estimateBasePrice, getRoadDistanceKm, haversineDistance } from '@/lib/packageSizes'
+import { PACKAGE_SIZES, getSizeById, calculatePrice, estimateBasePrice, applyPsychologicalPricing, getRoadDistanceKm, haversineDistance } from '@/lib/packageSizes'
 import { emailOrderConfirmed } from '@/utils/emailService'
 import { useApp } from '@/utils/appContext'
 import { t } from '@/lib/strings'
@@ -52,12 +52,10 @@ const STRINGS = {
     ],
     sms_note: 'otrzyma SMS o statusie dostawy',
     eta_note: 'Szacowany czas dostawy: ~40 min po odbiorze',
-    payment_title: 'Sposób płatności',
-    payment_revolut: '💳 Karta / BLIK przez Revolut',
-    payment_bank: '🏦 Przelew bankowy',
-    payment_note: 'Płatność wymagana przed wysyłką. Link do płatności pojawi się po złożeniu zamówienia.',
-    submit_revolut: '💳 Złóż i zapłać przez Revolut',
-    submit_bank: '🏦 Złóż i zapłać przelewem',
+    payment_title: 'Płatność',
+    payment_revolut: 'Zapłać przez Revolut',
+    payment_note: 'Otwórz link i opłać zamówienie. Kurier wyjedzie po potwierdzeniu płatności.',
+    submit_revolut: '✓ Złóż zamówienie i zapłać',
     summary_package: 'Paczka',
     summary_pickup: 'Odbiór',
     summary_delivery: 'Dostawa',
@@ -108,12 +106,10 @@ const STRINGS = {
     ],
     sms_note: 'will receive SMS delivery updates',
     eta_note: 'Estimated delivery: ~40 min after pickup',
-    payment_title: 'Payment method',
-    payment_revolut: '💳 Card / BLIK via Revolut',
-    payment_bank: '🏦 Bank transfer',
-    payment_note: 'Payment required before dispatch. Payment link shown after order.',
-    submit_revolut: '💳 Place order & pay via Revolut',
-    submit_bank: '🏦 Place order & pay by transfer',
+    payment_title: 'Payment',
+    payment_revolut: 'Pay via Revolut',
+    payment_note: 'Open the link and pay. Courier departs after payment is confirmed.',
+    submit_revolut: '✓ Place order & pay',
     summary_package: 'Package',
     summary_pickup: 'Pickup',
     summary_delivery: 'Delivery',
@@ -141,6 +137,11 @@ export default function NewOrderPage() {
   const [orderMode, setOrderMode] = useState('parcel')
   const [roadDistanceKm, setRoadDistanceKm] = useState(null)
   const [fetchingDistance, setFetchingDistance] = useState(false)
+
+  const displayPrice = price !== null ? applyPsychologicalPricing(price) : null
+
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }) }, [])
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, [step])
 
   const [form, setForm] = useState({
     packageSize: 'standard',
@@ -361,8 +362,8 @@ export default function NewOrderPage() {
           delivery_contact_phone: form.recipientPhone,
           recipient_name: form.recipientName,
           recipient_phone: form.recipientPhone,
-          amount_pln: price,
-          price_total: price,
+          amount_pln: displayPrice ?? price,
+          price_total: displayPrice ?? price,
           distance_km: roadDistanceKm,
           time_window: form.deliveryPref,
           estimated_pickup_at: estimatedPickup.toISOString(),
@@ -375,6 +376,7 @@ export default function NewOrderPage() {
         .single()
 
       if (insertError) throw insertError
+      if (!order) throw new Error('Order creation returned no data')
 
       try {
         const { data: prof } = await supabase
@@ -395,6 +397,7 @@ export default function NewOrderPage() {
       router.push('/orders/' + order['id'] + '?created=true')
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.')
+    } finally {
       setSubmitting(false)
     }
   }
@@ -425,8 +428,8 @@ export default function NewOrderPage() {
     padding: '10px 14px',
     borderRadius: 8,
     border: '1px solid ' + (active ? '#D4FF00' : colors.border),
-    background: active ? '#D4FF0015' : colors.bg,
-    color: active ? '#D4FF00' : colors.textSecondary,
+    background: active ? '#D4FF00' : colors.bg,
+    color: active ? '#0A0A0A' : colors.textSecondary,
     fontWeight: active ? 700 : 400,
     fontSize: 13,
     cursor: 'pointer',
@@ -482,9 +485,11 @@ export default function NewOrderPage() {
               }} />
               <span style={{
                 fontSize: 10,
-                color: i + 1 === step ? '#D4FF00' : colors.textSecondary,
+                color: i + 1 === step ? '#111827' : colors.textSecondary,
                 fontWeight: i + 1 === step ? 700 : 400,
                 letterSpacing: 0.3,
+                borderBottom: i + 1 === step ? '2px solid #D4FF00' : 'none',
+                paddingBottom: 1,
               }}>{label}</span>
             </div>
           ))}
@@ -504,9 +509,9 @@ export default function NewOrderPage() {
                     onClick={() => { setField('packageSize', size['id']); setFieldErrors({}) }}
                     style={{
                       padding: '16px',
-                      border: '2px solid ' + (selected ? '#D4FF00' : colors.border),
+                      border: selected ? '2.5px solid #0A0A0A' : '1px solid ' + colors.border,
                       borderRadius: 12,
-                      background: selected ? '#D4FF0010' : colors.card,
+                      background: selected ? '#F0F0F0' : colors.card,
                       color: colors.text,
                       cursor: 'pointer',
                       textAlign: 'left',
@@ -514,13 +519,22 @@ export default function NewOrderPage() {
                       position: 'relative',
                     }}
                   >
-                    {size.recommended && (
+                    {selected && (
+                      <div style={{
+                        position: 'absolute', top: 10, right: 10,
+                        width: 24, height: 24, borderRadius: '50%',
+                        background: '#0A0A0A', color: '#D4FF00',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 13, fontWeight: 700,
+                      }}>✓</div>
+                    )}
+                    {!selected && size.recommended && (
                       <div style={{
                         position: 'absolute', top: 8, right: 8,
-                        background: '#D4FF00', color: '#000',
+                        background: '#D4FF00', color: '#0A0A0A',
                         fontSize: 9, fontWeight: 700, padding: '2px 6px',
                         borderRadius: 4, letterSpacing: 0.3,
-                      }}>✓</div>
+                      }}>★ Popularna</div>
                     )}
                     <div style={{ fontSize: 22, marginBottom: 6 }}>{size.icon}</div>
                     <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2, color: colors.text }}>
@@ -540,8 +554,8 @@ export default function NewOrderPage() {
                         {s.quote_required}
                       </div>
                     ) : (
-                      <div style={{ fontSize: 13, color: '#D4FF00', fontWeight: 700 }}>
-                        {s.from_price} PLN {basePrice}
+                      <div style={{ fontSize: 13, color: '#111827', fontWeight: 700 }}>
+                        {s.from_price} PLN {basePrice?.toFixed(2)}
                       </div>
                     )}
                   </button>
@@ -781,12 +795,12 @@ export default function NewOrderPage() {
               />
             </div>
 
-            {price !== null && form.deliveryLat && (
-              <div style={{ ...cardStyle, border: '1px solid #D4FF00' }}>
+            {displayPrice !== null && form.deliveryLat && (
+              <div style={{ ...cardStyle, border: '2px solid #D4FF00' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: colors.textSecondary, fontSize: 14 }}>{s.summary_price}</span>
-                  <span style={{ color: '#D4FF00', fontWeight: 900, fontSize: 28, fontFamily: "'Fira Code', monospace" }}>
-                    PLN {price}
+                  <span style={{ color: '#111827', fontWeight: 900, fontSize: 28, fontFamily: "'Fira Code', monospace" }}>
+                    PLN {displayPrice.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -811,10 +825,10 @@ export default function NewOrderPage() {
               ))}
             </div>
 
-            <div style={{ ...cardStyle, border: '1px solid #D4FF00', textAlign: 'center', padding: '24px' }}>
+            <div style={{ ...cardStyle, border: '2px solid #D4FF00', textAlign: 'center', padding: '24px' }}>
               <div style={{ color: colors.textSecondary, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{s.summary_price}</div>
-              <div style={{ color: '#D4FF00', fontWeight: 900, fontSize: 40, fontFamily: "'Fira Code', monospace", marginBottom: 8 }}>
-                PLN {price ?? '—'}
+              <div style={{ color: '#111827', fontWeight: 900, fontSize: 40, fontFamily: "'Fira Code', monospace", marginBottom: 8 }}>
+                PLN {displayPrice?.toFixed(2) ?? '—'}
               </div>
               <div style={{ color: colors.textSecondary, fontSize: 12 }}>{s.eta_note}</div>
               {roadDistanceKm && (
@@ -830,43 +844,31 @@ export default function NewOrderPage() {
             </div>
 
             <div style={cardStyle}>
-              <label style={{ ...labelStyle, marginTop: 0 }}>{s.payment_title}</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => setField('paymentMethod', 'revolut')}
-                  style={pillStyle(form.paymentMethod === 'revolut')}
-                >
-                  {s.payment_revolut}
-                </button>
-                {form.paymentMethod === 'revolut' && (
-                  <a
-                    href={process.env.NEXT_PUBLIC_REVOLUT_LINK || 'https://revolut.me/lgkcourier'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={e => e.stopPropagation()}
-                    style={{ fontSize: 12, color: '#2563EB', paddingLeft: 10, textDecoration: 'underline' }}
-                  >
-                    revolut.me/lgkcourier →
-                  </a>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setField('paymentMethod', 'bank_transfer')}
-                  style={pillStyle(form.paymentMethod === 'bank_transfer')}
-                >
-                  {s.payment_bank}
-                </button>
-                {form.paymentMethod === 'bank_transfer' && (
-                  <div style={{ fontSize: 12, color: colors.textSecondary, paddingLeft: 10, lineHeight: 1.6 }}>
-                    <div style={{ fontFamily: 'monospace' }}>
-                      IBAN: {process.env.NEXT_PUBLIC_BANK_IBAN || '— widoczny po złożeniu zamówienia'}
-                    </div>
-                    <div>Ref: numer zamówienia — widoczny po złożeniu</div>
-                  </div>
-                )}
-              </div>
-              <p style={{ fontSize: 12, color: colors.textSecondary, marginTop: 10, marginBottom: 0 }}>
+              <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', margin: '0 0 10px' }}>
+                {s.payment_title}
+              </p>
+              <a
+                href={process.env.NEXT_PUBLIC_REVOLUT_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '12px 14px',
+                  background: '#191C20',
+                  borderRadius: 8, textDecoration: 'none', marginBottom: 8,
+                }}
+              >
+                <span style={{ fontSize: 20 }}>💳</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 14, fontWeight: 500, color: '#fff', margin: 0 }}>
+                    {s.payment_revolut}
+                  </p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '2px 0 0' }}>
+                    {(process.env.NEXT_PUBLIC_REVOLUT_LINK || '').replace('https://', '')} →
+                  </p>
+                </div>
+              </a>
+              <p style={{ fontSize: 11, color: '#9CA3AF', margin: 0 }}>
                 {s.payment_note}
               </p>
             </div>
@@ -910,18 +912,14 @@ export default function NewOrderPage() {
               className="btn-primary"
               style={{ flex: 1, height: 48, fontSize: 15, opacity: submitting ? 0.6 : 1 }}
             >
-              {submitting
-                ? s.submitting
-                : form.paymentMethod === 'bank_transfer'
-                ? s.submit_bank
-                : s.submit_revolut}
+              {submitting ? s.submitting : s.submit_revolut}
             </button>
           )}
         </div>
-        {price !== null && step >= 3 && (
+        {displayPrice !== null && step >= 3 && (
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase' }}>{s.summary_price}</div>
-            <div style={{ color: '#D4FF00', fontWeight: 900, fontSize: 20, fontFamily: "'Fira Code', monospace" }}>PLN {price}</div>
+            <div style={{ color: '#111827', fontWeight: 900, fontSize: 20, fontFamily: "'Fira Code', monospace" }}>PLN {displayPrice.toFixed(2)}</div>
           </div>
         )}
       </div>
