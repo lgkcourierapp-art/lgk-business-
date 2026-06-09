@@ -36,7 +36,7 @@ export default function IntegrationsSection({ user }) {
       }).select('id, key_prefix, last_used_at, is_active').single()
       if (inserted) { setExistingApiKey(inserted); setNewRawKey(raw) }
     } catch (err) {
-      console.error('Key generation failed:', err.message)
+      if (process.env.NODE_ENV === 'development') { console.error('Key generation failed:', err.message) }
     }
     setGeneratingKey(false)
   }

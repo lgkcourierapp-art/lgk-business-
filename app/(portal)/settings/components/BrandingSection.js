@@ -90,7 +90,7 @@ export default function BrandingSection({ user }) {
       setSignedLogoUrl(null)
       window.dispatchEvent(new Event('lgk-profile-updated'))
     } catch (err) {
-      console.error('Logo delete error:', err.message)
+      if (process.env.NODE_ENV === 'development') { console.error('Logo delete error:', err.message) }
     } finally {
       setDeleting(false)
     }

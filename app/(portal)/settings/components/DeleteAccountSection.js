@@ -45,7 +45,7 @@ export default function DeleteAccountSection() {
       await supabase.auth.signOut()
       window.location.href = '/?deleted=true'
     } catch (err) {
-      console.error('Delete account error:', err.message)
+      if (process.env.NODE_ENV === 'development') { console.error('Delete account error:', err.message) }
       setDeleteError(t('deleteError'))
       setDeleteStep(2)
     }

@@ -78,9 +78,21 @@ export default function DriversPage() {
   }
 
   const handleOverflowToggle = async () => {
-    const newVal = !overflowEnabled
-    await supabase.from('feature_flags').update({ enabled: newVal }).eq('name', 'overflow_to_gig')
+    const prev = overflowEnabled
+    const newVal = !prev
     setOverflowEnabled(newVal)
+    const { data, error } = await supabase
+      .from('feature_flags')
+      .update({ enabled: newVal })
+      .eq('name', 'overflow_to_gig')
+      .select()
+      .single()
+    if (error || !data) {
+      setOverflowEnabled(prev)
+      setAddError(!data && !error
+        ? 'Brak uprawnień — wymagany dostęp administratora'
+        : `Błąd: ${error?.message}`)
+    }
   }
 
   const cardStyle = { background: colors.card, border: '1px solid ' + colors.border, borderRadius: 12, padding: 24, marginBottom: 16 }
