@@ -279,6 +279,9 @@ export default function NewOrderPage() {
     setField('deliveryPostcode', addr.postcode || '')
     setField('deliveryLat', addr.lat)
     setField('deliveryLng', addr.lng)
+    if (addr.autofillName  && !form.recipientName)   setField('recipientName',  addr.autofillName)
+    if (addr.autofillPhone && !form.recipientPhone)  setField('recipientPhone', addr.autofillPhone)
+    if (addr.autofillNotes && !form.deliveryNotes)   setField('deliveryNotes',  addr.autofillNotes)
     setFieldErrors(e => ({ ...e, deliveryAddress: undefined }))
     if (addr.lat && addr.lng) {
       const pickupLat = form.pickupLat || profile?.pickup_lat

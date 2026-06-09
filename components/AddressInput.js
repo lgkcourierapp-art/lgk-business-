@@ -1,11 +1,13 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { searchAddresses } from '@/lib/addressSearch'
 import { useApp } from '@/utils/appContext'
+import { supabase } from '@/lib/supabase'
 
 export default function AddressInput({
   label,
   placeholder,
+  value: controlledValue,
   addressType = 'delivery',
   required = false,
   onChange,
@@ -13,19 +15,76 @@ export default function AddressInput({
   clientId,
   showSaved,
   onReuseNote,
+  onSelect,
 }) {
   const { lang } = useApp()
-  const [value, setValue] = useState('')
+  const [value, setValue] = useState(controlledValue || '')
   const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [searched, setSearched] = useState(false)
   const [focused, setFocused] = useState(false)
+  const [savedAddresses, setSavedAddresses] = useState([])
   const debounceRef = useRef(null)
+
+  // Sync controlled value from parent
+  useEffect(() => {
+    if (controlledValue !== undefined && controlledValue !== value) {
+      setValue(controlledValue || '')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controlledValue])
+
+  // Load saved addresses on mount
+  useEffect(() => {
+    let cancelled = false
+    const loadSaved = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user || cancelled) return
+        const { data } = await supabase
+          .from('saved_addresses')
+          .select('id, label, contact_name, contact_phone, street, house_number, postal_code, city, notes, delivery_count')
+          .eq('client_id', user['id'])
+          .order('delivery_count', { ascending: false, nullsFirst: false })
+          .limit(20)
+        if (!cancelled) setSavedAddresses(data || [])
+      } catch {}
+    }
+    loadSaved()
+    return () => { cancelled = true }
+  }, [])
 
   const defaultPlaceholder = lang === 'pl'
     ? 'Zacznij pisać lub wklej adres...'
     : 'Start typing or paste address...'
+
+  const getFilteredSaved = (query) => {
+    if (!query || query.length < 2) return []
+    const q = query.toLowerCase()
+    return savedAddresses.filter(a =>
+      a.street?.toLowerCase().includes(q) ||
+      a.contact_name?.toLowerCase().includes(q) ||
+      a.label?.toLowerCase().includes(q) ||
+      a.city?.toLowerCase().includes(q)
+    ).slice(0, 3).map(a => {
+      const addr = [a.street, a.house_number && a.house_number !== a.street ? a.house_number : null].filter(Boolean).join(' ')
+      return {
+        label:         a.contact_name ? `${a.contact_name} — ${addr}` : addr,
+        street:        a.street || '',
+        houseNumber:   a.house_number || '',
+        postcode:      a.postal_code || '',
+        city:          a.city || 'Szczecin',
+        lat:           a.lat ?? null,
+        lng:           a.lng ?? null,
+        isSaved:       true,
+        savedId:       a['id'],
+        recipientName:  a.contact_name || null,
+        recipientPhone: a.contact_phone || null,
+        notes:         a.notes || null,
+      }
+    })
+  }
 
   const handleChange = (e) => {
     const val = e.target.value
@@ -41,31 +100,47 @@ export default function AddressInput({
       setOpen(false)
       return
     }
+
+    const matched = getFilteredSaved(val)
+    if (matched.length > 0) {
+      setSuggestions(matched)
+      setOpen(true)
+    }
+
     setLoading(true)
     setOpen(true)
     debounceRef.current = setTimeout(async () => {
-      const results = await searchAddresses(val, lang)
-      setSuggestions(results)
+      const apiResults = await searchAddresses(val, lang)
+      setSuggestions([...getFilteredSaved(val), ...apiResults])
       setLoading(false)
       setSearched(true)
     }, 300)
   }
 
   const handleSelect = (s) => {
-    const display = [s.street, s.houseNumber].filter(Boolean).join(' ') || s.label
+    const display = s.isSaved
+      ? [s.street, s.houseNumber].filter(Boolean).join(' ') || s.label
+      : [s.street, s.houseNumber].filter(Boolean).join(' ') || s.label
     setValue(display)
     setSuggestions([])
     setOpen(false)
     setSearched(false)
-    onChange?.({
-      address: display,
-      street: s.street || '',
-      houseNumber: s.houseNumber || '',
-      city: s.city || 'Szczecin',
-      postcode: s.postcode || '',
-      lat: s.lat,
-      lng: s.lng,
-    })
+    const payload = {
+      address:      display,
+      street:       s.street || '',
+      houseNumber:  s.houseNumber || '',
+      city:         s.city || 'Szczecin',
+      postcode:     s.postcode || '',
+      lat:          s.lat,
+      lng:          s.lng,
+      ...(s.isSaved ? {
+        autofillName:  s.recipientName  || null,
+        autofillPhone: s.recipientPhone || null,
+        autofillNotes: s.notes          || null,
+      } : {}),
+    }
+    onChange?.(payload)
+    onSelect?.(payload)
   }
 
   const handleKeyDown = (e) => {
@@ -138,10 +213,11 @@ export default function AddressInput({
         }}>
           {suggestions.map((s, i) => (
             <SuggestionRow
-              key={s.label + i}
+              key={(s.savedId || s.label) + i}
               s={s}
               onSelect={handleSelect}
               isLast={i === suggestions.length - 1}
+              lang={lang}
             />
           ))}
           {searched && !loading && suggestions.length === 0 && (
@@ -155,7 +231,7 @@ export default function AddressInput({
   )
 }
 
-function SuggestionRow({ s, onSelect, isLast }) {
+function SuggestionRow({ s, onSelect, isLast, lang }) {
   const [hovered, setHovered] = useState(false)
   return (
     <button
@@ -163,24 +239,34 @@ function SuggestionRow({ s, onSelect, isLast }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'block', width: '100%',
+        display: 'flex', width: '100%',
         padding: '10px 14px',
         background: hovered ? '#F5F5F5' : '#FFFFFF',
         border: 'none',
         borderBottom: isLast ? 'none' : '0.5px solid #F0F0F0',
         textAlign: 'left', cursor: 'pointer',
         transition: 'background 100ms ease',
+        alignItems: 'center',
+        gap: 10,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ flexShrink: 0, fontSize: 13, opacity: 0.45 }}>📍</span>
-        <span style={{
+      <span style={{ flexShrink: 0, fontSize: 14 }}>{s.isSaved ? '⭐' : '📍'}</span>
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        <div style={{
           color: '#0A0A0A', fontSize: '13px', fontWeight: 500,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>
           {s.label || [s.street, s.houseNumber].filter(Boolean).join(' ')}
-        </span>
+        </div>
+        {s.isSaved && s.recipientPhone && (
+          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>{s.recipientPhone}</div>
+        )}
       </div>
+      {s.isSaved && (
+        <span style={{ fontSize: 10, padding: '1px 6px', background: 'rgba(212,255,0,0.15)', color: '#5a6a00', borderRadius: 4, flexShrink: 0 }}>
+          {lang === 'pl' ? 'Zapisany' : 'Saved'}
+        </span>
+      )}
     </button>
   )
 }
