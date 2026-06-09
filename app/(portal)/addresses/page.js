@@ -10,14 +10,18 @@ const BLANK_EDIT = {
   label: '', address_type: 'pickup',
   street: '', house_number: '', apartment: '',
   postal_code: '', city: '', country: 'PL',
-  contact_name: '', contact_phone: '',
+  recipient_name: '', recipient_phone: '',
   access_code: '', instructions: '',
   is_default_pickup: false,
 }
 
 const BLANK_NEW = {
   label: '', name: '', phone: '',
-  address: '', postcode: '', city: 'Szczecin', notes: '',
+  address: '',        // display text / fallback for street
+  street: '',
+  houseNumber: '',
+  apartment: '',
+  postcode: '', city: 'Szczecin', notes: '',
   lat: null, lng: null,
 }
 
@@ -43,7 +47,7 @@ export default function AddressesPage() {
   const [addSuccess, setAddSuccess]   = useState(false)
 
   // Import state
-  const [importing, setImporting]     = useState(false)
+  const [importing, setImporting]       = useState(false)
   const [importResult, setImportResult] = useState(null)
   const [importSuccess, setImportSuccess] = useState(null)
 
@@ -55,9 +59,9 @@ export default function AddressesPage() {
     setUserId(user['id'])
     const { data } = await supabase
       .from('saved_addresses')
-      .select('*')
+      .select('id, label, street, house_number, apartment, postal_code, city, recipient_name, recipient_phone, notes, delivery_count, use_count, is_default_pickup, address_type')
       .eq('client_id', user['id'])
-      .order('delivery_count', { ascending: false, nullsFirst: false })
+      .order('use_count', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
     setAddresses(data || [])
     setLoading(false)
@@ -68,7 +72,7 @@ export default function AddressesPage() {
   // ─── Add address ─────────────────────────────────────────────────────────
 
   const handleAddAddress = async () => {
-    if (!newAddress.address?.trim()) {
+    if (!newAddress.street?.trim() && !newAddress.address?.trim()) {
       setAddError(lang === 'pl' ? 'Adres jest wymagany' : 'Address is required')
       return
     }
@@ -78,31 +82,26 @@ export default function AddressesPage() {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError || !user) throw new Error('Not authenticated')
 
-      const payload = {
-        client_id:     user['id'],
-        label:         newAddress.label?.trim() || null,
-        contact_name:  newAddress.name?.trim() || null,
-        contact_phone: newAddress.phone?.trim() || null,
-        street:        newAddress.address?.trim(),
-        postal_code:   newAddress.postcode?.trim() || null,
-        city:          newAddress.city?.trim() || 'Szczecin',
-        notes:         newAddress.notes?.trim() || null,
-        delivery_count: 0,
-        address_type:  'delivery',
-      }
+      const { error } = await supabase
+        .from('saved_addresses')
+        .insert({
+          client_id:      user['id'],
+          label:          newAddress.label?.trim() || null,
+          street:         newAddress.street?.trim() || newAddress.address?.trim() || null,
+          house_number:   newAddress.houseNumber?.trim() || null,
+          apartment:      newAddress.apartment?.trim() || null,
+          postal_code:    newAddress.postcode?.trim() || null,
+          city:           newAddress.city?.trim() || 'Szczecin',
+          recipient_name:  newAddress.name?.trim() || null,
+          recipient_phone: newAddress.phone?.trim() || null,
+          notes:          newAddress.notes?.trim() || null,
+          delivery_count: 0,
+          use_count:      0,
+          address_type:   'delivery',
+          created_at:     new Date().toISOString(),
+        })
 
-      // Try with lat/lng; silently fall back if columns don't exist yet
-      const { error } = await supabase.from('saved_addresses').insert({
-        ...payload,
-        lat: newAddress.lat || null,
-        lng: newAddress.lng || null,
-      })
-      if (error?.message?.includes('lat') || error?.message?.includes('lng')) {
-        const { error: e2 } = await supabase.from('saved_addresses').insert(payload)
-        if (e2) throw e2
-      } else if (error) {
-        throw error
-      }
+      if (error) throw error
 
       setAddSuccess(true)
       setNewAddress(BLANK_NEW)
@@ -253,15 +252,17 @@ export default function AddressesPage() {
       for (let i = 0; i < importResult.preview.length; i += 50) {
         const batch = importResult.preview.slice(i, i + 50)
         const rows = batch.filter(a => a.address?.trim()).map(a => ({
-          client_id:     user['id'],
-          contact_name:  a.name || null,
-          contact_phone: a.phone || null,
-          street:        a.address.trim(),
-          postal_code:   a.postcode || null,
-          city:          a.city || 'Szczecin',
-          notes:         a.notes || null,
-          delivery_count: 0,
-          address_type:  'delivery',
+          client_id:       user['id'],
+          recipient_name:  a.name || null,
+          recipient_phone: a.phone || null,
+          street:          a.address.trim(),
+          postal_code:     a.postcode || null,
+          city:            a.city || 'Szczecin',
+          notes:           a.notes || null,
+          delivery_count:  0,
+          use_count:       0,
+          address_type:    'delivery',
+          created_at:      new Date().toISOString(),
         }))
         const { error } = await supabase.from('saved_addresses').insert(rows)
         if (error) throw error
@@ -311,20 +312,17 @@ export default function AddressesPage() {
             {lang === 'pl' ? 'Zapisane adresy' : 'Saved addresses'}
           </h1>
           <div style={{ display: 'flex', gap: 8 }}>
-            {/* Import button */}
-            <>
-              <input
-                type="file"
-                id="import-file"
-                accept=".csv,.vcf,.txt"
-                style={{ display: 'none' }}
-                onChange={handleImport}
-                onClick={e => { e.target.value = '' }}
-              />
-              <label htmlFor="import-file" style={btnSecondary}>
-                ↥ {lang === 'pl' ? 'Importuj' : 'Import'}
-              </label>
-            </>
+            <input
+              type="file"
+              id="import-file"
+              accept=".csv,.vcf,.txt"
+              style={{ display: 'none' }}
+              onChange={handleImport}
+              onClick={e => { e.target.value = '' }}
+            />
+            <label htmlFor="import-file" style={btnSecondary}>
+              ↥ {lang === 'pl' ? 'Importuj' : 'Import'}
+            </label>
             <button
               onClick={() => { setShowAddForm(v => !v); setNewAddress(BLANK_NEW); setAddError(null) }}
               style={{ background: '#D4FF00', color: '#000', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
@@ -334,12 +332,11 @@ export default function AddressesPage() {
           </div>
         </div>
 
-        {/* Format hint */}
         <p style={{ fontSize: 11, color: '#9CA3AF', margin: '-8px 0 12px' }}>
           {lang === 'pl' ? 'Import obsługuje: CSV (Excel), VCF (iPhone/Android kontakty)' : 'Import supports: CSV (Excel), VCF (iPhone/Android contacts)'}
         </p>
 
-        {/* Success toasts */}
+        {/* Toasts */}
         {addSuccess && (
           <div style={{ background: '#D1FAE5', border: '1px solid #6EE7B7', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#065F46' }}>
             {lang === 'pl' ? 'Adres zapisany' : 'Address saved'}
@@ -351,12 +348,14 @@ export default function AddressesPage() {
           </div>
         )}
 
-        {/* Import result preview */}
+        {/* Import error */}
         {importResult?.error && (
           <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#991B1B' }}>
             {importResult.error}
           </div>
         )}
+
+        {/* Import preview */}
         {importResult?.preview && (
           <div style={{ border: '1px solid ' + colors.border, borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
             <div style={{ background: colors.card, padding: '12px 16px', borderBottom: '1px solid ' + colors.border, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
@@ -366,10 +365,7 @@ export default function AddressesPage() {
                   : `Found ${importResult.preview.length} addresses — ${importResult.file}`}
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={() => setImportResult(null)}
-                  style={{ ...btnSecondary, fontSize: 13 }}
-                >
+                <button onClick={() => setImportResult(null)} style={{ ...btnSecondary, fontSize: 13 }}>
                   {lang === 'pl' ? 'Anuluj' : 'Cancel'}
                 </button>
                 <button
@@ -405,7 +401,6 @@ export default function AddressesPage() {
               {lang === 'pl' ? 'Nowy adres' : 'New address'}
             </h3>
 
-            {/* Label */}
             <label style={{ display: 'block', fontSize: 13, color: '#6B7280', marginBottom: 4 }}>
               {lang === 'pl' ? 'Etykieta (opcjonalnie)' : 'Label (optional)'}
             </label>
@@ -416,7 +411,6 @@ export default function AddressesPage() {
               style={{ ...inputStyle, marginBottom: 12 }}
             />
 
-            {/* Name */}
             <label style={{ display: 'block', fontSize: 13, color: '#6B7280', marginBottom: 4 }}>
               {lang === 'pl' ? 'Imię i nazwisko' : 'Name'}
             </label>
@@ -427,7 +421,6 @@ export default function AddressesPage() {
               style={{ ...inputStyle, marginBottom: 12 }}
             />
 
-            {/* Phone */}
             <label style={{ display: 'block', fontSize: 13, color: '#6B7280', marginBottom: 4 }}>
               {lang === 'pl' ? 'Telefon' : 'Phone'}
             </label>
@@ -439,7 +432,6 @@ export default function AddressesPage() {
               style={{ ...inputStyle, marginBottom: 12 }}
             />
 
-            {/* Address with autocomplete */}
             <label style={{ display: 'block', fontSize: 13, color: '#6B7280', marginBottom: 4 }}>
               {lang === 'pl' ? 'Adres *' : 'Address *'}
             </label>
@@ -448,17 +440,18 @@ export default function AddressesPage() {
                 value={newAddress.address}
                 onChange={s => setNewAddress(p => ({
                   ...p,
-                  address:  s.address || s.street || p.address,
-                  postcode: s.postcode || p.postcode,
-                  city:     s.city || p.city,
-                  lat:      s.lat ?? p.lat,
-                  lng:      s.lng ?? p.lng,
+                  address:     s.address || [s.street, s.houseNumber].filter(Boolean).join(' ') || p.address,
+                  street:      s.street || '',
+                  houseNumber: s.houseNumber || '',
+                  postcode:    s.postcode || p.postcode,
+                  city:        s.city || p.city,
+                  lat:         s.lat ?? p.lat,
+                  lng:         s.lng ?? p.lng,
                 }))}
                 placeholder={lang === 'pl' ? 'ul. Piastów 44/3' : 'Street and number'}
               />
             </div>
 
-            {/* Postcode + city */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 8, marginBottom: 12 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 13, color: '#6B7280', marginBottom: 4 }}>
@@ -483,7 +476,6 @@ export default function AddressesPage() {
               </div>
             </div>
 
-            {/* Notes */}
             <label style={{ display: 'block', fontSize: 13, color: '#6B7280', marginBottom: 4 }}>
               {lang === 'pl' ? 'Notatka dla kuriera' : 'Delivery note'}
             </label>
@@ -495,7 +487,7 @@ export default function AddressesPage() {
             />
 
             {addError && (
-              <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 10, margin: '0 0 10px' }}>{addError}</p>
+              <p style={{ color: '#DC2626', fontSize: 13, margin: '0 0 10px' }}>{addError}</p>
             )}
 
             <div style={{ display: 'flex', gap: 8 }}>
@@ -537,89 +529,100 @@ export default function AddressesPage() {
             ].map(({ title, list }) => list.length > 0 && (
               <div key={title} style={{ marginBottom: 28 }}>
                 <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>{title}</div>
-                {list.map(addr => (
-                  <div key={addr['id']} style={{ ...cardStyle, borderLeft: addr.is_default_pickup ? '3px solid #D4FF00' : undefined }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {/* Label row */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
-                          <div style={{ fontWeight: 700, fontSize: 15, color: colors.text }}>{addr.label || addr.street}</div>
-                          {addr.is_default_pickup && (
-                            <span style={{ background: '#D4FF0020', color: '#D4FF00', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>DEFAULT</span>
+                {list.map(addr => {
+                  const fullAddress = [
+                    addr.street,
+                    addr.house_number,
+                    addr.apartment ? `m. ${addr.apartment}` : null,
+                    addr.postal_code,
+                    addr.city,
+                  ].filter(Boolean).join(', ')
+
+                  return (
+                    <div key={addr['id']} style={{ ...cardStyle, borderLeft: addr.is_default_pickup ? '3px solid #D4FF00' : undefined }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {/* Label + badges */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
+                            <div style={{ fontWeight: 700, fontSize: 15, color: colors.text }}>
+                              {addr.label || addr.street}
+                            </div>
+                            {addr.is_default_pickup && (
+                              <span style={{ background: '#D4FF0020', color: '#D4FF00', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>DEFAULT</span>
+                            )}
+                            {addr.delivery_count >= 11 && (
+                              <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 8, background: '#D4FF00', color: '#0A0A0A' }}>VIP</span>
+                            )}
+                            {addr.delivery_count >= 6 && addr.delivery_count < 11 && (
+                              <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 8, background: 'rgba(212,255,0,0.15)', color: '#D4FF00' }}>Wierny</span>
+                            )}
+                            {addr.delivery_count >= 3 && addr.delivery_count < 6 && (
+                              <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 8, background: 'rgba(212,255,0,0.08)', color: 'rgba(212,255,0,0.7)' }}>Stały</span>
+                            )}
+                          </div>
+                          {/* Full address */}
+                          <div style={{ fontSize: 13, color: colors.textSecondary }}>{fullAddress}</div>
+                          {/* Recipient */}
+                          {addr.recipient_name && (
+                            <div style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                              {addr.recipient_name}{addr.recipient_phone ? ' · ' + addr.recipient_phone : ''}
+                            </div>
                           )}
-                          {(addr.delivery_count >= 11) && (
-                            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 8, background: '#D4FF00', color: '#0A0A0A' }}>VIP</span>
+                          {/* Notes */}
+                          {addr.notes && (
+                            <div style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2, fontStyle: 'italic' }}>
+                              {addr.notes}
+                            </div>
                           )}
-                          {(addr.delivery_count >= 6 && addr.delivery_count < 11) && (
-                            <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 8, background: 'rgba(212,255,0,0.15)', color: '#D4FF00' }}>Wierny</span>
-                          )}
-                          {(addr.delivery_count >= 3 && addr.delivery_count < 6) && (
-                            <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 8, background: 'rgba(212,255,0,0.08)', color: 'rgba(212,255,0,0.7)' }}>Stały</span>
+                          {/* Usage */}
+                          {addr.delivery_count > 0 && (
+                            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>
+                              {addr.delivery_count} {lang === 'pl' ? 'dostaw' : 'deliveries'}
+                              {addr.use_count > 0 ? ` · ${addr.use_count} ${lang === 'pl' ? 'użyć' : 'uses'}` : ''}
+                            </div>
                           )}
                         </div>
-                        {/* Full address */}
-                        <div style={{ fontSize: 13, color: colors.textSecondary }}>
-                          {[addr.street, addr.house_number && addr.house_number !== addr.street ? addr.house_number : null].filter(Boolean).join(' ')}
-                          {addr.postal_code ? ', ' + addr.postal_code : ''}
-                          {addr.city ? ' ' + addr.city : ''}
-                        </div>
-                        {/* Contact */}
-                        {addr.contact_name && (
-                          <div style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-                            {addr.contact_name}{addr.contact_phone ? ' · ' + addr.contact_phone : ''}
-                          </div>
-                        )}
-                        {/* Notes */}
-                        {addr.notes && (
-                          <div style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2, fontStyle: 'italic' }}>
-                            {addr.notes}
-                          </div>
-                        )}
-                        {/* Delivery count */}
-                        {addr.delivery_count > 0 && (
-                          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>
-                            {addr.delivery_count} {lang === 'pl' ? 'dostaw' : 'deliveries'}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginLeft: 8 }}>
-                        {!addr.is_default_pickup && (
-                          <button onClick={() => setDefault(addr)} style={{ background: 'transparent', border: '1px solid ' + colors.border, color: colors.textSecondary, padding: '6px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
-                            {lang === 'pl' ? 'Domyślny' : 'Set default'}
+
+                        <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginLeft: 8 }}>
+                          {!addr.is_default_pickup && (
+                            <button onClick={() => setDefault(addr)} style={{ background: 'transparent', border: '1px solid ' + colors.border, color: colors.textSecondary, padding: '6px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
+                              {lang === 'pl' ? 'Domyślny' : 'Set default'}
+                            </button>
+                          )}
+                          <button onClick={() => setEditing({ ...addr })} style={{ background: 'transparent', border: '1px solid ' + colors.border, color: '#D4FF00', padding: '6px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
+                            {lang === 'pl' ? 'Edytuj' : 'Edit'}
                           </button>
-                        )}
-                        <button onClick={() => setEditing({ ...addr })} style={{ background: 'transparent', border: '1px solid ' + colors.border, color: '#D4FF00', padding: '6px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
-                          {lang === 'pl' ? 'Edytuj' : 'Edit'}
-                        </button>
-                        <button onClick={() => setDeleteConfirm(addr['id'])} style={{ background: 'transparent', border: '1px solid #FF3B3040', color: '#FF3B30', padding: '6px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
-                          {lang === 'pl' ? 'Usuń' : 'Delete'}
-                        </button>
-                      </div>
-                    </div>
-                    {deleteConfirm === addr['id'] && (
-                      <div style={{ marginTop: 10, padding: 12, background: '#FF3B3010', borderRadius: 8, border: '1px solid #FF3B3030', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ color: '#FF6B6B', fontSize: 13 }}>
-                          {lang === 'pl' ? `Usunąć "${addr.label || addr.street}"?` : `Delete "${addr.label || addr.street}"?`}
-                        </span>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <button onClick={() => remove(addr['id'])} style={{ background: '#FF3B30', color: '#FFF', border: 'none', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+                          <button onClick={() => setDeleteConfirm(addr['id'])} style={{ background: 'transparent', border: '1px solid #FF3B3040', color: '#FF3B30', padding: '6px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
                             {lang === 'pl' ? 'Usuń' : 'Delete'}
                           </button>
-                          <button onClick={() => setDeleteConfirm(null)} style={{ background: 'transparent', border: '1px solid ' + colors.border, color: colors.textSecondary, padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
-                            {lang === 'pl' ? 'Anuluj' : 'Cancel'}
-                          </button>
                         </div>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {deleteConfirm === addr['id'] && (
+                        <div style={{ marginTop: 10, padding: 12, background: '#FF3B3010', borderRadius: 8, border: '1px solid #FF3B3030', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: '#FF6B6B', fontSize: 13 }}>
+                            {lang === 'pl' ? `Usunąć "${addr.label || addr.street}"?` : `Delete "${addr.label || addr.street}"?`}
+                          </span>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={() => remove(addr['id'])} style={{ background: '#FF3B30', color: '#FFF', border: 'none', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+                              {lang === 'pl' ? 'Usuń' : 'Delete'}
+                            </button>
+                            <button onClick={() => setDeleteConfirm(null)} style={{ background: 'transparent', border: '1px solid ' + colors.border, color: colors.textSecondary, padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
+                              {lang === 'pl' ? 'Anuluj' : 'Cancel'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             ))}
           </>
         )}
       </main>
 
-      {/* Edit modal (existing addresses) */}
+      {/* Edit modal */}
       {editing && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div style={{ background: colors.card, borderRadius: '16px 16px 0 0', padding: 24, width: '100%', maxWidth: 600, maxHeight: '90vh', overflowY: 'auto' }}>
@@ -630,7 +633,12 @@ export default function AddressesPage() {
               <button onClick={() => setEditing(null)} style={{ background: 'transparent', border: 'none', color: colors.textSecondary, fontSize: 22, cursor: 'pointer' }}>×</button>
             </div>
 
-            <input placeholder={lang === 'pl' ? 'Etykieta (np. Magazyn, Dom)' : 'Nickname (e.g. Warehouse, Home)'} value={editing.label} onChange={e => set('label', e.target.value)} style={{ ...inputStyle, marginBottom: 10 }} />
+            <input
+              placeholder={lang === 'pl' ? 'Etykieta (np. Magazyn, Dom)' : 'Nickname (e.g. Warehouse, Home)'}
+              value={editing.label}
+              onChange={e => set('label', e.target.value)}
+              style={{ ...inputStyle, marginBottom: 10 }}
+            />
 
             <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
               {['pickup', 'delivery'].map(type => (
@@ -645,16 +653,32 @@ export default function AddressesPage() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, marginBottom: 10 }}>
-              <input placeholder={lang === 'pl' ? 'Ulica' : 'Street'} value={editing.street} onChange={e => set('street', e.target.value)} style={{ ...inputStyle }} />
-              <input placeholder="Nr" value={editing.house_number} onChange={e => set('house_number', e.target.value)} style={{ ...inputStyle }} />
+              <input placeholder={lang === 'pl' ? 'Ulica' : 'Street'} value={editing.street} onChange={e => set('street', e.target.value)} style={inputStyle} />
+              <input placeholder="Nr" value={editing.house_number} onChange={e => set('house_number', e.target.value)} style={inputStyle} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
-              <input placeholder={lang === 'pl' ? 'Miasto' : 'City'} value={editing.city} onChange={e => set('city', e.target.value)} style={{ ...inputStyle }} />
-              <input placeholder={lang === 'pl' ? 'Kod pocztowy' : 'Postal code'} value={editing.postal_code} onChange={e => set('postal_code', e.target.value)} style={{ ...inputStyle }} />
+              <input placeholder={lang === 'pl' ? 'Miasto' : 'City'} value={editing.city} onChange={e => set('city', e.target.value)} style={inputStyle} />
+              <input placeholder={lang === 'pl' ? 'Kod pocztowy' : 'Postal code'} value={editing.postal_code} onChange={e => set('postal_code', e.target.value)} style={inputStyle} />
             </div>
-            <input placeholder={lang === 'pl' ? 'Imię i nazwisko' : 'Contact name'} value={editing.contact_name} onChange={e => set('contact_name', e.target.value)} style={{ ...inputStyle, marginBottom: 10 }} />
-            <input placeholder={lang === 'pl' ? 'Telefon' : 'Contact phone'} value={editing.contact_phone} onChange={e => set('contact_phone', e.target.value)} style={{ ...inputStyle, marginBottom: 10 }} />
-            <textarea placeholder={lang === 'pl' ? 'Notatka dla kuriera' : 'Notes for courier'} value={editing.instructions || ''} onChange={e => set('instructions', e.target.value)} rows={3} style={{ ...inputStyle, resize: 'none', fontFamily: 'inherit', marginBottom: 10 }} />
+            <input
+              placeholder={lang === 'pl' ? 'Imię i nazwisko odbiorcy' : 'Recipient name'}
+              value={editing.recipient_name}
+              onChange={e => set('recipient_name', e.target.value)}
+              style={{ ...inputStyle, marginBottom: 10 }}
+            />
+            <input
+              placeholder={lang === 'pl' ? 'Telefon odbiorcy' : 'Recipient phone'}
+              value={editing.recipient_phone}
+              onChange={e => set('recipient_phone', e.target.value)}
+              style={{ ...inputStyle, marginBottom: 10 }}
+            />
+            <textarea
+              placeholder={lang === 'pl' ? 'Notatka dla kuriera' : 'Notes for courier'}
+              value={editing.notes || ''}
+              onChange={e => set('notes', e.target.value)}
+              rows={3}
+              style={{ ...inputStyle, resize: 'none', fontFamily: 'inherit', marginBottom: 10 }}
+            />
 
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, cursor: 'pointer' }}>
               <input type="checkbox" checked={editing.is_default_pickup} onChange={e => set('is_default_pickup', e.target.checked)} style={{ accentColor: '#D4FF00', width: 16, height: 16 }} />
