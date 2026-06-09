@@ -62,7 +62,7 @@ export default function IntegrationsSection({ user }) {
 
   return (
     <div style={card}>
-      <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Integracje POS</div>
+      <div style={{ color: '#374151', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Integracje POS</div>
 
       {/* GloriaFood */}
       <div style={tile}>

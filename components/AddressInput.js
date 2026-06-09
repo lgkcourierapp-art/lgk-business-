@@ -161,7 +161,7 @@ export default function AddressInput({
       <style>{`@keyframes lgk-spin { to { transform: rotate(360deg) } }`}</style>
 
       {label && (
-        <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: '15px', marginBottom: '10px' }}>
+        <div style={{ color: '#374151', fontWeight: 700, fontSize: '15px', marginBottom: '10px' }}>
           {label}{required && <span style={{ color: '#FF3B30', marginLeft: 2 }}>*</span>}
         </div>
       )}

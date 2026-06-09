@@ -55,7 +55,7 @@ export default function SettingsPage() {
 
         {/* Saved Addresses */}
         <div style={card}>
-          <div style={{ color: '#D4FF00', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>{t('savedAddresses')}</div>
+          <div style={{ color: '#374151', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>{t('savedAddresses')}</div>
           {loadingAddresses ? (
             <div style={{ color: colors.textSecondary, fontSize: 14 }}>{t('loading')}</div>
           ) : savedAddresses.length === 0 ? (

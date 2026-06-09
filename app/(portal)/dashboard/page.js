@@ -152,7 +152,7 @@ export default function DashboardPage() {
           <span style={{
             fontWeight: 800,
             fontSize: isUrgent ? '16px' : '14px',
-            color: '#D4FF00',
+            color: '#111827',
             fontFamily: "'Fira Code', monospace",
             letterSpacing: '0.5px',
           }}>
@@ -177,7 +177,7 @@ export default function DashboardPage() {
         )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: '#D4FF00', fontWeight: 700, fontSize: '15px', fontFamily: "'Fira Code', monospace" }}>
+          <span style={{ color: '#111827', fontWeight: 700, fontSize: '15px', fontFamily: "'Fira Code', monospace" }}>
             {formatCurrency(order.price_total || 0)}
           </span>
           <div style={{ display: 'flex', gap: '6px' }}>
@@ -188,7 +188,7 @@ export default function DashboardPage() {
             >
               ▣ QR
             </a>
-            <span style={{ background: '#D4FF0015', color: '#D4FF00', border: '1px solid #D4FF0030', padding: '5px 12px', borderRadius: '6px', fontWeight: 600, fontSize: '12px', display: 'inline-flex', alignItems: 'center' }}>
+            <span style={{ background: '#D4FF00', color: '#0A0A0A', border: '1px solid #D4FF00', padding: '5px 12px', borderRadius: '6px', fontWeight: 600, fontSize: '12px', display: 'inline-flex', alignItems: 'center' }}>
               {isComplete ? t('viewProof') : t('track')}
             </span>
           </div>
@@ -199,7 +199,7 @@ export default function DashboardPage() {
 
   const sectionHead = (label, count) => (
     <div className="section-title" style={{ marginBottom: 12 }}>
-      {label} <span style={{ color: '#D4FF00' }}>({count})</span>
+      {label} <span style={{ color: '#111827' }}>({count})</span>
     </div>
   )
 
@@ -232,8 +232,8 @@ export default function DashboardPage() {
         {!loading && orders.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
             {[
-              { label: lang === 'pl' ? 'Zlecenia (mies.)' : 'Orders (month)', value: thisMonth.length, color: '#D4FF00' },
-              { label: lang === 'pl' ? 'Wydatki (mies.)' : 'Spent (month)', value: 'PLN ' + plnSpent.toFixed(0), color: '#D4FF00' },
+              { label: lang === 'pl' ? 'Zlecenia (mies.)' : 'Orders (month)', value: thisMonth.length, color: '#111827' },
+              { label: lang === 'pl' ? 'Wydatki (mies.)' : 'Spent (month)', value: 'PLN ' + plnSpent.toFixed(0), color: '#111827' },
               { label: lang === 'pl' ? 'Skuteczność' : 'Success rate', value: successRate + '%', color: successRate >= 90 ? '#00C853' : successRate >= 70 ? '#FF9500' : '#FF3B30' },
             ].map(({ label, value, color }) => (
               <div key={label} style={{ background: colors.card, border: '1px solid ' + colors.border, borderRadius: 10, padding: '16px 18px' }}>
