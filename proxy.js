@@ -1,7 +1,10 @@
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server';
 
 // Public routes — no auth required
 const PUBLIC_ROUTES = new Set(['/', '/login', '/register', '/privacy', '/terms']);
+
+const PROTECTED_PREFIXES = ['/dashboard', '/orders', '/addresses', '/settings', '/admin'];
 
 // In-memory rate limiter — sufficient for single-instance launch
 const rateLimitMap = new Map();
@@ -19,6 +22,7 @@ function rateLimit(ip, limit = 20, windowMs = 60000) {
 
 export async function proxy(request) {
   const { pathname } = request.nextUrl;
+  const res = NextResponse.next();
 
   // Rate limit all /api/* routes before any other logic
   if (pathname.startsWith('/api/')) {
@@ -37,11 +41,18 @@ export async function proxy(request) {
   }
 
   // Public routes always pass through
-  if (PUBLIC_ROUTES.has(pathname)) return NextResponse.next();
+  if (PUBLIC_ROUTES.has(pathname)) return res;
 
-  // All other routes pass through — auth is enforced client-side
-  // (server-side enforcement would require migrating to @supabase/ssr)
-  return NextResponse.next();
+  // Server-side auth guard for all portal routes
+  if (PROTECTED_PREFIXES.some(p => pathname.startsWith(p))) {
+    const supabase = createMiddlewareClient({ req: request, res })
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+  }
+
+  return res;
 }
 
 export const config = {
