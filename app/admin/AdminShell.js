@@ -1,7 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
 import AdminNav from '../../components/AdminNav';
+import { LiveStatusBadge } from '../../components/admin/LiveStatusBadge';
 
 const STYLES = {
   fonts: `@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;900&family=Fira+Code:wght@400;500;600;700&display=swap');`,
@@ -28,16 +27,6 @@ const STYLES = {
 };
 
 export default function AdminShell({ adminRole, children }) {
-  const pathname = usePathname();
-  const [time, setTime] = useState('');
-
-  useEffect(() => {
-    const tick = () => setTime(new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }));
-    tick();
-    const t = setInterval(tick, 30000);
-    return () => clearInterval(t);
-  }, []);
-
   return (
     <div id="lgk-admin-root" style={{ display: 'flex', minHeight: '100vh', background: '#0A0A0A' }}>
       <style>{STYLES.fonts}{STYLES.vars}</style>
@@ -49,32 +38,29 @@ export default function AdminShell({ adminRole, children }) {
         borderRight: '1px solid var(--border)',
         position: 'fixed', top: 0, left: 0, bottom: 0,
         display: 'flex', flexDirection: 'column',
-        zIndex: 100, overflowY: 'auto',
+        zIndex: 100, overflow: 'hidden',
       }}>
-        {/* Logo */}
-        <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid var(--border)' }}>
+        {/* Sticky header — never scrolls away */}
+        <div style={{
+          flexShrink: 0,
+          padding: '18px 16px 12px',
+          borderBottom: '1px solid var(--border)',
+          background: '#0D0D0D',
+        }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
             <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '17px', color: 'var(--yellow)', letterSpacing: '3px' }}>LGK</span>
             <span style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: '8px', color: 'rgba(255,255,255,0.6)', letterSpacing: '4px', textTransform: 'uppercase' }}>HQ</span>
           </div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--text3)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--text3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '10px' }}>
             {adminRole === 'ops_assistant' ? 'OPS ASSISTANT' : 'OPERATIONS CONTROL'}
           </div>
+          <LiveStatusBadge />
         </div>
 
-        {/* Nav */}
-        <div style={{ padding: '6px 8px', flex: 1 }}>
+        {/* Scrollable nav — scrolls independently under the sticky header */}
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '6px 8px' }}>
           <AdminNav />
-        </div>
-
-        {/* Status footer */}
-        <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)', animation: 'pulse 2.5s infinite' }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--success)', letterSpacing: '1px' }}>LIVE</span>
-          </div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text3)' }}>Szczecin · {time}</div>
-        </div>
+        </nav>
       </aside>
 
       {/* MAIN */}
