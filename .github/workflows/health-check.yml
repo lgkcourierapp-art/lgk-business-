@@ -1,0 +1,101 @@
+name: Deploy Health Check + Auto-Rollback
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Vercel deployment
+        run: sleep 90 # Give Vercel 90 seconds to deploy
+
+      - name: Check portal health endpoints
+        id: health
+        run: |
+          BASE="https://lgk-business.vercel.app"
+          FAILED=0
+
+          check() {
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 10 "$1")
+            echo "  $1 → $STATUS"
+            if [ "$STATUS" != "200" ] && [ "$STATUS" != "304" ]; then
+              echo "  ❌ FAILED: expected 200/304, got $STATUS"
+              FAILED=1
+            else
+              echo "  ✓ OK"
+            fi
+          }
+
+          echo "Checking portal health..."
+          check "$BASE/"
+          check "$BASE/login"
+          check "$BASE/register"
+          check "$BASE/terms"
+          check "$BASE/privacy"
+
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+
+          if [ "$FAILED" = "1" ]; then
+            echo ""
+            echo "❌ Health check FAILED — initiating rollback"
+            exit 1
+          else
+            echo ""
+            echo "✅ All health checks passed"
+          fi
+
+      - name: Rollback Vercel deployment on failure
+        if: failure() && steps.health.outputs.failed == '1'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: prj_QZAkM38EPMA8dKvtR0zh7EZvW8ni
+          VERCEL_TEAM_ID: team_4AnFjCC8AGuRBP2T6cbdDldf
+        run: |
+          echo "Fetching deployment list..."
+
+          # Get last 5 deployments:
+          DEPLOYS=$(curl -s \
+            "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&teamId=$VERCEL_TEAM_ID&limit=5" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+
+          echo "Deployments: $DEPLOYS"
+
+          # Get the previous deployment ID (second in list):
+          PREV_DEPLOY=$(echo $DEPLOYS | \
+            python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          deploys = d.get('deployments', [])
+          # Find first deployment that is not the current broken one:
+          ready = [x for x in deploys if x.get('state') == 'READY']
+          if len(ready) >= 2:
+            print(ready[1]['uid'])
+          elif len(ready) >= 1:
+            print(ready[0]['uid'])
+          ")
+
+          if [ -z "$PREV_DEPLOY" ]; then
+            echo "❌ Could not find previous deployment to roll back to"
+            exit 1
+          fi
+
+          echo "Rolling back to: $PREV_DEPLOY"
+
+          # Promote previous deployment to production:
+          curl -s -X POST \
+            "https://api.vercel.com/v9/now/deployments/$PREV_DEPLOY/promote" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"teamId\":\"$VERCEL_TEAM_ID\"}"
+
+          echo "✅ Rollback initiated"
+
+      - name: Notify on rollback
+        if: failure()
+        run: |
+          echo "::error::Deploy health check FAILED — rollback initiated"
+          echo "Portal was automatically rolled back."
+          echo "Check the deploy at: https://vercel.com/lgkcourierapp-7877s-projects/lgk-business"
