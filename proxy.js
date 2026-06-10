@@ -1,4 +1,4 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server';
 
 // Public routes — no auth required
@@ -45,7 +45,21 @@ export async function proxy(request) {
 
   // Server-side auth guard for all portal routes
   if (PROTECTED_PREFIXES.some(p => pathname.startsWith(p))) {
-    const supabase = createMiddlewareClient({ req: request, res })
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value)
+              res.cookies.set(name, value, options)
+            })
+          },
+        },
+      }
+    )
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       return NextResponse.redirect(new URL('/login', request.url))
