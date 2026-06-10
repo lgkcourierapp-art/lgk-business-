@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import StatusBadge from '@/components/StatusBadge'
 import { useApp } from '@/utils/appContext'
+import { t as tStr } from '@/lib/strings'
 import WeatherAlert from '@/components/WeatherAlert'
 import { formatStreetAddress, formatCity } from '@/utils/capitalize'
 import { formatCurrency } from '@/utils/marketConfig'
@@ -26,6 +27,8 @@ export default function DashboardPage() {
   const [hoveredCard, setHoveredCard] = useState(null)
   const [userId, setUserId] = useState(null)
   const loginCounted = useRef(false)
+
+  useEffect(() => { document.title = tStr(lang, 'pageDashboard') }, [lang])
 
   const fetchOrders = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()

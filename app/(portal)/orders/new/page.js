@@ -140,6 +140,7 @@ export default function NewOrderPage() {
 
   const displayPrice = price !== null ? applyPsychologicalPricing(price) : null
 
+  useEffect(() => { document.title = t(appLang, 'pageNewOrder') }, [appLang])
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }) }, [])
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, [step])
 

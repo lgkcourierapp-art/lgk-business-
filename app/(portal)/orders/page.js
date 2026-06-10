@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import StatusBadge from '@/components/StatusBadge'
 import Link from 'next/link'
 import { useApp } from '@/utils/appContext'
+import { t as tStr } from '@/lib/strings'
 
 const STATUS_DOTS = {
   pending:          { color: '#9CA3AF', pulse: false },
@@ -57,6 +58,8 @@ export default function OrdersPage() {
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [userId, setUserId] = useState(null)
+
+  useEffect(() => { document.title = tStr(lang, 'pageOrders') }, [lang])
 
   const fetchOrders = useCallback(async (uid) => {
     if (!uid) return

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useApp } from '@/utils/appContext'
+import { t as tStr } from '@/lib/strings'
 import AddressInput from '@/components/AddressInput'
 
 const BLANK_EDIT = {
@@ -28,6 +29,8 @@ const BLANK_NEW = {
 export default function AddressesPage() {
   const router = useRouter()
   const { lang, colors } = useApp()
+
+  useEffect(() => { document.title = tStr(lang, 'pageAddresses') }, [lang])
 
   // List state
   const [addresses, setAddresses]     = useState([])

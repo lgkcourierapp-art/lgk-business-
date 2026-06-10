@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useApp } from '@/utils/appContext'
+import { t as tStr } from '@/lib/strings'
 import BrandingSection from './components/BrandingSection'
 import AddressesSection from './components/AddressesSection'
 import IntegrationsSection from './components/IntegrationsSection'
@@ -13,6 +14,8 @@ export default function SettingsPage() {
   const router = useRouter()
   const { t, colors, lang } = useApp()
   const [user, setUser] = useState(null)
+
+  useEffect(() => { document.title = tStr(lang, 'pageSettings') }, [lang])
   const [savedAddresses, setSavedAddresses] = useState([])
   const [loadingAddresses, setLoadingAddresses] = useState(true)
 
