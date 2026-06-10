@@ -85,6 +85,26 @@ export default function LabelPage({ params }) {
         </button>
       </div>
 
+      {order.payment_status !== 'paid' && (order.amount_pln || order.price_total) && (
+        <div className="no-print" style={{ background: '#191C20', borderBottom: '1px solid #2A2A2A', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 16 }}>💳</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>
+              Payment pending — PLN {parseFloat(order.amount_pln || order.price_total || 0).toFixed(2)}
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Pay via Revolut to unlock courier pickup</div>
+          </div>
+          <a
+            href={`${process.env.NEXT_PUBLIC_REVOLUT_LINK}/PLN/${parseFloat(order.amount_pln || order.price_total || 0).toFixed(2)}?reference=${encodeURIComponent(order.order_number || order['id'])}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ background: '#D4FF00', color: '#000', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 13, textDecoration: 'none', whiteSpace: 'nowrap' }}
+          >
+            Pay now →
+          </a>
+        </div>
+      )}
+
       <div className="label-page" style={{ background: '#FFF', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '32px 16px' }}>
         <div style={{ width: 420, border: '2px solid #000', borderRadius: 8, overflow: 'hidden', fontFamily: 'monospace' }}>
 
