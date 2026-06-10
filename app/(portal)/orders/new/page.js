@@ -275,7 +275,7 @@ export default function NewOrderPage() {
 
   const handleDeliveryChange = (addr) => {
     if (!addr) return
-    setField('deliveryAddress', [addr.address, addr.city].filter(Boolean).join(', '))
+    setField('deliveryAddress', [addr.street, addr.houseNumber].filter(Boolean).join(' ') || addr.address || '')
     setField('deliveryStreet', addr.street || addr.address || '')
     setField('deliveryCity', addr.city || 'Szczecin')
     setField('deliveryPostcode', addr.postcode || '')
@@ -849,7 +849,7 @@ export default function NewOrderPage() {
                 {s.payment_title}
               </p>
               <a
-                href={`${process.env.NEXT_PUBLIC_REVOLUT_LINK}/PLN/${displayPrice != null ? parseFloat(displayPrice).toFixed(2) : '0.00'}?reference=${encodeURIComponent('LGK')}`}
+                href={process.env.NEXT_PUBLIC_REVOLUT_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -865,7 +865,7 @@ export default function NewOrderPage() {
                     {s.payment_revolut}
                   </p>
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '2px 0 0' }}>
-                    {(process.env.NEXT_PUBLIC_REVOLUT_LINK || '').replace('https://', '')}/PLN/{displayPrice != null ? parseFloat(displayPrice).toFixed(2) : '0.00'} →
+                    {(process.env.NEXT_PUBLIC_REVOLUT_LINK || '').replace('https://', '')} → PLN {displayPrice != null ? parseFloat(displayPrice).toFixed(2) : ''}
                   </p>
                 </div>
               </a>
