@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createHash } from 'crypto'
-import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
 import { generateOrderNumber } from '@/utils/orderNumber'
 
 function extractApiKey(request) {
@@ -28,6 +28,7 @@ function buildDeliveryAddress(addr) {
 }
 
 export async function POST(request) {
+  const supabaseAdmin = getSupabaseAdmin()
   // 1. Feature flag check
   const { data: flagRow } = await supabaseAdmin
     .from('feature_flags')

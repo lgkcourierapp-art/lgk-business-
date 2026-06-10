@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createHash } from 'crypto'
-import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
 
 function extractApiKey(request) {
   const auth = request.headers.get('authorization') ?? ''
@@ -9,6 +9,7 @@ function extractApiKey(request) {
 }
 
 export async function POST(request) {
+  const supabaseAdmin = getSupabaseAdmin()
   // Feature flag check
   const { data: flagRow } = await supabaseAdmin
     .from('feature_flags')
