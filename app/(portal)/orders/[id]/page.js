@@ -44,7 +44,10 @@ export default function OrderPage() {
 
   const amount = parseFloat(order.amount_pln || order.price_total || 0)
   const revolutUser = process.env.NEXT_PUBLIC_REVOLUT_USER
-  const revolutHref = revolutUser ? `https://revolut.me/${revolutUser}` : null
+  const revolutBase = revolutUser
+    ? `https://revolut.me/${revolutUser}`
+    : (process.env.NEXT_PUBLIC_REVOLUT_LINK || null)
+  const revolutHref = revolutBase && amount > 0 ? revolutBase : null
 
   return (
     <div style={{ minHeight: '100vh', background: colors?.bg || '#f9fafb' }}>

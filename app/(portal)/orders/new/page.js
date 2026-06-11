@@ -849,7 +849,7 @@ export default function NewOrderPage() {
                 {s.payment_title}
               </p>
               <a
-                href={process.env.NEXT_PUBLIC_REVOLUT_USER ? `https://revolut.me/${process.env.NEXT_PUBLIC_REVOLUT_USER}` : '#'}
+                href={process.env.NEXT_PUBLIC_REVOLUT_USER ? `https://revolut.me/${process.env.NEXT_PUBLIC_REVOLUT_USER}` : (process.env.NEXT_PUBLIC_REVOLUT_LINK || '#')}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
