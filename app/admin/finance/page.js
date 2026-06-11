@@ -3,46 +3,74 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { VAT_RATE, CIT_RATE, STRIPE_PCT, STRIPE_FIXED_PLN, OPS_PER_DELIVERY_PLN } from '@/lib/constants';
+import { CIT_RATE } from '@/lib/constants';
 
-const STRIPE_FIXED = STRIPE_FIXED_PLN;
-const OPS_PER_DELIVERY = OPS_PER_DELIVERY_PLN;
+// Fixed per-order fee components that come out of gross before split
+const FIXED_FEES = 5.95;    // insurance 3 + processing 2 + psychological uplift 0.95
+const INSURANCE_PER = 3.00;
+const PROCESSING_PER = 2.00;
+const PSYCH = 0.95;
+const COURIER_RATE_STD = 0.72;
 
+const ZERO_AGG = { vat: 0, courier: 0, stripe: 0, ops: 0, insurance: 0, cit: 0, profit: 0, total: 0 };
+
+// For the single-order calculator (takes PLN payout directly)
 function calcBuckets(grossRevenue, courierPayout) {
-  const vatAmount = grossRevenue - (grossRevenue / (1 + VAT_RATE));
-  const netRevenue = grossRevenue - vatAmount;
-  const stripeFee = (grossRevenue * STRIPE_PCT) + STRIPE_FIXED;
-  const ops = OPS_PER_DELIVERY;
-  const grossProfit = netRevenue - courierPayout - stripeFee - ops;
-  const citReserve = Math.max(0, grossProfit) * CIT_RATE;
-  const lgkProfit = grossProfit - citReserve;
+  if (!grossRevenue) return { ...ZERO_AGG };
+  const dv = grossRevenue - FIXED_FEES;
+  const lgkMargin = dv - courierPayout + PSYCH;
+  const preCIT = lgkMargin - PROCESSING_PER;
+  const cit = Math.max(0, preCIT) * CIT_RATE;
   return {
-    vat: Math.max(0, vatAmount),
+    vat: 0,
     courier: Math.max(0, courierPayout),
-    stripe: Math.max(0, stripeFee),
-    ops,
-    cit: Math.max(0, citReserve),
-    profit: lgkProfit,
+    stripe: 0,
+    ops: PROCESSING_PER,
+    insurance: INSURANCE_PER,
+    cit: Math.max(0, cit),
+    profit: preCIT - cit,
     total: grossRevenue,
   };
 }
 
-function aggregateBuckets(deliveries) {
+// Aggregate from order_financials rows (trigger-calculated, most accurate)
+function aggregateFromTrigger(rows) {
+  return rows.reduce((acc, r) => {
+    const preCIT = (r.lgk_margin || 0) - (r.processing_fee || 0);
+    return {
+      vat: 0,
+      courier: acc.courier + (r.courier_earnings || 0),
+      stripe: 0,
+      ops: acc.ops + (r.processing_fee || 0),
+      insurance: acc.insurance + (r.insurance_contribution || 0),
+      cit: acc.cit + Math.max(0, preCIT) * CIT_RATE,
+      profit: acc.profit + Math.max(0, preCIT) * (1 - CIT_RATE),
+      total: acc.total + (r.amount_total || 0),
+    };
+  }, { ...ZERO_AGG });
+}
+
+// Aggregate from deliveries table (fallback, uses assumed 72% rate)
+function aggregateFromDeliveries(deliveries) {
   return deliveries.reduce((acc, d) => {
     const gross = d.amount_pln || 0;
-    const payout = d.courier_payout_pln || 0;
-    if (gross === 0) return acc;
-    const b = calcBuckets(gross, payout);
+    if (!gross) return acc;
+    const dv = gross - FIXED_FEES;
+    const courier = dv * COURIER_RATE_STD;
+    const lgkMargin = dv * (1 - COURIER_RATE_STD) + PSYCH;
+    const preCIT = lgkMargin - PROCESSING_PER;
+    const cit = Math.max(0, preCIT) * CIT_RATE;
     return {
-      vat: acc.vat + b.vat,
-      courier: acc.courier + b.courier,
-      stripe: acc.stripe + b.stripe,
-      ops: acc.ops + b.ops,
-      cit: acc.cit + b.cit,
-      profit: acc.profit + b.profit,
-      total: acc.total + b.total,
+      vat: 0,
+      courier: acc.courier + courier,
+      stripe: 0,
+      ops: acc.ops + PROCESSING_PER,
+      insurance: acc.insurance + INSURANCE_PER,
+      cit: acc.cit + Math.max(0, cit),
+      profit: acc.profit + (preCIT - cit),
+      total: acc.total + gross,
     };
-  }, { vat: 0, courier: 0, stripe: 0, ops: 0, cit: 0, profit: 0, total: 0 });
+  }, { ...ZERO_AGG });
 }
 
 function calcSubscriptionRevenue(tierCounts) {
@@ -68,11 +96,12 @@ const BUCKETS = [
     key: 'vat',
     label: 'VAT',
     icon: '🏦',
-    bg: 'rgba(255,59,48,0.08)',
-    border: 'rgba(255,59,48,0.2)',
-    color: '#FF3B30',
-    bank: '→ VAT account · mBank',
-    rule: 'Paid quarterly to tax office · DO NOT TOUCH',
+    bg: 'rgba(80,80,80,0.05)',
+    border: 'rgba(80,80,80,0.12)',
+    color: '#555',
+    bank: '→ VAT account · mBank (when active)',
+    rule: 'Active when PLN 200k annual revenue crossed — currently PLN 0',
+    inactive: true,
   },
   {
     key: 'courier',
@@ -81,18 +110,19 @@ const BUCKETS = [
     bg: 'rgba(0,123,255,0.08)',
     border: 'rgba(0,123,255,0.2)',
     color: '#007BFF',
-    bank: '→ Courier payouts account · Revolut Business',
-    rule: 'Paid every Monday to couriers',
+    bank: '→ Courier payouts · Revolut Business',
+    rule: 'Paid every Monday · 72% of delivery value (standard tier)',
   },
   {
     key: 'stripe',
     label: 'Stripe fees',
     icon: '💳',
-    bg: 'rgba(255,149,0,0.08)',
-    border: 'rgba(255,149,0,0.2)',
-    color: '#FF9500',
-    bank: 'Auto-deducted by Stripe',
-    rule: '1.4% + PLN 1.00 per transaction',
+    bg: 'rgba(80,80,80,0.05)',
+    border: 'rgba(80,80,80,0.12)',
+    color: '#555',
+    bank: 'Auto-deducted by Stripe (when active)',
+    rule: 'Active when Stripe goes live — currently PLN 0 (Revolut payments)',
+    inactive: true,
   },
   {
     key: 'ops',
@@ -102,7 +132,7 @@ const BUCKETS = [
     border: 'rgba(255,255,255,0.08)',
     color: '#888888',
     bank: '→ Operations account · mBank',
-    rule: 'Supabase, Vercel, tools, salary',
+    rule: 'PLN 2.00 per order — Supabase, Vercel, HERE Maps, SMS, tools',
   },
   {
     key: 'cit',
@@ -112,7 +142,7 @@ const BUCKETS = [
     border: 'rgba(255,149,0,0.12)',
     color: '#CC7700',
     bank: '→ CIT savings · mBank',
-    rule: '9% of profit · paid annually · DO NOT TOUCH',
+    rule: '9% of (LGK margin − ops) · paid annually · DO NOT TOUCH',
   },
   {
     key: 'profit',
@@ -155,7 +185,8 @@ function sourceLabel(source) {
 
 export default function FinancePage() {
   const [summary, setSummary] = useState(null);
-  const [completedDeliveries, setCompletedDeliveries] = useState([]);
+  const [aggregated, setAggregated] = useState({ ...ZERO_AGG });
+  const [usingTrigger, setUsingTrigger] = useState(false);
   const [tierCounts, setTierCounts] = useState([]);
   const [recentDeliveries, setRecentDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -166,9 +197,9 @@ export default function FinancePage() {
 
   const fetchData = useCallback(async () => {
     const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-    const [summaryRes, completedRes, tiersRes, recentRes] = await Promise.all([
+    const [summaryRes, ofRes, tiersRes, recentRes] = await Promise.all([
       supabase.from('deliveries').select('status, payment_status, amount_pln').gte('created_at', monthStart),
-      supabase.from('deliveries').select('id, amount_pln, courier_payout_pln, status, payment_status, created_at, source').eq('payment_status', 'paid').gte('created_at', monthStart).order('created_at', { ascending: false }),
+      supabase.from('order_financials').select('amount_total, courier_earnings, lgk_margin, insurance_contribution, processing_fee').gte('calculated_at', monthStart),
       supabase.from('profiles').select('client_tier').in('client_tier', ['business', 'fleet']).eq('is_client', true),
       supabase.from('deliveries').select('order_number, amount_pln, courier_payout_pln, status, payment_status, created_at, source, pickup_city').order('created_at', { ascending: false }).limit(20),
     ]);
@@ -181,7 +212,17 @@ export default function FinancePage() {
       pending: all.filter(d => d.status === 'pending').length,
     });
 
-    setCompletedDeliveries(completedRes.data || []);
+    // Primary: order_financials (trigger-calculated with real courier tier rates)
+    // Fallback: calculate from deliveries with assumed 72% standard rate
+    const ofRows = !ofRes.error ? (ofRes.data || []) : [];
+    if (ofRows.length > 0) {
+      setAggregated(aggregateFromTrigger(ofRows));
+      setUsingTrigger(true);
+    } else {
+      const paidDeliveries = all.filter(d => d.payment_status === 'paid' && (d.amount_pln || 0) > 0);
+      setAggregated(aggregateFromDeliveries(paidDeliveries));
+      setUsingTrigger(false);
+    }
 
     const tiers = tiersRes.data || [];
     setTierCounts([
@@ -207,7 +248,6 @@ export default function FinancePage() {
     };
   }, [fetchData]);
 
-  const aggregated = aggregateBuckets(completedDeliveries);
   const subscriptionRevenue = calcSubscriptionRevenue(tierCounts);
   const singleBuckets = calcBuckets(fee + comm, cpay);
   const totalProfit = aggregated.profit + subscriptionRevenue;
@@ -231,7 +271,9 @@ export default function FinancePage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
         <div>
           <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '24px', margin: 0, color: '#FFF' }}>Finance — Money Buckets</h1>
-          <p style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#888', margin: '4px 0 0' }}>Where every PLN goes · Buckets populate as payments are confirmed</p>
+          <p style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#888', margin: '4px 0 0' }}>
+            Where every PLN goes · {usingTrigger ? <span style={{ color: '#00C853' }}>live trigger data</span> : <span style={{ color: '#FF9500' }}>estimated — run Fix 3 SQL for exact rates</span>}
+          </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555' }}>Updated {lastUpdated}</span>
@@ -303,15 +345,16 @@ export default function FinancePage() {
       </div>
 
       {/* SECTION 3 — Six Bucket Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
         {BUCKETS.map(b => {
-          const amount = aggregated[b.key];
+          const amount = aggregated[b.key] || 0;
           const pct = aggregated.total > 0 ? (Math.max(0, amount) / aggregated.total) * 100 : 0;
           return (
-            <div key={b.key} style={{ background: b.bg, border: `0.5px solid ${b.border}`, borderRadius: '12px', padding: '14px' }}>
+            <div key={b.key} style={{ background: b.bg, border: `0.5px solid ${b.border}`, borderRadius: '12px', padding: '14px', opacity: b.inactive ? 0.5 : 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '14px' }}>{b.icon}</span>
                 <span style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#888' }}>{b.label}</span>
+                {b.inactive && <span style={{ fontFamily: "'Fira Code', monospace", fontSize: '9px', color: '#555', marginLeft: 'auto' }}>NOT ACTIVE</span>}
               </div>
               <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: b.prominent ? '28px' : '24px', fontWeight: 600, color: b.color }}>
                 {formatPLN(amount)}
@@ -327,6 +370,20 @@ export default function FinancePage() {
             </div>
           );
         })}
+      </div>
+
+      {/* SECTION 3.5 — Insurance Reserve (separate ring-fenced pool) */}
+      <div style={{ background: 'rgba(0,200,83,0.05)', border: '0.5px solid rgba(0,200,83,0.15)', borderRadius: '12px', padding: '14px 18px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <span style={{ fontSize: '18px' }}>🛡️</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#555', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '4px' }}>Insurance reserve — ring-fenced</div>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '22px', fontWeight: 700, color: '#00C853' }}>{formatPLN(aggregated.insurance || 0)}</div>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#555', marginTop: '3px' }}>PLN 3.00 per order · used for lost/damaged claims · DO NOT SPEND on ops</div>
+        </div>
+        <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#333', textAlign: 'right' }}>
+          <div>Not in the 6 buckets</div>
+          <div style={{ marginTop: '4px' }}>Separate mBank account</div>
+        </div>
       </div>
 
       {/* SECTION 4 — Single Delivery Calculator */}
@@ -366,17 +423,20 @@ export default function FinancePage() {
           <tbody>
             {[
               { label: 'Client pays (gross)', amount: fee + comm },
-              { label: '↳ VAT (tax office)', amount: singleBuckets.vat },
-              { label: '↳ Courier', amount: singleBuckets.courier },
-              { label: '↳ Stripe', amount: singleBuckets.stripe },
-              { label: '↳ Ops', amount: singleBuckets.ops },
-              { label: '↳ CIT reserve', amount: singleBuckets.cit },
+              { label: '↳ Insurance reserve', amount: singleBuckets.insurance, note: 'ring-fenced' },
+              { label: '↳ Courier payout', amount: singleBuckets.courier },
+              { label: '↳ Operations (PLN 2)', amount: singleBuckets.ops },
+              { label: '↳ CIT reserve (9%)', amount: singleBuckets.cit },
+              { label: '↳ VAT (inactive)', amount: singleBuckets.vat, dim: true },
+              { label: '↳ Stripe (inactive)', amount: singleBuckets.stripe, dim: true },
               { label: '🟡 LGK keeps', amount: singleBuckets.profit, highlight: true },
-            ].map(({ label, amount, highlight }) => (
-              <tr key={label} style={{ background: highlight ? 'rgba(212,255,0,0.05)' : 'transparent' }}>
-                <td style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: highlight ? '#D4FF00' : '#aaa', padding: '8px 0', borderBottom: '0.5px solid #1A1A1A' }}>{label}</td>
-                <td style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: highlight ? (singleBuckets.profit < 0 ? '#FF3B30' : '#D4FF00') : '#FFF', textAlign: 'right', padding: '8px 0', borderBottom: '0.5px solid #1A1A1A' }}>{formatPLN(amount)}</td>
-                <td style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#555', textAlign: 'right', padding: '8px 0', borderBottom: '0.5px solid #1A1A1A' }}>
+            ].map(({ label, amount, highlight, dim, note }) => (
+              <tr key={label} style={{ background: highlight ? 'rgba(212,255,0,0.05)' : 'transparent', opacity: dim ? 0.35 : 1 }}>
+                <td style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: highlight ? '#D4FF00' : '#aaa', padding: '7px 0', borderBottom: '0.5px solid #1A1A1A' }}>
+                  {label}{note && <span style={{ color: '#333', fontSize: '10px', marginLeft: '6px' }}>{note}</span>}
+                </td>
+                <td style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: highlight ? (singleBuckets.profit < 0 ? '#FF3B30' : '#D4FF00') : '#FFF', textAlign: 'right', padding: '7px 0', borderBottom: '0.5px solid #1A1A1A' }}>{formatPLN(amount)}</td>
+                <td style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#555', textAlign: 'right', padding: '7px 0', borderBottom: '0.5px solid #1A1A1A' }}>
                   {(fee + comm > 0 ? (Math.abs(amount) / (fee + comm)) * 100 : 0).toFixed(1)}%
                 </td>
               </tr>
