@@ -130,7 +130,7 @@ export default function LoginPage() {
         email,
         password,
         options: {
-          emailRedirectTo: 'https://lgk-business.vercel.app/dashboard',
+          emailRedirectTo: 'https://lgk-business.vercel.app/auth/callback',
         }
       });
 
@@ -183,7 +183,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: 'https://lgk-business.vercel.app/dashboard',
+          emailRedirectTo: 'https://lgk-business.vercel.app/auth/callback',
         }
       });
       if (error) throw error;
