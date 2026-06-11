@@ -231,6 +231,20 @@ export default function AdminOrders() {
                       }}
                     >{confirmingPayment === o['id'] ? '...' : '💳 Confirm Pay'}</button>
                   )}
+                  {o.payment_status !== 'paid' && o.payment_status !== 'pending_verification' && (
+                    <button
+                      onClick={() => confirmPayment(o['id'])}
+                      disabled={confirmingPayment === o['id']}
+                      style={{
+                        background: 'transparent',
+                        color: confirmingPayment === o['id'] ? '#333' : '#555',
+                        border: '1px solid #2A2A2A', padding: '6px 12px',
+                        borderRadius: '7px', cursor: confirmingPayment === o['id'] ? 'not-allowed' : 'pointer',
+                        ...M.display, fontSize: '11px', fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >{confirmingPayment === o['id'] ? '...' : '✓ Mark Paid'}</button>
+                  )}
                   {needsApproval && (
                     <button
                       onClick={() => approve(o['id'])}
