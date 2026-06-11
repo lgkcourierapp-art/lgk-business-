@@ -1,11 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useApp } from '@/utils/appContext'
 
-export default function OrderPage({ params }) {
+export default function OrderPage() {
   const router = useRouter()
+  const params = useParams()
+  const id = params.id
   const searchParams = useSearchParams()
   const isCreated = searchParams.get('created') === 'true'
   const { colors } = useApp()
@@ -14,18 +16,19 @@ export default function OrderPage({ params }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!id) return
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.replace('/login'); return }
       const { data } = await supabase
         .from('deliveries')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', id)
         .eq('client_id', user['id'])
         .single()
       setOrder(data || null)
       setLoading(false)
     })
-  }, [params.id, router])
+  }, [id, router])
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: colors?.bg || '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#888' }}>

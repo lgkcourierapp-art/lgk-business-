@@ -1,24 +1,27 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import QRCode from 'qrcode'
 import { useApp } from '@/utils/appContext'
 import { parseOrderNumber } from '@/utils/orderNumber'
 
-export default function LabelPage({ params }) {
+export default function LabelPage() {
   const router = useRouter()
+  const params = useParams()
+  const id = params.id
   const { t, lang } = useApp()
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [qrDataUrl, setQrDataUrl] = useState(null)
 
   useEffect(() => {
+    if (!id) return
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push('/login'); return }
       const { data } = await supabase
         .from('deliveries').select('*')
-        .eq('id', params.id).eq('client_id', user['id']).single()
+        .eq('id', id).eq('client_id', user['id']).single()
       if (!data) { setLoading(false); return }
       setOrder(data)
 
@@ -29,7 +32,7 @@ export default function LabelPage({ params }) {
       setQrDataUrl(qr)
       setLoading(false)
     })
-  }, [params.id, router])
+  }, [id, router])
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0A0A0A', fontSize: 16 }}>
@@ -49,7 +52,7 @@ export default function LabelPage({ params }) {
         <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
         <div style={{ fontWeight: 900, fontSize: 20, marginBottom: 12, color: '#0A0A0A' }}>{t('labelLockedTitle')}</div>
         <div style={{ fontSize: 14, lineHeight: 1.7, marginBottom: 24, color: '#666' }}>{t('labelLockedDesc')}</div>
-        <a href={'/orders/' + params.id} style={{ background: '#D4FF00', color: '#000', padding: '14px 28px', borderRadius: 8, fontWeight: 700, textDecoration: 'none', fontSize: 15, display: 'inline-block' }}>
+        <a href={'/orders/' + id} style={{ background: '#D4FF00', color: '#000', padding: '14px 28px', borderRadius: 8, fontWeight: 700, textDecoration: 'none', fontSize: 15, display: 'inline-block' }}>
           ← Back to order
         </a>
       </div>
