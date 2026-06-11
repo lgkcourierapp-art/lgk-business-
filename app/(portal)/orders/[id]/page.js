@@ -191,12 +191,18 @@ export default function OrderPage() {
           ) : null}
         </div>
 
-        {/* Label button */}
+        {/* Label button — becomes primary CTA after paying */}
         <a
           href={'/orders/' + order['id'] + '/label'}
-          style={{ display: 'block', background: colors?.card || '#fff', border: '1px solid ' + (colors?.border || '#E5E7EB'), color: colors?.text || '#0A0A0A', padding: '14px 16px', borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: 'none', textAlign: 'center' }}
+          style={{
+            display: 'block', padding: '14px 16px', borderRadius: 10,
+            fontWeight: 700, fontSize: 14, textDecoration: 'none', textAlign: 'center',
+            background: paymentSent || isPaid ? '#D4FF00' : (colors?.card || '#fff'),
+            color: paymentSent || isPaid ? '#000' : (colors?.text || '#0A0A0A'),
+            border: paymentSent || isPaid ? 'none' : '1px solid ' + (colors?.border || '#E5E7EB'),
+          }}
         >
-          🖨️ View & print label
+          🖨️ {paymentSent || isPaid ? 'Print your label →' : 'View & print label'}
         </a>
 
       </div>
