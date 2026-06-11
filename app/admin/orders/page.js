@@ -36,7 +36,7 @@ export default function AdminOrders() {
     setLoading(true);
     let q = supabase
       .from('deliveries')
-      .select('id, status, payment_status, pickup_city, delivery_city, delivery_street, price_total, created_at, client_id, profiles(name, email)')
+      .select('id, order_number, status, payment_status, pickup_city, delivery_city, delivery_street, price_total, created_at, client_id, profiles!client_id(name, company_name, email)')
       .order('created_at', { ascending: false })
       .limit(100);
     if (filter !== 'all') q = q.eq('status', filter);
@@ -48,9 +48,10 @@ export default function AdminOrders() {
   useEffect(() => { load(); }, [load]);
 
   const openPayModal = (o) => {
-    setPayModal({ id: o['id'], priceTotal: o.price_total || 0, shortId: o['id']?.slice(-8).toUpperCase() });
+    const dv = Math.max(0, (o.price_total || 0) - 5.95);
+    setPayModal({ id: o['id'], orderNumber: o.order_number, priceTotal: o.price_total || 0, shortId: o['id']?.slice(-8).toUpperCase() });
     setPayAmount((o.price_total || 0).toFixed(2));
-    setPayCourierPay('20.00');
+    setPayCourierPay((dv * 0.72).toFixed(2));
   };
 
   const doConfirmPayment = async () => {
@@ -85,9 +86,12 @@ export default function AdminOrders() {
     const s = search.toLowerCase();
     return (
       o['id']?.toLowerCase().includes(s) ||
+      o.order_number?.toLowerCase().includes(s) ||
       o.delivery_street?.toLowerCase().includes(s) ||
       o.pickup_city?.toLowerCase().includes(s) ||
       o.delivery_city?.toLowerCase().includes(s) ||
+      o.profiles?.company_name?.toLowerCase().includes(s) ||
+      o.profiles?.name?.toLowerCase().includes(s) ||
       o.profiles?.email?.toLowerCase().includes(s)
     );
   });
@@ -196,7 +200,7 @@ export default function AdminOrders() {
                 </div>
 
                 <span style={{ ...M.display, fontSize: '12px', color: '#888' }}>
-                  {o.profiles?.name || o.profiles?.email?.split('@')[0] || '—'}
+                  {o.profiles?.company_name || o.profiles?.name || o.profiles?.email?.split('@')[0] || '—'}
                 </span>
 
                 <span style={{ ...M.mono, fontSize: '13px', fontWeight: 700, color: '#D4FF00' }}>
@@ -228,7 +232,13 @@ export default function AdminOrders() {
                 </span>
 
                 <span style={{ ...M.mono, fontSize: '10px', color: '#444' }}>
-                  {new Date(o.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })}
+                  {(() => {
+                    const d = new Date(o.created_at);
+                    const isToday = d.toDateString() === new Date().toDateString();
+                    return isToday
+                      ? d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
+                      : d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
+                  })()}
                 </span>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -301,7 +311,7 @@ export default function AdminOrders() {
           >
             <div style={{ ...M.display, fontSize: '16px', fontWeight: 700, color: '#FFF', marginBottom: '3px' }}>Confirm payment</div>
             <div style={{ ...M.mono, fontSize: '11px', color: '#555', marginBottom: '22px' }}>
-              Order #{payModal.shortId} · billed PLN {payModal.priceTotal.toFixed(2)}
+              {payModal.orderNumber ? `Order ${payModal.orderNumber}` : `Order #${payModal.shortId}`} · billed PLN {payModal.priceTotal.toFixed(2)}
             </div>
 
             <div style={{ marginBottom: '14px' }}>
@@ -347,7 +357,7 @@ export default function AdminOrders() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #1E1E1E', paddingTop: '5px', marginTop: '5px' }}>
                   <span style={{ color: '#888' }}>LGK net (est.)</span>
                   <span style={{ color: '#D4FF00', fontWeight: 700 }}>
-                    PLN {Math.max(0, parseFloat(payAmount || 0) - parseFloat(payCourierPay || 0) - (parseFloat(payAmount || 0) * 0.014 + 1) - 0.9 - ((parseFloat(payAmount || 0) - parseFloat(payCourierPay || 0)) * 0.18699)).toFixed(2)}
+                    PLN {Math.max(0, (parseFloat(payAmount || 0) - 7.00 - parseFloat(payCourierPay || 0)) * 0.91).toFixed(2)}
                   </span>
                 </div>
               </div>
