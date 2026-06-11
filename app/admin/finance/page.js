@@ -167,16 +167,17 @@ export default function FinancePage() {
   const fetchData = useCallback(async () => {
     const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
     const [summaryRes, completedRes, tiersRes, recentRes] = await Promise.all([
-      supabase.from('deliveries').select('status, amount_pln').gte('created_at', monthStart),
-      supabase.from('deliveries').select('id, amount_pln, courier_payout_pln, status, created_at, source').in('status', ['delivered', 'confirmed']).gte('created_at', monthStart).order('created_at', { ascending: false }),
+      supabase.from('deliveries').select('status, payment_status, amount_pln').gte('created_at', monthStart),
+      supabase.from('deliveries').select('id, amount_pln, courier_payout_pln, status, payment_status, created_at, source').eq('payment_status', 'paid').gte('created_at', monthStart).order('created_at', { ascending: false }),
       supabase.from('profiles').select('client_tier').in('client_tier', ['business', 'fleet']).eq('is_client', true),
-      supabase.from('deliveries').select('order_number, amount_pln, courier_payout_pln, status, created_at, source, pickup_city').order('created_at', { ascending: false }).limit(20),
+      supabase.from('deliveries').select('order_number, amount_pln, courier_payout_pln, status, payment_status, created_at, source, pickup_city').order('created_at', { ascending: false }).limit(20),
     ]);
 
     const all = summaryRes.data || [];
     setSummary({
       total_deliveries: all.length,
       completed: all.filter(d => ['delivered', 'confirmed'].includes(d.status)).length,
+      paid_pipeline: all.filter(d => d.payment_status === 'paid' && !['delivered', 'confirmed'].includes(d.status)).length,
       pending: all.filter(d => d.status === 'pending').length,
     });
 
@@ -230,7 +231,7 @@ export default function FinancePage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
         <div>
           <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '24px', margin: 0, color: '#FFF' }}>Finance — Money Buckets</h1>
-          <p style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#888', margin: '4px 0 0' }}>Where every PLN goes · This month</p>
+          <p style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#888', margin: '4px 0 0' }}>Where every PLN goes · Buckets populate as payments are confirmed</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555' }}>Updated {lastUpdated}</span>
@@ -248,13 +249,16 @@ export default function FinancePage() {
         <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '12px', padding: '18px' }}>
           <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Deliveries this month</div>
           <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '32px', color: '#FFF' }}>{summary?.total_deliveries || 0}</div>
-          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555', marginTop: '4px' }}>{summary?.completed || 0} completed · {summary?.pending || 0} pending</div>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555', marginTop: '4px' }}>
+            {summary?.completed || 0} delivered
+            {(summary?.paid_pipeline || 0) > 0 && <span style={{ color: '#007BFF' }}> · {summary.paid_pipeline} in pipeline</span>}
+          </div>
         </div>
 
-        <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '12px', padding: '18px' }}>
-          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Gross revenue</div>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '28px', color: '#FFF' }}>{formatPLN(aggregated.total)}</div>
-          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555', marginTop: '4px' }}>Total from clients</div>
+        <div style={{ background: '#1A1A1A', border: `1px solid ${aggregated.total > 0 ? 'rgba(0,200,83,0.3)' : '#2A2A2A'}`, borderRadius: '12px', padding: '18px' }}>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '10px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Cash collected</div>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '28px', color: aggregated.total > 0 ? '#FFF' : '#333' }}>{formatPLN(aggregated.total)}</div>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#555', marginTop: '4px' }}>Paid orders this month</div>
         </div>
 
         <div style={{ background: '#1A1A1A', border: `1px solid ${totalProfit > 0 ? '#00C853' : '#FF3B30'}`, borderRadius: '12px', padding: '18px' }}>
@@ -294,7 +298,7 @@ export default function FinancePage() {
             </div>
           </>
         ) : (
-          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#444' }}>No data for this month</div>
+          <div style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#444' }}>No confirmed payments this month — confirm payments in Orders to see buckets populate</div>
         )}
       </div>
 

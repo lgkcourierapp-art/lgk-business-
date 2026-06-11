@@ -28,6 +28,9 @@ export default function AdminOrders() {
   const [search, setSearch] = useState('');
   const [approving, setApproving] = useState(null);
   const [confirmingPayment, setConfirmingPayment] = useState(null);
+  const [payModal, setPayModal] = useState(null);
+  const [payAmount, setPayAmount] = useState('');
+  const [payCourierPay, setPayCourierPay] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -44,12 +47,24 @@ export default function AdminOrders() {
 
   useEffect(() => { load(); }, [load]);
 
-  const confirmPayment = async (id) => {
-    setConfirmingPayment(id);
+  const openPayModal = (o) => {
+    setPayModal({ id: o['id'], priceTotal: o.price_total || 0, shortId: o['id']?.slice(-8).toUpperCase() });
+    setPayAmount((o.price_total || 0).toFixed(2));
+    setPayCourierPay('20.00');
+  };
+
+  const doConfirmPayment = async () => {
+    if (!payModal) return;
+    setConfirmingPayment(payModal.id);
     await supabase
       .from('deliveries')
-      .update({ payment_status: 'paid', status: 'pending' })
-      .eq('id', id);
+      .update({
+        payment_status: 'paid',
+        status: 'pending',
+        courier_payout_pln: parseFloat(payCourierPay) || 0,
+      })
+      .eq('id', payModal.id);
+    setPayModal(null);
     setConfirmingPayment(null);
     load();
   };
@@ -219,7 +234,7 @@ export default function AdminOrders() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {o.payment_status === 'pending_verification' && (
                     <button
-                      onClick={() => confirmPayment(o['id'])}
+                      onClick={() => openPayModal(o)}
                       disabled={confirmingPayment === o['id']}
                       style={{
                         background: confirmingPayment === o['id'] ? '#1A1A1A' : '#007BFF',
@@ -233,7 +248,7 @@ export default function AdminOrders() {
                   )}
                   {o.payment_status !== 'paid' && o.payment_status !== 'pending_verification' && (
                     <button
-                      onClick={() => confirmPayment(o['id'])}
+                      onClick={() => openPayModal(o)}
                       disabled={confirmingPayment === o['id']}
                       style={{
                         background: 'transparent',
@@ -259,7 +274,7 @@ export default function AdminOrders() {
                       }}
                     >{approving === o['id'] ? '...' : '✓ Approve'}</button>
                   )}
-                  {!needsApproval && o.payment_status !== 'pending_verification' && (
+                  {!needsApproval && o.payment_status !== 'pending_verification' && o.payment_status === 'paid' && (
                     <span style={{ ...M.mono, fontSize: '10px', color: '#2A2A2A' }}>—</span>
                   )}
                 </div>
@@ -272,6 +287,84 @@ export default function AdminOrders() {
       {!loading && (
         <div style={{ ...M.mono, fontSize: '10px', color: '#333', marginTop: '12px', textAlign: 'right' }}>
           {filtered.length} orders shown
+        </div>
+      )}
+
+      {payModal && (
+        <div
+          onClick={() => setPayModal(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#141414', border: '1px solid #2A2A2A', borderRadius: '14px', padding: '24px', width: '380px', maxWidth: '92vw' }}
+          >
+            <div style={{ ...M.display, fontSize: '16px', fontWeight: 700, color: '#FFF', marginBottom: '3px' }}>Confirm payment</div>
+            <div style={{ ...M.mono, fontSize: '11px', color: '#555', marginBottom: '22px' }}>
+              Order #{payModal.shortId} · billed PLN {payModal.priceTotal.toFixed(2)}
+            </div>
+
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ ...M.mono, fontSize: '10px', color: '#555', display: 'block', marginBottom: '6px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                Amount received (PLN)
+              </label>
+              <input
+                type="number"
+                value={payAmount}
+                onChange={e => setPayAmount(e.target.value)}
+                style={{ width: '100%', background: '#0A0A0A', border: `1px solid ${parseFloat(payAmount) < payModal.priceTotal ? '#FF9500' : '#2A2A2A'}`, borderRadius: '8px', color: '#FFF', padding: '10px 12px', fontSize: '16px', fontFamily: "'Fira Code', monospace", outline: 'none' }}
+              />
+              {parseFloat(payAmount) > 0 && parseFloat(payAmount) < payModal.priceTotal && (
+                <div style={{ ...M.mono, fontSize: '11px', color: '#FF9500', marginTop: '5px' }}>
+                  ⚠ PLN {(payModal.priceTotal - parseFloat(payAmount)).toFixed(2)} underpaid — confirm anyway or chase client
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginBottom: '22px' }}>
+              <label style={{ ...M.mono, fontSize: '10px', color: '#555', display: 'block', marginBottom: '6px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                Courier payout (PLN)
+              </label>
+              <input
+                type="number"
+                value={payCourierPay}
+                onChange={e => setPayCourierPay(e.target.value)}
+                style={{ width: '100%', background: '#0A0A0A', border: '1px solid #2A2A2A', borderRadius: '8px', color: '#FFF', padding: '10px 12px', fontSize: '16px', fontFamily: "'Fira Code', monospace", outline: 'none' }}
+              />
+              <div style={{ ...M.mono, fontSize: '10px', color: '#444', marginTop: '4px' }}>Set to 0 if no courier assigned yet — you can update later</div>
+            </div>
+
+            {parseFloat(payAmount) > 0 && parseFloat(payCourierPay) >= 0 && (
+              <div style={{ background: '#0A0A0A', borderRadius: '8px', padding: '12px 14px', marginBottom: '18px', ...M.mono, fontSize: '11px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                  <span style={{ color: '#555' }}>Gross received</span>
+                  <span style={{ color: '#FFF' }}>PLN {parseFloat(payAmount || 0).toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                  <span style={{ color: '#555' }}>Courier</span>
+                  <span style={{ color: '#007BFF' }}>− PLN {parseFloat(payCourierPay || 0).toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #1E1E1E', paddingTop: '5px', marginTop: '5px' }}>
+                  <span style={{ color: '#888' }}>LGK net (est.)</span>
+                  <span style={{ color: '#D4FF00', fontWeight: 700 }}>
+                    PLN {Math.max(0, parseFloat(payAmount || 0) - parseFloat(payCourierPay || 0) - (parseFloat(payAmount || 0) * 0.014 + 1) - 0.9 - ((parseFloat(payAmount || 0) - parseFloat(payCourierPay || 0)) * 0.18699)).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setPayModal(null)}
+                style={{ flex: 1, background: 'transparent', border: '1px solid #2A2A2A', color: '#666', padding: '11px', borderRadius: '8px', cursor: 'pointer', ...M.display, fontSize: '13px', fontWeight: 600 }}
+              >Cancel</button>
+              <button
+                onClick={doConfirmPayment}
+                disabled={confirmingPayment === payModal.id}
+                style={{ flex: 2, background: confirmingPayment === payModal.id ? '#1A1A1A' : '#00C853', color: confirmingPayment === payModal.id ? '#444' : '#000', border: 'none', padding: '11px', borderRadius: '8px', cursor: confirmingPayment === payModal.id ? 'not-allowed' : 'pointer', ...M.display, fontSize: '13px', fontWeight: 700 }}
+              >{confirmingPayment === payModal.id ? 'Saving...' : '✓ Confirm Paid'}</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
