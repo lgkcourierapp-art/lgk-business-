@@ -88,7 +88,16 @@ export default function LabelPage() {
         </button>
       </div>
 
-      {order.payment_status !== 'paid' && (order.amount_pln || order.price_total) && (
+      {order.payment_status === 'pending_verification' && (
+        <div className="no-print" style={{ background: '#0A1A2A', borderBottom: '1px solid #1A3050', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 16 }}>✓</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Payment sent — awaiting confirmation</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>We'll confirm your payment shortly</div>
+          </div>
+        </div>
+      )}
+      {order.payment_status !== 'paid' && order.payment_status !== 'pending_verification' && (order.amount_pln || order.price_total) && (
         <div className="no-print" style={{ background: '#191C20', borderBottom: '1px solid #2A2A2A', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 16 }}>💳</span>
           <div style={{ flex: 1 }}>
