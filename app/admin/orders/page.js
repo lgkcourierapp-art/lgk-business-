@@ -27,12 +27,13 @@ export default function AdminOrders() {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [approving, setApproving] = useState(null);
+  const [confirmingPayment, setConfirmingPayment] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     let q = supabase
       .from('deliveries')
-      .select('id, status, pickup_city, delivery_city, delivery_street, price_total, created_at, client_id, profiles(name, email)')
+      .select('id, status, payment_status, pickup_city, delivery_city, delivery_street, price_total, created_at, client_id, profiles(name, email)')
       .order('created_at', { ascending: false })
       .limit(100);
     if (filter !== 'all') q = q.eq('status', filter);
@@ -42,6 +43,16 @@ export default function AdminOrders() {
   }, [filter]);
 
   useEffect(() => { load(); }, [load]);
+
+  const confirmPayment = async (id) => {
+    setConfirmingPayment(id);
+    await supabase
+      .from('deliveries')
+      .update({ payment_status: 'paid' })
+      .eq('id', id);
+    setConfirmingPayment(null);
+    load();
+  };
 
   const approve = async (id) => {
     setApproving(id);
@@ -67,6 +78,7 @@ export default function AdminOrders() {
   });
 
   const pendingApproval = orders.filter(o => o.status === 'awaiting_payment').length;
+  const pendingPayments = orders.filter(o => o.payment_status === 'pending_verification').length;
 
   const FILTERS = [
     ['all',             'All'],
@@ -85,6 +97,15 @@ export default function AdminOrders() {
           <div style={{ ...M.mono, fontSize: '11px', color: '#444' }}>Live order stream · last 100</div>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {pendingPayments > 0 && (
+            <div style={{
+              background: 'rgba(0,123,255,0.1)', border: '1px solid rgba(0,123,255,0.3)',
+              borderRadius: '8px', padding: '7px 14px',
+              ...M.display, fontSize: '12px', color: '#007BFF', fontWeight: 700,
+            }}>
+              💳 {pendingPayments} payment{pendingPayments > 1 ? 's' : ''} to confirm
+            </div>
+          )}
           {pendingApproval > 0 && (
             <div style={{
               background: 'rgba(255,149,0,0.1)', border: '1px solid rgba(255,149,0,0.3)',
@@ -178,21 +199,36 @@ export default function AdminOrders() {
                   {new Date(o.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })}
                 </span>
 
-                <div>
-                  {needsApproval ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {o.payment_status === 'pending_verification' && (
+                    <button
+                      onClick={() => confirmPayment(o['id'])}
+                      disabled={confirmingPayment === o['id']}
+                      style={{
+                        background: confirmingPayment === o['id'] ? '#1A1A1A' : '#007BFF',
+                        color: confirmingPayment === o['id'] ? '#444' : '#fff',
+                        border: 'none', padding: '6px 12px',
+                        borderRadius: '7px', cursor: confirmingPayment === o['id'] ? 'not-allowed' : 'pointer',
+                        ...M.display, fontSize: '11px', fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >{confirmingPayment === o['id'] ? '...' : '💳 Confirm Pay'}</button>
+                  )}
+                  {needsApproval && (
                     <button
                       onClick={() => approve(o['id'])}
                       disabled={approving === o['id']}
                       style={{
                         background: approving === o['id'] ? '#1A1A1A' : '#00C853',
                         color: approving === o['id'] ? '#444' : '#000',
-                        border: 'none', padding: '6px 14px',
+                        border: 'none', padding: '6px 12px',
                         borderRadius: '7px', cursor: approving === o['id'] ? 'not-allowed' : 'pointer',
-                        ...M.display, fontSize: '12px', fontWeight: 700,
+                        ...M.display, fontSize: '11px', fontWeight: 700,
                         whiteSpace: 'nowrap',
                       }}
                     >{approving === o['id'] ? '...' : '✓ Approve'}</button>
-                  ) : (
+                  )}
+                  {!needsApproval && o.payment_status !== 'pending_verification' && (
                     <span style={{ ...M.mono, fontSize: '10px', color: '#2A2A2A' }}>—</span>
                   )}
                 </div>
