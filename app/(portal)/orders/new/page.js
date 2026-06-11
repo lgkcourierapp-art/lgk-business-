@@ -849,7 +849,7 @@ export default function NewOrderPage() {
                 {s.payment_title}
               </p>
               <a
-                href={process.env.NEXT_PUBLIC_REVOLUT_LINK}
+                href={process.env.NEXT_PUBLIC_REVOLUT_USER ? `https://revolut.me/${process.env.NEXT_PUBLIC_REVOLUT_USER}` : '#'}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -865,7 +865,7 @@ export default function NewOrderPage() {
                     {s.payment_revolut}
                   </p>
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '2px 0 0' }}>
-                    {(process.env.NEXT_PUBLIC_REVOLUT_LINK || '').replace('https://', '')} → PLN {displayPrice != null ? parseFloat(displayPrice).toFixed(2) : ''}
+                    {process.env.NEXT_PUBLIC_REVOLUT_USER ? `revolut.me/${process.env.NEXT_PUBLIC_REVOLUT_USER}` : '...'} → PLN {displayPrice != null ? parseFloat(displayPrice).toFixed(2) : ''}
                   </p>
                 </div>
               </a>
