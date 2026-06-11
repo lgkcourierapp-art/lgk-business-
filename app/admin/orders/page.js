@@ -39,12 +39,13 @@ export default function AdminOrders() {
   const [payAmount, setPayAmount] = useState('');
   const [payCourierPay, setPayCourierPay] = useState('');
   const [payResult, setPayResult] = useState(null);
+  const [payError, setPayError] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     let q = supabase
       .from('deliveries')
-      .select('id, order_number, status, payment_status, payment_received_pln, pickup_city, delivery_city, delivery_street, price_total, created_at, client_id, profiles!client_id(name, company_name, business_name, business_type, phone, email)')
+      .select('id, order_number, status, payment_status, payment_received_pln, pickup_city, delivery_city, delivery_street, price_total, created_at, client_id, courier_id, profiles!client_id(name, company_name, business_name, business_type, phone, email)')
       .order('created_at', { ascending: false })
       .limit(100);
     if (filter !== 'all') q = q.eq('status', filter);
@@ -66,14 +67,21 @@ export default function AdminOrders() {
       clientName,
       clientType: o.profiles?.business_type || 'general',
       clientPhone: o.profiles?.phone || '',
+      courierId: o.courier_id || null,
     });
     setPayAmount((o.price_total || 0).toFixed(2));
     setPayCourierPay((dv * 0.72).toFixed(2));
     setPayResult(null);
+    setPayError(null);
   };
 
   const doConfirmPayment = async () => {
     if (!payModal) return;
+    if (!payModal.courierId) {
+      setPayError('Assign a courier before confirming payment.');
+      return;
+    }
+    setPayError(null);
     setConfirmingPayment(payModal.id);
     const received = parseFloat(payAmount) || payModal.priceTotal;
     await supabase
@@ -361,6 +369,15 @@ export default function AdminOrders() {
                       ⚠ −PLN {shortfall.toFixed(2)}
                     </span>
                   )}
+                  {o.payment_status === 'paid' && !o.courier_id && (
+                    <span style={{
+                      fontSize: 10, padding: '2px 8px',
+                      borderRadius: 10, background: 'rgba(220,38,38,0.12)',
+                      color: '#DC2626', fontWeight: 500, display: 'inline-block',
+                    }}>
+                      ⚠ No courier assigned
+                    </span>
+                  )}
                 </div>
 
                 <span style={{ ...M.mono, fontSize: '10px', color: '#444' }}>
@@ -524,7 +541,7 @@ export default function AdminOrders() {
                     onChange={e => setPayCourierPay(e.target.value)}
                     style={{ width: '100%', background: '#0A0A0A', border: '1px solid #2A2A2A', borderRadius: '8px', color: '#FFF', padding: '10px 12px', fontSize: '16px', fontFamily: "'Fira Code', monospace", outline: 'none', boxSizing: 'border-box' }}
                   />
-                  <div style={{ ...M.mono, fontSize: '10px', color: '#444', marginTop: '4px' }}>Set to 0 if no courier assigned yet</div>
+                  <div style={{ ...M.mono, fontSize: '10px', color: '#444', marginTop: '4px' }}>Courier must be assigned before confirming payment</div>
                 </div>
 
                 {parseFloat(payAmount) > 0 && parseFloat(payCourierPay) >= 0 && (
@@ -543,6 +560,12 @@ export default function AdminOrders() {
                         PLN {Math.max(0, (parseFloat(payAmount || 0) - 7.00 - parseFloat(payCourierPay || 0)) * 0.91).toFixed(2)}
                       </span>
                     </div>
+                  </div>
+                )}
+
+                {payError && (
+                  <div style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', borderRadius: '8px', padding: '10px 12px', marginBottom: '14px', ...M.mono, fontSize: '11px', color: '#DC2626' }}>
+                    ⚠ {payError}
                   </div>
                 )}
 
