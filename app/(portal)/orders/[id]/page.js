@@ -47,9 +47,7 @@ export default function OrderPage() {
   const revolutBase = revolutUser
     ? `https://revolut.me/${revolutUser}`
     : (process.env.NEXT_PUBLIC_REVOLUT_LINK || null)
-  const revolutHref = revolutBase && amount > 0
-    ? `${revolutBase}/PLN/${amount.toFixed(2)}`
-    : null
+  const revolutHref = revolutBase || null
 
   return (
     <div style={{ minHeight: '100vh', background: colors?.bg || '#f9fafb' }}>
