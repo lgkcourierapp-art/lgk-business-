@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
 const SAFE_REDIRECTS = ['/dashboard', '/orders', '/settings', '/profile', '/support'];
@@ -8,16 +8,34 @@ export async function GET(request) {
   const code = searchParams.get('code');
   const nextParam = searchParams.get('next') || '/dashboard';
 
-  // Only allow redirects to known safe internal paths
   const next = SAFE_REDIRECTS.includes(nextParam) ? nextParam : '/dashboard';
+  const redirectTo = `${origin}${next}`;
 
-  if (code) {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
-    await supabase.auth.exchangeCodeForSession(code);
+  if (!code) {
+    return NextResponse.redirect(redirectTo);
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  const response = NextResponse.redirect(redirectTo);
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name, value, options) {
+          response.cookies.set({ name, value, ...options });
+        },
+        remove(name, options) {
+          response.cookies.set({ name, value: '', ...options });
+        },
+      },
+    }
+  );
+
+  await supabase.auth.exchangeCodeForSession(code);
+
+  return response;
 }
