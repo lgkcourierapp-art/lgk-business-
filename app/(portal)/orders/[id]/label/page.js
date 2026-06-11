@@ -98,7 +98,7 @@ export default function LabelPage() {
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Pay via Revolut to unlock courier pickup</div>
           </div>
           <a
-            href={process.env.NEXT_PUBLIC_REVOLUT_USER ? `https://revolut.me/${process.env.NEXT_PUBLIC_REVOLUT_USER}/PLN/${parseFloat(order.amount_pln || order.price_total || 0).toFixed(2)}` : '#'}
+            href={process.env.NEXT_PUBLIC_REVOLUT_USER ? `https://revolut.me/${process.env.NEXT_PUBLIC_REVOLUT_USER}` : '#'}
             target="_blank"
             rel="noopener noreferrer"
             style={{ background: '#D4FF00', color: '#000', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 13, textDecoration: 'none', whiteSpace: 'nowrap' }}
