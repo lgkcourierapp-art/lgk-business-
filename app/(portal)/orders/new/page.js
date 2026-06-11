@@ -335,7 +335,7 @@ export default function NewOrderPage() {
         .insert({
           order_number: orderNumber,
           client_id: user['id'],
-          status: 'pending',
+          status: 'awaiting_payment',
           order_source: 'portal',
           payment_status: 'awaiting',
           payment_method: form.paymentMethod,

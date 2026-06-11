@@ -59,6 +59,7 @@ export default function AdminCommand() {
 
     const [
       { count: pendingPayment },
+      { count: pendingVerification },
       { count: activeOrders },
       { data: todayDeliveries },
       { count: p1Tickets },
@@ -68,6 +69,7 @@ export default function AdminCommand() {
       { data: activeCouriers },
     ] = await Promise.all([
       supabase.from('deliveries').select('id', { count: 'exact', head: true }).eq('status', 'awaiting_payment'),
+      supabase.from('deliveries').select('id', { count: 'exact', head: true }).eq('payment_status', 'pending_verification'),
       supabase.from('deliveries').select('id', { count: 'exact', head: true }).in('status', ['pending','assigned','collected','in_transit']),
       supabase.from('deliveries').select('price_total, status').gte('created_at', today.toISOString()),
       supabase.from('support_tickets').select('id', { count: 'exact', head: true }).eq('status', 'open').eq('priority', 'P1'),
@@ -93,6 +95,7 @@ export default function AdminCommand() {
 
     setData({
       pendingPayment: pendingPayment || 0,
+      pendingVerification: pendingVerification || 0,
       activeOrders: activeOrders || 0,
       todayRevenue: Math.round(revenue),
       todayDelivered: delivered.length,
@@ -197,6 +200,7 @@ export default function AdminCommand() {
           <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
             <StatCard value={`PLN ${data.todayRevenue}`} label="Today revenue" color="#D4FF00" />
             <StatCard value={data.todayDelivered} label="Delivered today" color="#00C853" />
+            <StatCard value={data.pendingVerification} label="Payments to confirm" color={data.pendingVerification > 0 ? '#007BFF' : '#333'} alert={data.pendingVerification > 0 ? '#007BFF' : null} />
             <StatCard value={data.pendingPayment} label="Awaiting payment" color={data.pendingPayment > 0 ? '#FF9500' : '#333'} alert={data.pendingPayment > 0 ? '#FF9500' : null} />
             <StatCard value={data.activeCouriers.length} label="Couriers online" color="#007BFF" />
             <StatCard value={data.p1Tickets > 0 ? data.p1Tickets : data.openTickets} label={data.p1Tickets > 0 ? 'P1 tickets !' : 'Open tickets'} color={data.p1Tickets > 0 ? '#FF3B30' : '#666'} alert={data.p1Tickets > 0 ? '#FF3B30' : null} />
@@ -208,10 +212,11 @@ export default function AdminCommand() {
               Actions needed
             </div>
             {data.p1Tickets > 0 && <AlertItem level="critical" text={`${data.p1Tickets} P1 ticket${data.p1Tickets > 1 ? 's' : ''} — respond within 1 hour`} href="/admin/cs" />}
-            {data.pendingPayment > 0 && <AlertItem level="warning" text={`${data.pendingPayment} order${data.pendingPayment > 1 ? 's' : ''} awaiting payment confirmation`} href="/admin/orders" />}
+            {data.pendingVerification > 0 && <AlertItem level="warning" text={`${data.pendingVerification} payment${data.pendingVerification > 1 ? 's' : ''} sent by clients — confirm to release to couriers`} href="/admin/orders" />}
+            {data.pendingPayment > 0 && <AlertItem level="info" text={`${data.pendingPayment} order${data.pendingPayment > 1 ? 's' : ''} awaiting payment from client`} href="/admin/orders" />}
             {data.pendingCodes > 0 && <AlertItem level="info" text={`${data.pendingCodes} Brama code${data.pendingCodes > 1 ? 's' : ''} awaiting moderation`} href="/admin/brama" />}
             {data.newWaitlist > 0 && <AlertItem level="info" text={`${data.newWaitlist} new waitlist signup${data.newWaitlist > 1 ? 's' : ''} in last 24 hours`} href="/admin/waitlist" />}
-            {data.p1Tickets === 0 && data.pendingPayment === 0 && data.pendingCodes === 0 && data.newWaitlist === 0 && (
+            {data.p1Tickets === 0 && data.pendingVerification === 0 && data.pendingPayment === 0 && data.pendingCodes === 0 && data.newWaitlist === 0 && (
               <div style={{ padding: '14px 16px', background: 'rgba(0,200,83,0.06)', borderRadius: '10px', borderLeft: '3px solid #00C853', ...M.display, fontSize: '13px', color: '#00C853' }}>
                 ✓ All clear — no actions needed right now
               </div>

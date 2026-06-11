@@ -19,7 +19,7 @@ const STATUS_CONFIG = {
   cancelled:        { label: 'Cancelled',     color: '#555',    bg: 'rgba(85,85,85,0.1)'  },
 };
 
-const COLS = '140px 1fr 1fr 100px 120px 70px 130px';
+const COLS = '140px 1fr 1fr 100px 110px 100px 70px 130px';
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -48,7 +48,7 @@ export default function AdminOrders() {
     setConfirmingPayment(id);
     await supabase
       .from('deliveries')
-      .update({ payment_status: 'paid' })
+      .update({ payment_status: 'paid', status: 'pending' })
       .eq('id', id);
     setConfirmingPayment(null);
     load();
@@ -152,7 +152,7 @@ export default function AdminOrders() {
       ) : (
         <div style={{ background: '#141414', border: '1px solid #1E1E1E', borderRadius: '12px', overflow: 'hidden' }}>
           <div style={{ display: 'grid', gridTemplateColumns: COLS, gap: '12px', padding: '10px 18px', borderBottom: '1px solid #1E1E1E' }}>
-            {['Order ID', 'Route', 'Client', 'Value', 'Status', 'Date', 'Action'].map(h => (
+            {['Order ID', 'Route', 'Client', 'Value', 'Status', 'Payment', 'Date', 'Action'].map(h => (
               <span key={h} style={{ ...M.mono, fontSize: '10px', color: '#333', letterSpacing: '1px', textTransform: 'uppercase' }}>{h}</span>
             ))}
           </div>
@@ -194,6 +194,23 @@ export default function AdminOrders() {
                   padding: '3px 8px', borderRadius: '6px', textAlign: 'center',
                   display: 'inline-block',
                 }}>{sc.label}</span>
+
+                <span style={{
+                  ...M.display, fontSize: '11px', fontWeight: 700,
+                  color: o.payment_status === 'paid' ? '#00C853'
+                    : o.payment_status === 'pending_verification' ? '#007BFF'
+                    : '#555',
+                  background: o.payment_status === 'paid' ? 'rgba(0,200,83,0.1)'
+                    : o.payment_status === 'pending_verification' ? 'rgba(0,123,255,0.1)'
+                    : 'transparent',
+                  padding: o.payment_status === 'paid' || o.payment_status === 'pending_verification' ? '3px 8px' : '0',
+                  borderRadius: 6, display: 'inline-block',
+                }}>
+                  {o.payment_status === 'paid' ? '✓ Paid'
+                    : o.payment_status === 'pending_verification' ? '💳 Verifying'
+                    : o.payment_status === 'awaiting' ? 'Awaiting'
+                    : o.payment_status || '—'}
+                </span>
 
                 <span style={{ ...M.mono, fontSize: '10px', color: '#444' }}>
                   {new Date(o.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })}
