@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import LangSwitcher from '@/components/LangSwitcher'
 
 export const metadata = {
   title: 'Terms of Service — LGK Courier',
@@ -56,11 +57,12 @@ export default function TermsPage() {
     <div style={{ background: '#FFFFFF', minHeight: '100vh', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", color: '#0A0A0A' }}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px 80px' }}>
 
-        <div style={{ marginBottom: 40 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
           <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
             <span style={{ background: '#D4FF00', color: '#0A0A0A', fontWeight: 900, padding: '4px 10px', borderRadius: 20, fontSize: 14 }}>L°</span>
             <span style={{ fontWeight: 700, fontSize: 15, color: '#0A0A0A' }}>LGK Business</span>
           </Link>
+          <LangSwitcher />
         </div>
 
         <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Terms of Service</h1>
