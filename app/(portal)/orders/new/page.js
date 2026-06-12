@@ -480,7 +480,7 @@ export default function NewOrderPage() {
           recipient_phone: form.recipientPhone,
           amount_pln: displayPrice ?? price,
           price_total: displayPrice ?? price,
-          distance_km: form.distanceKm || roadDistanceKm || null,
+          distance_km: Math.round(form.distanceKm || roadDistanceKm || 0) || null,
           time_window: form.deliveryPref,
           estimated_pickup_at: estimatedPickup.toISOString(),
           estimated_delivery_at: estimatedDelivery.toISOString(),
