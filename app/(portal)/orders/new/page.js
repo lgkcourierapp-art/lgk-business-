@@ -322,43 +322,63 @@ export default function NewOrderPage() {
     return `SZ-${Date.now().toString(36).toUpperCase()}`
   }
 
-  const handleDeliveryChange = (addr) => {
+  const handleDeliveryChange = async (addr) => {
     if (!addr) return
-    setField('deliveryAddress', [addr.street, addr.houseNumber].filter(Boolean).join(' ') || addr.address || '')
+    const base = [addr.street, addr.houseNumber].filter(Boolean).join(' ') || addr.address || ''
+    const cityPart = [addr.postcode, addr.city].filter(Boolean).join(' ')
+    const fullAddress = [base, cityPart].filter(Boolean).join(', ')
+    setField('deliveryAddress', fullAddress || base)
     setField('deliveryStreet', addr.street || addr.address || '')
     setField('deliveryCity', addr.city || 'Szczecin')
     setField('deliveryPostcode', addr.postcode || '')
-    setField('deliveryLat', addr.lat)
-    setField('deliveryLng', addr.lng)
     if (addr.autofillName  && !form.recipientName)   setField('recipientName',  addr.autofillName)
     if (addr.autofillPhone && !form.recipientPhone)  setField('recipientPhone', addr.autofillPhone)
     if (addr.autofillNotes && !form.deliveryNotes)   setField('deliveryNotes',  addr.autofillNotes)
     setFieldErrors(e => ({ ...e, deliveryAddress: undefined }))
-    if (addr.lat && addr.lng) {
+
+    let lat = addr.lat
+    let lng = addr.lng
+
+    // HERE autocomplete doesn't return position — geocode to get coordinates
+    if ((!lat || !lng) && base) {
+      try {
+        const { mapyAutocomplete } = await import('@/lib/mapyService')
+        const results = await mapyAutocomplete(fullAddress || base)
+        if (results.length > 0 && results[0].lat && results[0].lng) {
+          lat = results[0].lat
+          lng = results[0].lng
+        }
+      } catch {}
+    }
+
+    setField('deliveryLat', lat ?? null)
+    setField('deliveryLng', lng ?? null)
+
+    if (lat && lng) {
       const pickupLat = form.pickupLat || profile?.pickup_lat
       const pickupLng = form.pickupLng || profile?.pickup_lng
       if (pickupLat && pickupLng) {
         setFetchingDistance(true)
         setSnapshotUrl(getRouteSnapshotUrl({
           fromLat: pickupLat, fromLng: pickupLng,
-          toLat: addr.lat, toLng: addr.lng,
+          toLat: lat, toLng: lng,
           width: 700, height: 180,
         }))
         const MIN_KM = 2.0
         const fallbackDistance = () => {
-          getRoadDistanceKm(pickupLat, pickupLng, addr.lat, addr.lng, process.env.NEXT_PUBLIC_HERE_API_KEY)
+          getRoadDistanceKm(pickupLat, pickupLng, lat, lng, process.env.NEXT_PUBLIC_HERE_API_KEY)
             .then(km => {
-              setRoadDistanceKm(km || haversineDistance(pickupLat, pickupLng, addr.lat, addr.lng))
+              setRoadDistanceKm(km || haversineDistance(pickupLat, pickupLng, lat, lng))
               setFetchingDistance(false)
             })
             .catch(() => {
-              setRoadDistanceKm(haversineDistance(pickupLat, pickupLng, addr.lat, addr.lng))
+              setRoadDistanceKm(haversineDistance(pickupLat, pickupLng, lat, lng))
               setFetchingDistance(false)
             })
         }
         Promise.all([
-          getRouteData({ fromLat: pickupLat, fromLng: pickupLng, toLat: addr.lat, toLng: addr.lng, transport: 'bike' }),
-          getRouteData({ fromLat: pickupLat, fromLng: pickupLng, toLat: addr.lat, toLng: addr.lng, transport: 'car' }),
+          getRouteData({ fromLat: pickupLat, fromLng: pickupLng, toLat: lat, toLng: lng, transport: 'bike' }),
+          getRouteData({ fromLat: pickupLat, fromLng: pickupLng, toLat: lat, toLng: lng, transport: 'car' }),
         ]).then(([bikeData, carData]) => {
           if (!bikeData && !carData) { fallbackDistance(); return }
           const effectiveDistance = Math.max(
