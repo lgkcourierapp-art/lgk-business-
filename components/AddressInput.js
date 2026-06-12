@@ -254,14 +254,9 @@ function SuggestionRow({ s, onSelect, isLast, lang }) {
     >
       <span style={{ flexShrink: 0, fontSize: 14, marginTop: 2 }}>{s.isSaved ? '⭐' : '📍'}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ color: '#0A0A0A', fontSize: '13px', fontWeight: 600, lineHeight: 1.3 }}>
-          {streetLine}
+        <div style={{ color: '#0A0A0A', fontSize: '14px', fontWeight: 700, lineHeight: 1.4 }}>
+          {[streetLine, cityLine].filter(Boolean).join(', ')}
         </div>
-        {cityLine && (
-          <div style={{ color: '#6B7280', fontSize: '12px', marginTop: 2, lineHeight: 1.3 }}>
-            {cityLine}
-          </div>
-        )}
         {s.isSaved && s.recipientPhone && (
           <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{s.recipientPhone}</div>
         )}
