@@ -8,6 +8,8 @@ import { PACKAGE_SIZES, getSizeById, calculatePrice, estimateBasePrice, applyPsy
 import { emailOrderConfirmed } from '@/utils/emailService'
 import { useApp } from '@/utils/appContext'
 import { t } from '@/lib/strings'
+import { getRouteSnapshotUrl, getRouteData } from '@/lib/mapyService'
+import { fetchWeatherSzczecin } from '@/lib/weatherService'
 
 const STRINGS = {
   pl: {
@@ -137,8 +139,13 @@ export default function NewOrderPage() {
   const [orderMode, setOrderMode] = useState('parcel')
   const [roadDistanceKm, setRoadDistanceKm] = useState(null)
   const [fetchingDistance, setFetchingDistance] = useState(false)
+  const [snapshotUrl, setSnapshotUrl] = useState(null)
+  const [routeData, setRouteData] = useState(null)
+  const [weather, setWeather] = useState(null)
 
   const displayPrice = price !== null ? applyPsychologicalPricing(price) : null
+
+  useEffect(() => { fetchWeatherSzczecin().then(setWeather) }, [])
 
   useEffect(() => { document.title = t(appLang, 'pageNewOrder') }, [appLang])
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }) }, [])
@@ -290,12 +297,43 @@ export default function NewOrderPage() {
       const pickupLng = form.pickupLng || profile?.pickup_lng
       if (pickupLat && pickupLng) {
         setFetchingDistance(true)
-        getRoadDistanceKm(pickupLat, pickupLng, addr.lat, addr.lng, process.env.NEXT_PUBLIC_HERE_API_KEY)
-          .then(km => { setRoadDistanceKm(km); setFetchingDistance(false) })
-          .catch(() => setFetchingDistance(false))
+        setSnapshotUrl(getRouteSnapshotUrl({
+          fromLat: pickupLat, fromLng: pickupLng,
+          toLat: addr.lat, toLng: addr.lng,
+          transport: 'bike',
+          width: 700, height: 180,
+        }))
+        const MIN_KM = 2.0
+        Promise.all([
+          getRouteData({ fromLat: pickupLat, fromLng: pickupLng, toLat: addr.lat, toLng: addr.lng, transport: 'bike' }),
+          getRouteData({ fromLat: pickupLat, fromLng: pickupLng, toLat: addr.lat, toLng: addr.lng, transport: 'car' }),
+        ]).then(([bikeData, carData]) => {
+          const effectiveDistance = Math.max(
+            bikeData?.distanceKm || 0,
+            carData?.distanceKm  || 0,
+            MIN_KM
+          )
+          setRoadDistanceKm(effectiveDistance)
+          setRouteData(bikeData || carData)
+          setForm(prev => ({
+            ...prev,
+            distanceKm: effectiveDistance,
+            bikeRouteKm: bikeData?.distanceKm || 0,
+            carRouteKm:  carData?.distanceKm  || 0,
+            durationMin: bikeData?.durationMin || 20,
+          }))
+          setFetchingDistance(false)
+        }).catch(() => {
+          // Fallback to HERE for distance only
+          getRoadDistanceKm(pickupLat, pickupLng, addr.lat, addr.lng, process.env.NEXT_PUBLIC_HERE_API_KEY)
+            .then(km => { setRoadDistanceKm(km); setFetchingDistance(false) })
+            .catch(() => setFetchingDistance(false))
+        })
       }
     } else {
       setRoadDistanceKm(null)
+      setSnapshotUrl(null)
+      setRouteData(null)
     }
   }
 
@@ -366,6 +404,10 @@ export default function NewOrderPage() {
           amount_pln: displayPrice ?? price,
           price_total: displayPrice ?? price,
           distance_km: roadDistanceKm,
+          bike_route_km: form.bikeRouteKm || null,
+          car_route_km: form.carRouteKm || null,
+          effective_distance_km: form.distanceKm || roadDistanceKm || null,
+          duration_min: form.durationMin || null,
           time_window: form.deliveryPref,
           estimated_pickup_at: estimatedPickup.toISOString(),
           estimated_delivery_at: estimatedDelivery.toISOString(),
@@ -704,6 +746,28 @@ export default function NewOrderPage() {
                 style={{ ...inputStyle, resize: 'vertical' }}
               />
             </div>
+
+            {weather && (
+              <div style={{ background: '#F9FAFB', border: '0.5px solid #E5E7EB', borderRadius: 10, overflow: 'hidden', marginTop: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
+                  {[
+                    { label: 'Teraz', d: weather.now },
+                    { label: 'Wieczór', d: weather.evening },
+                    { label: 'Noc', d: weather.night },
+                  ].map((p, i) => (
+                    <div key={p.label} style={{ padding: '10px 8px', textAlign: 'center', borderRight: i < 2 ? '0.5px solid #E5E7EB' : 'none' }}>
+                      <div style={{ fontSize: 9, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{p.label}</div>
+                      <div style={{ fontSize: 22, fontWeight: 600, color: '#111827' }}>{p.d.temp}°</div>
+                      <div style={{ fontSize: 16, margin: '2px 0' }}>{p.d.icon}</div>
+                      <div style={{ fontSize: 9, color: '#9CA3AF' }}>{p.d.rain}% 💨{p.d.wind}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ background: weather.bikeCondition.bg, padding: '5px 10px', fontSize: 10, color: weather.bikeCondition.color, fontWeight: 500, textAlign: 'center' }}>
+                  {weather.bikeCondition.text}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -756,10 +820,34 @@ export default function NewOrderPage() {
               )}
               {roadDistanceKm && !fetchingDistance && (
                 <p style={{ fontSize: 12, color: colors.textSecondary, margin: '4px 0 0' }}>
-                  {appLang === 'pl' ? `Trasa: ${roadDistanceKm.toFixed(1)} km drogi` : `Route: ${roadDistanceKm.toFixed(1)} km by road`}
+                  {appLang === 'pl' ? `Trasa: ${roadDistanceKm.toFixed(1)} km` : `Route: ${roadDistanceKm.toFixed(1)} km`}
                 </p>
               )}
               {fieldErr('deliveryAddress')}
+              {snapshotUrl && (
+                <div style={{ marginTop: 10, borderRadius: 10, overflow: 'hidden', position: 'relative' }}>
+                  <img
+                    src={snapshotUrl}
+                    alt="Trasa dostawy"
+                    style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }}
+                  />
+                  {routeData && (
+                    <div style={{
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+                      padding: '20px 12px 8px',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+                    }}>
+                      <span style={{ fontSize: 12, color: '#fff', fontWeight: 500 }}>
+                        🚲 {routeData.distanceKm} km · ~{routeData.durationMin} min
+                      </span>
+                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>
+                        Trasa rowerowa · Mapy.com
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <label style={labelStyle}>{s.apartment}</label>
               <input
@@ -826,17 +914,30 @@ export default function NewOrderPage() {
               ))}
             </div>
 
+            {snapshotUrl && (
+              <div style={{ borderRadius: 8, overflow: 'hidden', marginBottom: 12 }}>
+                <img
+                  src={snapshotUrl}
+                  alt="Trasa"
+                  style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
+                />
+                {routeData && (
+                  <div style={{ background: '#0A0A0A', padding: '6px 12px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Trasa rowerowa</span>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#D4FF00' }}>
+                      {routeData.distanceKm} km · ~{routeData.durationMin} min
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ ...cardStyle, border: '2px solid #D4FF00', textAlign: 'center', padding: '24px' }}>
               <div style={{ color: colors.textSecondary, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{s.summary_price}</div>
               <div style={{ color: '#111827', fontWeight: 900, fontSize: 40, fontFamily: "'Fira Code', monospace", marginBottom: 8 }}>
                 PLN {displayPrice?.toFixed(2) ?? '—'}
               </div>
               <div style={{ color: colors.textSecondary, fontSize: 12 }}>{s.eta_note}</div>
-              {roadDistanceKm && (
-                <div style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
-                  {appLang === 'pl' ? `Trasa: ${roadDistanceKm.toFixed(1)} km drogi` : `Route: ${roadDistanceKm.toFixed(1)} km by road`}
-                </div>
-              )}
               {form.recipientPhone && (
                 <div style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
                   {form.recipientName ? `${form.recipientName} ${s.sms_note}` : s.sms_note}
