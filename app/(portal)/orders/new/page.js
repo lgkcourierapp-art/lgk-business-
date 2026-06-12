@@ -365,20 +365,19 @@ export default function NewOrderPage() {
       const pickupLng = form.pickupLng || profile?.pickup_lng
       if (pickupLat && pickupLng) {
         setFetchingDistance(true)
-        setSnapshotUrl(getRouteSnapshotUrl({
-          fromLat: pickupLat, fromLng: pickupLng,
-          toLat: lat, toLng: lng,
-          width: 700, height: 180,
-        }))
+        setSnapshotUrl(null)
         const MIN_KM = 2.0
+        const snapshotOpts = { fromLat: pickupLat, fromLng: pickupLng, toLat: lat, toLng: lng, width: 700, height: 180 }
         const fallbackDistance = () => {
           getRoadDistanceKm(pickupLat, pickupLng, lat, lng, process.env.NEXT_PUBLIC_HERE_API_KEY)
             .then(km => {
               setRoadDistanceKm(km || haversineDistance(pickupLat, pickupLng, lat, lng))
+              setSnapshotUrl(getRouteSnapshotUrl(snapshotOpts))
               setFetchingDistance(false)
             })
             .catch(() => {
               setRoadDistanceKm(haversineDistance(pickupLat, pickupLng, lat, lng))
+              setSnapshotUrl(getRouteSnapshotUrl(snapshotOpts))
               setFetchingDistance(false)
             })
         }
@@ -387,18 +386,22 @@ export default function NewOrderPage() {
           getRouteData({ fromLat: pickupLat, fromLng: pickupLng, toLat: lat, toLng: lng, transport: 'car' }),
         ]).then(([bikeData, carData]) => {
           if (!bikeData && !carData) { fallbackDistance(); return }
+          const bikeKm = bikeData?.distanceKm || 0
+          const carKm  = carData?.distanceKm  || 0
+          // If bike route is >2 km longer than car route, courier takes longer detours — price by bike km
           const effectiveDistance = Math.max(
-            bikeData?.distanceKm || 0,
-            carData?.distanceKm  || 0,
+            Math.abs(bikeKm - carKm) > 2 ? bikeKm : carKm,
             MIN_KM
           )
+          // Map always renders the car route geometry
+          setSnapshotUrl(getRouteSnapshotUrl({ ...snapshotOpts, geometry: carData?.geometry || null }))
           setRoadDistanceKm(effectiveDistance)
           setRouteData(bikeData || carData)
           setForm(prev => ({
             ...prev,
             distanceKm: effectiveDistance,
-            bikeRouteKm: bikeData?.distanceKm || 0,
-            carRouteKm:  carData?.distanceKm  || 0,
+            bikeRouteKm: bikeKm,
+            carRouteKm:  carKm,
             durationMin: bikeData?.durationMin || 20,
           }))
           setFetchingDistance(false)
