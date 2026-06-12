@@ -57,7 +57,7 @@ const STRINGS = {
     payment_title: 'Płatność',
     payment_revolut: 'Zapłać przez Revolut',
     payment_note: 'Otwórz link i opłać zamówienie. Kurier wyjedzie po potwierdzeniu płatności.',
-    submit_revolut: '✓ Złóż zamówienie i zapłać',
+    submit_revolut: '💳 Zamawiam i płacę',
     summary_package: 'Paczka',
     summary_pickup: 'Odbiór',
     summary_delivery: 'Dostawa',
@@ -914,23 +914,49 @@ export default function NewOrderPage() {
               ))}
             </div>
 
-            {snapshotUrl && (
-              <div style={{ borderRadius: 8, overflow: 'hidden', marginBottom: 12 }}>
-                <img
-                  src={snapshotUrl}
-                  alt="Trasa"
-                  style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
-                />
-                {routeData && (
-                  <div style={{ background: '#0A0A0A', padding: '6px 12px', display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Trasa rowerowa</span>
-                    <span style={{ fontSize: 11, fontWeight: 500, color: '#D4FF00' }}>
-                      {routeData.distanceKm} km · ~{routeData.durationMin} min
-                    </span>
+            {snapshotUrl && (() => {
+              const getETA = (durationMin) => {
+                const now = new Date()
+                now.setMinutes(now.getMinutes() + (durationMin || 20) + 5)
+                return now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
+              }
+              return (
+                <div style={{ borderRadius: 8, overflow: 'hidden', marginBottom: 0 }}>
+                  <img
+                    src={snapshotUrl}
+                    alt="Trasa"
+                    style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
+                  />
+                  {routeData && (
+                    <div style={{ background: '#0A0A0A', padding: '6px 12px', display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Trasa rowerowa</span>
+                      <span style={{ fontSize: 11, fontWeight: 500, color: '#D4FF00' }}>
+                        {routeData.distanceKm} km · ~{routeData.durationMin} min · Dotarcie ~{getETA(routeData.durationMin)}
+                      </span>
+                    </div>
+                  )}
+                  <div style={{
+                    background: 'rgba(37,99,235,0.06)',
+                    borderBottom: '0.5px solid rgba(37,99,235,0.15)',
+                    padding: '8px 14px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 8,
+                  }}>
+                    <span style={{ fontSize: 14, flexShrink: 0 }}>🚲</span>
+                    <p style={{ fontSize: 11, color: '#374151', margin: 0, lineHeight: 1.5 }}>
+                      Trasa rowerowa może być nieco dłuższa niż w linii prostej —
+                      kurier jedzie ścieżkami rowerowymi i unika głównych arterii.{' '}
+                      <strong style={{ color: '#111827' }}>
+                        Dzięki temu jest szybszy i bezpieczniejszy w ruchu miejskim.
+                      </strong>
+                    </p>
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )
+            })()}
+
+            <div style={{ height: 12 }} />
 
             <div style={{ ...cardStyle, border: '2px solid #D4FF00', textAlign: 'center', padding: '24px' }}>
               <div style={{ color: colors.textSecondary, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{s.summary_price}</div>
@@ -943,6 +969,48 @@ export default function NewOrderPage() {
                   {form.recipientName ? `${form.recipientName} ${s.sms_note}` : s.sms_note}
                 </div>
               )}
+            </div>
+
+            <div style={{
+              background: 'rgba(22,163,74,0.06)',
+              border: '0.5px solid rgba(22,163,74,0.2)',
+              borderRadius: 10,
+              padding: '10px 12px',
+              marginBottom: 12,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A', flexShrink: 0 }} />
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 500, color: '#111827', margin: 0 }}>
+                  Kurier gotowy do wyjazdu
+                </p>
+                <p style={{ fontSize: 10, color: '#6B7280', margin: '2px 0 0' }}>
+                  Wyruszy natychmiast po potwierdzeniu płatności
+                </p>
+              </div>
+            </div>
+
+            <div style={{
+              background: 'rgba(212,255,0,0.05)',
+              border: '0.5px solid rgba(212,255,0,0.2)',
+              borderRadius: 10,
+              padding: '10px 12px',
+              marginBottom: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}>
+              <span style={{ fontSize: 16 }}>📡</span>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 500, color: '#111827', margin: 0 }}>
+                  Śledź dostawę na żywo
+                </p>
+                <p style={{ fontSize: 10, color: '#6B7280', margin: '2px 0 0' }}>
+                  Po opłaceniu zobaczysz kuriera na mapie w czasie rzeczywistym
+                </p>
+              </div>
             </div>
 
             <div style={cardStyle}>
@@ -1007,15 +1075,20 @@ export default function NewOrderPage() {
             </button>
           )}
           {step === 4 && (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="btn-primary"
-              style={{ flex: 1, height: 48, fontSize: 15, opacity: submitting ? 0.6 : 1 }}
-            >
-              {submitting ? s.submitting : s.submit_revolut}
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 0 }}>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="btn-primary"
+                style={{ flex: 1, height: 48, fontSize: 15, opacity: submitting ? 0.6 : 1 }}
+              >
+                {submitting ? s.submitting : s.submit_revolut}
+              </button>
+              <p style={{ fontSize: 10, color: '#9CA3AF', textAlign: 'center', marginTop: 8, marginBottom: 0 }}>
+                Anulowanie po przypisaniu kuriera: PLN 15.00
+              </p>
+            </div>
           )}
         </div>
         {displayPrice !== null && step >= 3 && (
