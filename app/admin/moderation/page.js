@@ -162,7 +162,7 @@ export default function AdminModeration() {
           const color = STATUS_COLORS[tab] || '#555';
           return (
             <button key={tab} onClick={() => setActiveTab(tab)} style={{
-              padding: '9px 18px', background: 'transparent', border: 'none',
+              padding: '9px 18px', background: 'transparent', borderTop: 0, borderRight: 0, borderLeft: 0,
               borderBottom: active ? `2px solid ${color}` : '2px solid transparent',
               color: active ? color : '#555',
               cursor: 'pointer', ...M.display, fontSize: '13px',

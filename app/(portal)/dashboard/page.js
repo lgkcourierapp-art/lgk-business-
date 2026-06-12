@@ -131,12 +131,9 @@ export default function DashboardPage() {
         onMouseLeave={() => setHoveredCard(null)}
         style={{
           background: isWaiting ? '#8B5CF608' : colors.card,
-          border: '1px solid ' + (
-            isUrgent  ? '#007BFF40' :
-            isWaiting ? '#8B5CF640' :
-            hoveredCard === orderId ? '#D4FF00' :
-            colors.border
-          ),
+          borderTop: '1px solid ' + (isUrgent ? '#007BFF40' : isWaiting ? '#8B5CF640' : hoveredCard === orderId ? '#D4FF00' : colors.border),
+          borderRight: '1px solid ' + (isUrgent ? '#007BFF40' : isWaiting ? '#8B5CF640' : hoveredCard === orderId ? '#D4FF00' : colors.border),
+          borderBottom: '1px solid ' + (isUrgent ? '#007BFF40' : isWaiting ? '#8B5CF640' : hoveredCard === orderId ? '#D4FF00' : colors.border),
           borderLeft: '4px solid ' + (statusBorderMap[order.status] || colors.border),
           borderRadius: '10px',
           padding: isUrgent ? '20px 20px 20px 17px' : '16px 16px 16px 13px',

@@ -381,7 +381,7 @@ export default function AdminSettings() {
       <div style={{ display: 'flex', gap: '4px', marginBottom: '28px', borderBottom: '1px solid #1E1E1E' }}>
         {visibleTabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
-            padding: '9px 20px', background: 'transparent', border: 'none',
+            padding: '9px 20px', background: 'transparent', borderTop: 0, borderRight: 0, borderLeft: 0,
             borderBottom: tab === t.key ? '2px solid #D4FF00' : '2px solid transparent',
             color: tab === t.key ? '#D4FF00' : '#555',
             cursor: 'pointer', ...M.display, fontSize: '13px',

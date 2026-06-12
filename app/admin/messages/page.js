@@ -243,7 +243,9 @@ export default function AdminMessages() {
       ) : messages.map(msg => (
         <div key={msg.id} style={{
           background: '#141414',
-          border: `1px solid ${msg.priority === 'urgent' ? 'rgba(255,59,48,0.3)' : '#1E1E1E'}`,
+          borderTop: `1px solid ${msg.priority === 'urgent' ? 'rgba(255,59,48,0.3)' : '#1E1E1E'}`,
+          borderRight: `1px solid ${msg.priority === 'urgent' ? 'rgba(255,59,48,0.3)' : '#1E1E1E'}`,
+          borderBottom: `1px solid ${msg.priority === 'urgent' ? 'rgba(255,59,48,0.3)' : '#1E1E1E'}`,
           borderLeft: `3px solid ${msg.priority === 'urgent' ? '#FF3B30' : '#2A2A2A'}`,
           borderRadius: '10px', padding: '14px 16px',
           marginBottom: '8px',

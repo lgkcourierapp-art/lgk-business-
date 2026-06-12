@@ -210,7 +210,7 @@ export default function AdminBrama() {
       <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '1px solid #1E1E1E' }}>
         {[['pending', `Pending (${pending.length})`], ['live', `Live (${live.length})`]].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{
-            padding: '9px 18px', background: 'transparent', border: 'none',
+            padding: '9px 18px', background: 'transparent', borderTop: 0, borderRight: 0, borderLeft: 0,
             borderBottom: tab === key ? '2px solid #D4FF00' : '2px solid transparent',
             color: tab === key ? '#D4FF00' : '#555',
             cursor: 'pointer', ...M.display, fontSize: '13px',

@@ -140,14 +140,11 @@ export default function AdminFlags() {
             return (
               <div key={flag['id']} style={{
                 background: '#141414',
-                border: isSmsFlag ? '1px solid rgba(255,149,0,0.4)' : '1px solid #1E1E1E',
+                borderTop: `1px solid ${isSmsFlag ? 'rgba(255,149,0,0.4)' : '#1E1E1E'}`,
+                borderRight: `1px solid ${isSmsFlag ? 'rgba(255,149,0,0.4)' : '#1E1E1E'}`,
+                borderBottom: `1px solid ${isSmsFlag ? 'rgba(255,149,0,0.4)' : '#1E1E1E'}`,
+                borderLeft: `${(isAiFlag || isSmsFlag) ? 3 : 1}px solid ${isAiFlag ? (flag.enabled ? '#00C853' : '#FF9500') : isSmsFlag ? '#FF9500' : '#1E1E1E'}`,
                 borderRadius: '12px', padding: '20px 22px',
-                borderLeftWidth: (isAiFlag || isSmsFlag) ? 3 : 1,
-                borderLeftColor: isAiFlag
-                  ? (flag.enabled ? '#00C853' : '#FF9500')
-                  : isSmsFlag
-                  ? '#FF9500'
-                  : '#1E1E1E',
               }}>
 
                 {/* Top row: name + toggle */}
