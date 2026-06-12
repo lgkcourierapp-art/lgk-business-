@@ -261,7 +261,7 @@ export default function NewOrderPage() {
             setForm(prev => ({ ...prev, pickupAddress: data.pickup_address }))
             const { mapyAutocomplete } = await import('@/lib/mapyService')
             const geocodeQuery = data.pickup_address.split(',')[0].trim()
-            const results = await mapyAutocomplete(geocodeQuery)
+            const results = await mapyAutocomplete(geocodeQuery + ' Szczecin')
             if (results.length > 0) {
               const { lat, lng } = results[0]
               if (lat && lng) {
@@ -349,7 +349,7 @@ export default function NewOrderPage() {
     if ((!lat || !lng) && addr.street) {
       try {
         const { mapyAutocomplete } = await import('@/lib/mapyService')
-        const results = await mapyAutocomplete(base)
+        const results = await mapyAutocomplete(base + ' ' + (addr.city || 'Szczecin'))
         if (results.length > 0 && results[0].lat && results[0].lng) {
           lat = results[0].lat
           lng = results[0].lng

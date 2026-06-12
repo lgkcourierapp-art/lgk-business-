@@ -24,6 +24,14 @@
 
 ## 🟡 MONITORING (fixed but watch for regressions)
 
+### BUG-014 — Mapy suggest returns 422 for ALL requests (type param)
+- **Symptom**: `GET .../v1/suggest?...&type=address 422` — geocoding always fails, map never renders, distance always null
+- **Root cause**: Mapy v1/suggest returns 422 for ANY request that includes a `type` parameter — even `type=address` alone. Also: geocoding without city context returns wrong city (e.g. "Piastów 44" matched Piechowice instead of Szczecin).
+- **Fix (1)**: Removed `type` param entirely from `mapyService.js mapyAutocomplete`.
+- **Fix (2)**: Append city with space to all geocoding queries — `mapyAutocomplete(base + ' Szczecin')` in both delivery handler and profile self-heal.
+- **Commit**: `pending`
+- **Status**: 🟡 Monitor — deploy and verify map renders + price updates
+
 ### BUG-009 — Mapy static map still not rendering
 - **Symptom**: Map image area is blank in order form step 3 and step 4
 - **Root cause**: `getRouteSnapshotUrl` returns a valid URL but browser may still block if `NEXT_PUBLIC_MAPY_API_KEY` is not baked into the Vercel build (env vars require redeploy to take effect)
