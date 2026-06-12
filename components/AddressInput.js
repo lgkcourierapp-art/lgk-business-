@@ -78,7 +78,7 @@ export default function AddressInput({
       if (!user || cancelled) return
       supabase
         .from('saved_addresses')
-        .select('id, label, recipient_name, recipient_phone, street, house_number, postal_code, city, lat, lng, notes, delivery_count')
+        .select('id, label, recipient_name, recipient_phone, street, house_number, postal_code, city, notes, delivery_count')
         .eq('client_id', user['id'])
         .order('delivery_count', { ascending: false, nullsFirst: false })
         .limit(20)

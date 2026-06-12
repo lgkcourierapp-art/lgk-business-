@@ -24,6 +24,20 @@
 
 ## 🟡 MONITORING (fixed but watch for regressions)
 
+### BUG-016 — Distance calculation broken after AddressInput rewrite
+- **Symptom**: Price reverts to PLN 24.95 minimum — route not calculating after delivery address selection
+- **Root cause (1)**: `mapyAutocomplete` still dynamically imported (`await import(...)`) in two places in `orders/new/page.js` — same silent production failure pattern as BUG-015. Dynamic imports of internal modules fail in Next.js production builds.
+- **Root cause (2)**: AddressInput rewrite added `lat, lng` to `saved_addresses` select query — those columns don't exist, causing 400 that silently kills the saved addresses load.
+- **Fix**: Static import `mapyAutocomplete` alongside `getRouteData` at top of file. Removed `lat, lng` from saved_addresses select.
+- **Commit**: `pending`
+
+### BUG-015 — deliveries INSERT 400 / SELECT * 400
+- **Symptom**: Pressing Pay returns `invalid input syntax for type integer: "6.49"` and dashboard shows 400 on `deliveries?select=*`
+- **Root cause (1)**: Inserted `bike_route_km`, `car_route_km`, `effective_distance_km`, `duration_min` — columns that don't exist in the table. PostgREST schema cache corrupted by repeated failed inserts, causing SELECT to also 400.
+- **Root cause (2)**: `distance_km` column typed as INTEGER but receiving float values.
+- **Fix**: Removed non-existent columns from INSERT. Changed to `Math.ceil(x * 2) / 2` (ceil to nearest 0.5). Changed `distance_km` column to NUMERIC in Supabase. Schema cache reloaded.
+- **Commit**: `e1dffb8`, `f4cc5a7`
+
 ### BUG-014 — Mapy suggest returns 422 for ALL requests (type param)
 - **Symptom**: `GET .../v1/suggest?...&type=address 422` — geocoding always fails, map never renders, distance always null
 - **Root cause**: Mapy v1/suggest returns 422 for ANY request that includes a `type` parameter — even `type=address` alone. Also: geocoding without city context returns wrong city (e.g. "Piastów 44" matched Piechowice instead of Szczecin).

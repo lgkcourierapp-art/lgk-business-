@@ -8,7 +8,7 @@ import { PACKAGE_SIZES, getSizeById, calculatePrice, estimateBasePrice, applyPsy
 import { emailOrderConfirmed } from '@/utils/emailService'
 import { useApp } from '@/utils/appContext'
 import { t } from '@/lib/strings'
-import { getRouteSnapshotUrl, getRouteData } from '@/lib/mapyService'
+import { getRouteSnapshotUrl, getRouteData, mapyAutocomplete } from '@/lib/mapyService'
 import { fetchWeatherSzczecin } from '@/lib/weatherService'
 
 const STRINGS = {
@@ -259,7 +259,6 @@ export default function NewOrderPage() {
             // Strip postcode/city portion (everything after first comma) so Mapy suggest
             // doesn't return 422 on queries containing commas.
             setForm(prev => ({ ...prev, pickupAddress: data.pickup_address }))
-            const { mapyAutocomplete } = await import('@/lib/mapyService')
             const geocodeQuery = data.pickup_address.split(',')[0].trim()
             const results = await mapyAutocomplete(geocodeQuery)
             if (results.length > 0) {
@@ -348,7 +347,6 @@ export default function NewOrderPage() {
     // Pass only base (no commas) — Mapy suggest returns 422 when query has commas.
     if ((!lat || !lng) && addr.street) {
       try {
-        const { mapyAutocomplete } = await import('@/lib/mapyService')
         const results = await mapyAutocomplete(base)
         if (results.length > 0 && results[0].lat && results[0].lng) {
           lat = results[0].lat
