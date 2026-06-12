@@ -26,7 +26,7 @@ export default function SettingsPage() {
       const { data: addrs } = await supabase
         .from('saved_addresses')
         .select('*')
-        .eq('user_id', user['id'])
+        .eq('client_id', user['id'])
         .order('is_default_pickup', { ascending: false })
       setSavedAddresses(addrs || [])
       setLoadingAddresses(false)
@@ -35,7 +35,7 @@ export default function SettingsPage() {
 
   const setDefaultAddress = async (addrId) => {
     if (!user) return
-    await supabase.from('saved_addresses').update({ is_default_pickup: false }).eq('user_id', user['id'])
+    await supabase.from('saved_addresses').update({ is_default_pickup: false }).eq('client_id', user['id'])
     await supabase.from('saved_addresses').update({ is_default_pickup: true }).eq('id', addrId)
     setSavedAddresses(prev => prev.map(a => ({ ...a, is_default_pickup: a['id'] === addrId })))
   }

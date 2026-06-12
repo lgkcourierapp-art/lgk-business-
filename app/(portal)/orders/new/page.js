@@ -255,10 +255,13 @@ export default function NewOrderPage() {
               pickupLng: data.pickup_lng,
             }))
           } else {
-            // Coordinates missing — geocode the saved address text and persist to profile
+            // Coordinates missing — geocode the saved address text and persist to profile.
+            // Strip postcode/city portion (everything after first comma) so Mapy suggest
+            // doesn't return 422 on queries containing commas.
             setForm(prev => ({ ...prev, pickupAddress: data.pickup_address }))
             const { mapyAutocomplete } = await import('@/lib/mapyService')
-            const results = await mapyAutocomplete(data.pickup_address)
+            const geocodeQuery = data.pickup_address.split(',')[0].trim()
+            const results = await mapyAutocomplete(geocodeQuery)
             if (results.length > 0) {
               const { lat, lng } = results[0]
               if (lat && lng) {
@@ -339,11 +342,14 @@ export default function NewOrderPage() {
     let lat = addr.lat
     let lng = addr.lng
 
-    // HERE autocomplete doesn't return position — geocode to get coordinates
-    if ((!lat || !lng) && base) {
+    // HERE autocomplete doesn't return position — geocode to get coordinates.
+    // Only geocode on real dropdown selections (addr.street is populated); on
+    // raw keystrokes addr.street is '' and we must not fire a request per character.
+    // Pass only base (no commas) — Mapy suggest returns 422 when query has commas.
+    if ((!lat || !lng) && addr.street) {
       try {
         const { mapyAutocomplete } = await import('@/lib/mapyService')
-        const results = await mapyAutocomplete(fullAddress || base)
+        const results = await mapyAutocomplete(base)
         if (results.length > 0 && results[0].lat && results[0].lng) {
           lat = results[0].lat
           lng = results[0].lng
