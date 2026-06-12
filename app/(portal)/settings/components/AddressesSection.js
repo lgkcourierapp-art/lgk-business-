@@ -112,6 +112,12 @@ export default function AddressesSection({ user }) {
 
   const savePickup = async () => {
     if (!user) return
+    if (pickupAddress && (!pickupLat || !pickupLng)) {
+      setErrorPickup(lang === 'pl'
+        ? 'Wybierz adres z listy podpowiedzi — wpisany ręcznie adres nie ma współrzędnych GPS.'
+        : 'Select an address from the suggestions list — a manually typed address has no GPS coordinates.')
+      return
+    }
     setSavingPickup(true)
     setErrorPickup('')
     try {

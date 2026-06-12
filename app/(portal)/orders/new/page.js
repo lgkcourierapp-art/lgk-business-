@@ -219,12 +219,26 @@ export default function NewOrderPage() {
           setForm(prev => ({ ...prev, readyTime: '15min' }))
         }
         if (data.pickup_address) {
-          setForm(prev => ({
-            ...prev,
-            pickupAddress: data.pickup_address || prev.pickupAddress,
-            pickupLat: data.pickup_lat || prev.pickupLat,
-            pickupLng: data.pickup_lng || prev.pickupLng,
-          }))
+          if (data.pickup_lat && data.pickup_lng) {
+            setForm(prev => ({
+              ...prev,
+              pickupAddress: data.pickup_address,
+              pickupLat: data.pickup_lat,
+              pickupLng: data.pickup_lng,
+            }))
+          } else {
+            // Coordinates missing — geocode the saved address text and persist to profile
+            setForm(prev => ({ ...prev, pickupAddress: data.pickup_address }))
+            const { mapyAutocomplete } = await import('@/lib/mapyService')
+            const results = await mapyAutocomplete(data.pickup_address)
+            if (results.length > 0) {
+              const { lat, lng } = results[0]
+              if (lat && lng) {
+                setForm(prev => ({ ...prev, pickupLat: lat, pickupLng: lng }))
+                supabase.from('profiles').update({ pickup_lat: lat, pickup_lng: lng }).eq('id', data.id).then(() => {})
+              }
+            }
+          }
         }
       }
     })
