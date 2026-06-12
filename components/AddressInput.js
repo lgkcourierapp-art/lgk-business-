@@ -233,6 +233,8 @@ export default function AddressInput({
 
 function SuggestionRow({ s, onSelect, isLast, lang }) {
   const [hovered, setHovered] = useState(false)
+  const streetLine = [s.street, s.houseNumber].filter(Boolean).join(' ') || s.label || ''
+  const cityLine = [s.postcode, s.city].filter(Boolean).join(' ')
   return (
     <button
       onMouseDown={(e) => { e.preventDefault(); onSelect(s) }}
@@ -246,24 +248,26 @@ function SuggestionRow({ s, onSelect, isLast, lang }) {
         borderBottom: isLast ? 'none' : '0.5px solid #F0F0F0',
         textAlign: 'left', cursor: 'pointer',
         transition: 'background 100ms ease',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: 10,
       }}
     >
-      <span style={{ flexShrink: 0, fontSize: 14 }}>{s.isSaved ? '⭐' : '📍'}</span>
-      <div style={{ flex: 1, overflow: 'hidden' }}>
-        <div style={{
-          color: '#0A0A0A', fontSize: '13px', fontWeight: 500,
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>
-          {s.label || [s.street, s.houseNumber].filter(Boolean).join(' ')}
+      <span style={{ flexShrink: 0, fontSize: 14, marginTop: 2 }}>{s.isSaved ? '⭐' : '📍'}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ color: '#0A0A0A', fontSize: '13px', fontWeight: 600, lineHeight: 1.3 }}>
+          {streetLine}
         </div>
+        {cityLine && (
+          <div style={{ color: '#6B7280', fontSize: '12px', marginTop: 2, lineHeight: 1.3 }}>
+            {cityLine}
+          </div>
+        )}
         {s.isSaved && s.recipientPhone && (
-          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>{s.recipientPhone}</div>
+          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{s.recipientPhone}</div>
         )}
       </div>
       {s.isSaved && (
-        <span style={{ fontSize: 10, padding: '1px 6px', background: 'rgba(212,255,0,0.15)', color: '#5a6a00', borderRadius: 4, flexShrink: 0 }}>
+        <span style={{ fontSize: 10, padding: '1px 6px', background: 'rgba(212,255,0,0.15)', color: '#5a6a00', borderRadius: 4, flexShrink: 0, marginTop: 2 }}>
           {lang === 'pl' ? 'Zapisany' : 'Saved'}
         </span>
       )}
