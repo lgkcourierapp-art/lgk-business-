@@ -137,6 +137,15 @@ export const TRANSLATIONS = {
     weatherWindNote: 'Secure packages on cargo bike',
     weatherColdNote: 'E-bike battery range reduced — plan shorter routes',
     weatherHotNote: 'Carry extra water — stay hydrated',
+    // Dashboard stat cards
+    statsOrders: 'Orders (month)',
+    statsSpent: 'Spent (month)',
+    statsSuccess: 'Success rate',
+    couriersNotified: 'Couriers notified · avg. acceptance time 3–8 min',
+    emptyStateDesc: 'Place your first order and watch your courier deliver with GPS proof.',
+    firstOrder: '+ Place your first order',
+    firstDeliveryFree: 'First delivery free · GPS proof included',
+    tagline: 'Less guessing. More doing.',
   },
   pl: {
     // Nav & layout
@@ -270,6 +279,15 @@ export const TRANSLATIONS = {
     weatherWindNote: 'Zabezpiecz paczki na rowerze cargo',
     weatherColdNote: 'Zasięg baterii e-roweru zmniejszony — planuj krótsze trasy',
     weatherHotNote: 'Weź dodatkową wodę — dbaj o nawodnienie',
+    // Dashboard stat cards
+    statsOrders: 'Zlecenia (mies.)',
+    statsSpent: 'Wydatki (mies.)',
+    statsSuccess: 'Skuteczność',
+    couriersNotified: 'Kurierzy powiadomieni · średni czas przyjęcia 3–8 min',
+    emptyStateDesc: 'Złóż pierwsze zlecenie i obserwuj jak kurier dostarcza Twój towar z GPS potwierdzeniem.',
+    firstOrder: '+ Złóż pierwsze zlecenie',
+    firstDeliveryFree: 'Pierwsza dostawa gratis · Potwierdzenie GPS w cenie',
+    tagline: 'Less guessing. More doing.',
   },
 
   uk: {
@@ -333,6 +351,15 @@ export const TRANSLATIONS = {
     weatherWindNote: 'Закріпіть пакети на вантажному велосипеді',
     weatherColdNote: 'Знижений заряд акумулятора — плануйте коротші маршрути',
     weatherHotNote: 'Візьміть воду — слідкуйте за гідратацією',
+    // Dashboard stat cards
+    statsOrders: 'Замовлення (міс.)',
+    statsSpent: 'Витрати (міс.)',
+    statsSuccess: 'Ефективність',
+    couriersNotified: 'Кур\'єрів сповіщено · сер. час прийняття 3–8 хв',
+    emptyStateDesc: 'Оформіть перше замовлення і спостерігайте, як кур\'єр доставляє з підтвердженням GPS.',
+    firstOrder: '+ Перше замовлення',
+    firstDeliveryFree: 'Перша доставка безкоштовно · GPS підтвердження в ціні',
+    tagline: 'Less guessing. More doing.',
   },
 };
 

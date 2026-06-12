@@ -65,6 +65,20 @@ const STRINGS = {
     summary_price: 'Cena',
     field_required: 'To pole jest wymagane',
     phone_invalid: 'Podaj prawidłowy numer telefonu',
+    popular: '★ Popularna',
+    weather_now: 'Teraz', weather_evening: 'Wieczór', weather_night: 'Noc',
+    calculating: 'Obliczanie trasy...',
+    route_label: 'Trasa:',
+    route_bike: 'Trasa rowerowa · Mapy.com',
+    route_bike_short: 'Trasa rowerowa',
+    route_arrival: 'Dotarcie ~',
+    bike_info: 'Trasa rowerowa może być nieco dłuższa niż w linii prostej — kurier jedzie ścieżkami rowerowymi i unika głównych arterii.',
+    bike_info_bold: 'Dzięki temu jest szybszy i bezpieczniejszy w ruchu miejskim.',
+    courier_ready_title: 'Kurier gotowy do wyjazdu',
+    courier_ready_desc: 'Wyruszy natychmiast po potwierdzeniu płatności',
+    track_live_title: 'Śledź dostawę na żywo',
+    track_live_desc: 'Po opłaceniu zobaczysz kuriera na mapie w czasie rzeczywistym',
+    cancellation_note: 'Anulowanie po przypisaniu kuriera: PLN 15.00',
   },
   en: {
     title: 'New order',
@@ -119,6 +133,20 @@ const STRINGS = {
     summary_price: 'Price',
     field_required: 'This field is required',
     phone_invalid: 'Enter a valid phone number',
+    popular: '★ Popular',
+    weather_now: 'Now', weather_evening: 'Evening', weather_night: 'Night',
+    calculating: 'Calculating route...',
+    route_label: 'Route:',
+    route_bike: 'Bike route · Mapy.com',
+    route_bike_short: 'Bike route',
+    route_arrival: 'ETA ~',
+    bike_info: 'The bike route may be slightly longer than straight-line distance — the courier uses cycle paths and avoids main roads.',
+    bike_info_bold: 'This makes delivery faster and safer in city traffic.',
+    courier_ready_title: 'Courier ready to depart',
+    courier_ready_desc: 'Will depart immediately after payment is confirmed',
+    track_live_title: 'Track delivery live',
+    track_live_desc: 'After payment you can track your courier on the map in real time',
+    cancellation_note: 'Cancellation after courier assignment: PLN 15.00',
   },
 }
 
@@ -597,7 +625,7 @@ export default function NewOrderPage() {
                         background: '#D4FF00', color: '#0A0A0A',
                         fontSize: 9, fontWeight: 700, padding: '2px 6px',
                         borderRadius: 4, letterSpacing: 0.3,
-                      }}>★ Popularna</div>
+                      }}>{s.popular}</div>
                     )}
                     <div style={{ fontSize: 22, marginBottom: 6 }}>{size.icon}</div>
                     <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2, color: colors.text }}>
@@ -771,9 +799,9 @@ export default function NewOrderPage() {
               <div style={{ background: '#F9FAFB', border: '0.5px solid #E5E7EB', borderRadius: 10, overflow: 'hidden', marginTop: 10 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
                   {[
-                    { label: 'Teraz', d: weather.now },
-                    { label: 'Wieczór', d: weather.evening },
-                    { label: 'Noc', d: weather.night },
+                    { label: s.weather_now, d: weather.now },
+                    { label: s.weather_evening, d: weather.evening },
+                    { label: s.weather_night, d: weather.night },
                   ].map((p, i) => (
                     <div key={p.label} style={{ padding: '10px 8px', textAlign: 'center', borderRight: i < 2 ? '0.5px solid #E5E7EB' : 'none' }}>
                       <div style={{ fontSize: 9, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{p.label}</div>
@@ -835,12 +863,12 @@ export default function NewOrderPage() {
               />
               {fetchingDistance && (
                 <p style={{ fontSize: 12, color: '#9CA3AF', margin: '4px 0 0' }}>
-                  {appLang === 'pl' ? 'Obliczanie trasy...' : 'Calculating route...'}
+                  {s.calculating}
                 </p>
               )}
               {roadDistanceKm && !fetchingDistance && (
                 <p style={{ fontSize: 12, color: colors.textSecondary, margin: '4px 0 0' }}>
-                  {appLang === 'pl' ? `Trasa: ${roadDistanceKm.toFixed(1)} km` : `Route: ${roadDistanceKm.toFixed(1)} km`}
+                  {s.route_label} {roadDistanceKm.toFixed(1)} km
                 </p>
               )}
               {fieldErr('deliveryAddress')}
@@ -862,7 +890,7 @@ export default function NewOrderPage() {
                         🚲 {routeData.distanceKm} km · ~{routeData.durationMin} min
                       </span>
                       <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>
-                        Trasa rowerowa · Mapy.com
+                        {s.route_bike}
                       </span>
                     </div>
                   )}
@@ -949,9 +977,9 @@ export default function NewOrderPage() {
                   />
                   {routeData && (
                     <div style={{ background: '#0A0A0A', padding: '6px 12px', display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Trasa rowerowa</span>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{s.route_bike_short}</span>
                       <span style={{ fontSize: 11, fontWeight: 500, color: '#D4FF00' }}>
-                        {routeData.distanceKm} km · ~{routeData.durationMin} min · Dotarcie ~{getETA(routeData.durationMin)}
+                        {routeData.distanceKm} km · ~{routeData.durationMin} min · {s.route_arrival}{getETA(routeData.durationMin)}
                       </span>
                     </div>
                   )}
@@ -965,10 +993,9 @@ export default function NewOrderPage() {
                   }}>
                     <span style={{ fontSize: 14, flexShrink: 0 }}>🚲</span>
                     <p style={{ fontSize: 11, color: '#374151', margin: 0, lineHeight: 1.5 }}>
-                      Trasa rowerowa może być nieco dłuższa niż w linii prostej —
-                      kurier jedzie ścieżkami rowerowymi i unika głównych arterii.{' '}
+                      {s.bike_info}{' '}
                       <strong style={{ color: '#111827' }}>
-                        Dzięki temu jest szybszy i bezpieczniejszy w ruchu miejskim.
+                        {s.bike_info_bold}
                       </strong>
                     </p>
                   </div>
@@ -1004,10 +1031,10 @@ export default function NewOrderPage() {
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A', flexShrink: 0 }} />
               <div>
                 <p style={{ fontSize: 11, fontWeight: 500, color: '#111827', margin: 0 }}>
-                  Kurier gotowy do wyjazdu
+                  {s.courier_ready_title}
                 </p>
                 <p style={{ fontSize: 10, color: '#6B7280', margin: '2px 0 0' }}>
-                  Wyruszy natychmiast po potwierdzeniu płatności
+                  {s.courier_ready_desc}
                 </p>
               </div>
             </div>
@@ -1025,10 +1052,10 @@ export default function NewOrderPage() {
               <span style={{ fontSize: 16 }}>📡</span>
               <div>
                 <p style={{ fontSize: 11, fontWeight: 500, color: '#111827', margin: 0 }}>
-                  Śledź dostawę na żywo
+                  {s.track_live_title}
                 </p>
                 <p style={{ fontSize: 10, color: '#6B7280', margin: '2px 0 0' }}>
-                  Po opłaceniu zobaczysz kuriera na mapie w czasie rzeczywistym
+                  {s.track_live_desc}
                 </p>
               </div>
             </div>
@@ -1106,7 +1133,7 @@ export default function NewOrderPage() {
                 {submitting ? s.submitting : s.submit_revolut}
               </button>
               <p style={{ fontSize: 10, color: '#9CA3AF', textAlign: 'center', marginTop: 8, marginBottom: 0 }}>
-                Anulowanie po przypisaniu kuriera: PLN 15.00
+                {s.cancellation_note}
               </p>
             </div>
           )}

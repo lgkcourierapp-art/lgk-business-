@@ -11,6 +11,8 @@ const STRINGS = {
     pickupDesc: 'Default pickup point pre-filled on every new order.',
     pickupContact: 'Contact name',
     pickupPhone: 'Contact phone',
+    pickupEditPlaceholder: 'Type pickup address...',
+    pickupContactPlaceholder: 'e.g. Jan Kowalski',
     registeredTitle: 'Registered Business Address',
     registeredDesc: 'Your company\'s registered address for invoicing.',
     correspondenceTitle: 'Correspondence Address',
@@ -27,6 +29,8 @@ const STRINGS = {
     pickupDesc: 'Domyślny punkt odbioru — wypełnia się automatycznie przy każdym nowym zleceniu.',
     pickupContact: 'Imię i nazwisko kontaktu',
     pickupPhone: 'Telefon kontaktowy',
+    pickupEditPlaceholder: 'Wpisz adres odbioru...',
+    pickupContactPlaceholder: 'np. Jan Kowalski',
     registeredTitle: 'Adres siedziby',
     registeredDesc: 'Adres rejestrowy firmy do fakturowania.',
     correspondenceTitle: 'Adres korespondencyjny',
@@ -112,12 +116,6 @@ export default function AddressesSection({ user }) {
 
   const savePickup = async () => {
     if (!user) return
-    if (pickupAddress && (!pickupLat || !pickupLng)) {
-      setErrorPickup(lang === 'pl'
-        ? 'Wybierz adres z listy podpowiedzi — wpisany ręcznie adres nie ma współrzędnych GPS.'
-        : 'Select an address from the suggestions list — a manually typed address has no GPS coordinates.')
-      return
-    }
     setSavingPickup(true)
     setErrorPickup('')
     try {
@@ -209,10 +207,10 @@ export default function AddressesSection({ user }) {
 
         {!editingPickup ? (
           <div style={readonlyChip}>
-            <span>{pickupAddress || s.noAddress}</span>
+            <span style={{ flex: 1, wordBreak: 'break-word', lineHeight: 1.5 }}>{pickupAddress || s.noAddress}</span>
             <button
               onClick={() => setEditingPickup(true)}
-              style={{ background: 'none', border: '1px solid ' + colors.border, borderRadius: 6, padding: '4px 10px', fontSize: 12, color: colors.textSecondary, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+              style={{ background: 'none', border: '1px solid ' + colors.border, borderRadius: 6, padding: '4px 10px', fontSize: 12, color: colors.textSecondary, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}
             >
               {s.edit}
             </button>
@@ -221,20 +219,16 @@ export default function AddressesSection({ user }) {
           <div style={{ marginBottom: 8 }}>
             <AddressInput
               label=""
-              placeholder={lang === 'pl' ? 'Wpisz adres odbioru...' : 'Type pickup address...'}
+              placeholder={s.pickupEditPlaceholder}
               addressType="pickup"
               showSaved={false}
               onChange={(addr) => {
-                const formatted = [
-                  addr.street,
-                  addr.houseNumber,
-                  addr.apartment ? '/' + addr.apartment : '',
-                  addr.postcode ? ', ' + addr.postcode : '',
-                  addr.city ? ' ' + addr.city : '',
-                ].filter(Boolean).join('')
-                setPickupAddress(formatted.trim().replace(/,\s*$/, ''))
-                setPickupLat(addr.lat)
-                setPickupLng(addr.lng)
+                const base = addr.address || [addr.street, addr.houseNumber].filter(Boolean).join(' ')
+                const cityPart = [addr.postcode, addr.city].filter(Boolean).join(' ')
+                const formatted = [base, cityPart].filter(Boolean).join(', ')
+                setPickupAddress(formatted || base)
+                setPickupLat(addr.lat ?? null)
+                setPickupLng(addr.lng ?? null)
               }}
             />
           </div>
@@ -248,7 +242,7 @@ export default function AddressesSection({ user }) {
                 value={pickupContactName}
                 onChange={e => setPickupContactName(e.target.value)}
                 style={input}
-                placeholder={lang === 'pl' ? 'np. Jan Kowalski' : 'e.g. Jan Kowalski'}
+                placeholder={s.pickupContactPlaceholder}
               />
             </div>
             <div>

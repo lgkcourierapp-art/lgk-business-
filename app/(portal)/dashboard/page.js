@@ -172,7 +172,7 @@ export default function DashboardPage() {
 
         {order.status === 'pending' && (
           <p style={{ fontSize: '10px', color: '#999999', margin: '0 0 14px', fontStyle: 'italic' }}>
-            Kurierzy powiadomieni · średni czas przyjęcia 3–8 min
+            {t('couriersNotified')}
           </p>
         )}
 
@@ -232,9 +232,9 @@ export default function DashboardPage() {
         {!loading && orders.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
             {[
-              { label: lang === 'pl' ? 'Zlecenia (mies.)' : 'Orders (month)', value: thisMonth.length, color: '#111827' },
-              { label: lang === 'pl' ? 'Wydatki (mies.)' : 'Spent (month)', value: 'PLN ' + plnSpent.toFixed(0), color: '#111827' },
-              { label: lang === 'pl' ? 'Skuteczność' : 'Success rate', value: successRate + '%', color: successRate >= 90 ? '#00C853' : successRate >= 70 ? '#FF9500' : '#FF3B30' },
+              { label: t('statsOrders'), value: thisMonth.length, color: '#111827' },
+              { label: t('statsSpent'), value: 'PLN ' + plnSpent.toFixed(0), color: '#111827' },
+              { label: t('statsSuccess'), value: successRate + '%', color: successRate >= 90 ? '#00C853' : successRate >= 70 ? '#FF9500' : '#FF3B30' },
             ].map(({ label, value, color }) => (
               <div key={label} style={{ background: colors.card, border: '1px solid ' + colors.border, borderRadius: 10, padding: '16px 18px' }}>
                 <div style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{label}</div>
@@ -250,18 +250,16 @@ export default function DashboardPage() {
           <div style={{ background: '#F8F8F8', border: '0.5px solid #E8E8E8', borderRadius: '12px', padding: '32px 24px', textAlign: 'center', marginTop: '16px' }}>
             <div style={{ fontSize: '40px', marginBottom: '12px' }}>📦</div>
             <p style={{ fontSize: '16px', fontWeight: '500', color: '#0A0A0A', margin: '0 0 6px' }}>
-              {lang === 'pl' ? 'Brak aktywnych dostaw' : 'No active deliveries'}
+              {t('noActive')}
             </p>
             <p style={{ fontSize: '13px', color: '#555555', margin: '0 0 20px', lineHeight: '1.6' }}>
-              {lang === 'pl'
-                ? 'Złóż pierwsze zlecenie i obserwuj jak kurier dostarcza Twój towar z GPS potwierdzeniem.'
-                : 'Place your first order and watch your courier deliver with GPS proof.'}
+              {t('emptyStateDesc')}
             </p>
             <a href="/orders/new" style={{ display: 'inline-block', background: '#D4FF00', color: '#0A0A0A', fontWeight: '700', fontSize: '14px', padding: '12px 24px', borderRadius: '8px', textDecoration: 'none' }}>
-              {lang === 'pl' ? '+ Złóż pierwsze zlecenie' : '+ Place your first order'}
+              {t('firstOrder')}
             </a>
             <p style={{ fontSize: '11px', color: '#999999', marginTop: '12px' }}>
-              {lang === 'pl' ? 'Pierwsza dostawa gratis · Potwierdzenie GPS w cenie' : 'First delivery free · GPS proof included'}
+              {t('firstDeliveryFree')}
             </p>
           </div>
         ) : (
@@ -286,7 +284,7 @@ export default function DashboardPage() {
 
       <footer style={{ borderTop: '1px solid ' + colors.border, padding: '20px 16px', textAlign: 'center', color: colors.textSecondary, fontSize: 12, marginTop: 48 }}>
         <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: '13px', color: colors.textSecondary, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>
-          Less guessing. More doing.
+          {t('tagline')}
         </div>
         {t('poweredBy')} &middot; lgkcourierapp@gmail.com
       </footer>
