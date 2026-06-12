@@ -337,14 +337,18 @@ export const TRANSLATIONS = {
 };
 
 export function AppProvider({ children }) {
-  const [lang, setLangState] = useState(() => {
-    if (typeof window === 'undefined') return 'pl';
+  // Always start with 'pl' so server and client render identical HTML.
+  // Read localStorage only after mount to avoid React hydration mismatch (#418).
+  const [lang, setLangState] = useState('pl');
+
+  useEffect(() => {
     try {
       const stored = localStorage.getItem('lgk_lang');
-      if (stored && SUPPORTED_LANGS.includes(stored)) return stored;
+      if (stored && SUPPORTED_LANGS.includes(stored)) { setLangState(stored); return; }
     } catch {}
-    return resolveLang(null);
-  });
+    const resolved = resolveLang(null);
+    if (resolved !== 'pl') setLangState(resolved);
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('lang', lang);

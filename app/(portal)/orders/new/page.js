@@ -300,14 +300,25 @@ export default function NewOrderPage() {
         setSnapshotUrl(getRouteSnapshotUrl({
           fromLat: pickupLat, fromLng: pickupLng,
           toLat: addr.lat, toLng: addr.lng,
-          transport: 'bike',
           width: 700, height: 180,
         }))
         const MIN_KM = 2.0
+        const fallbackDistance = () => {
+          getRoadDistanceKm(pickupLat, pickupLng, addr.lat, addr.lng, process.env.NEXT_PUBLIC_HERE_API_KEY)
+            .then(km => {
+              setRoadDistanceKm(km || haversineDistance(pickupLat, pickupLng, addr.lat, addr.lng))
+              setFetchingDistance(false)
+            })
+            .catch(() => {
+              setRoadDistanceKm(haversineDistance(pickupLat, pickupLng, addr.lat, addr.lng))
+              setFetchingDistance(false)
+            })
+        }
         Promise.all([
           getRouteData({ fromLat: pickupLat, fromLng: pickupLng, toLat: addr.lat, toLng: addr.lng, transport: 'bike' }),
           getRouteData({ fromLat: pickupLat, fromLng: pickupLng, toLat: addr.lat, toLng: addr.lng, transport: 'car' }),
         ]).then(([bikeData, carData]) => {
+          if (!bikeData && !carData) { fallbackDistance(); return }
           const effectiveDistance = Math.max(
             bikeData?.distanceKm || 0,
             carData?.distanceKm  || 0,
@@ -323,12 +334,7 @@ export default function NewOrderPage() {
             durationMin: bikeData?.durationMin || 20,
           }))
           setFetchingDistance(false)
-        }).catch(() => {
-          // Fallback to HERE for distance only
-          getRoadDistanceKm(pickupLat, pickupLng, addr.lat, addr.lng, process.env.NEXT_PUBLIC_HERE_API_KEY)
-            .then(km => { setRoadDistanceKm(km); setFetchingDistance(false) })
-            .catch(() => setFetchingDistance(false))
-        })
+        }).catch(fallbackDistance)
       }
     } else {
       setRoadDistanceKm(null)
