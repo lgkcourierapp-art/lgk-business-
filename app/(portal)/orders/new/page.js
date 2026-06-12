@@ -388,11 +388,11 @@ export default function NewOrderPage() {
           if (!bikeData && !carData) { fallbackDistance(); return }
           const bikeKm = bikeData?.distanceKm || 0
           const carKm  = carData?.distanceKm  || 0
-          // ≤3 km diff → price on car route (customer reference, rate covers bike effort)
-          // >3 km diff → split the difference (car + bike) / 2 — large detour, share the gap fairly
-          const diff = Math.abs(bikeKm - carKm)
-          const routedKm = diff > 3 ? (carKm + bikeKm) / 2 : carKm
-          const effectiveDistance = Math.max(routedKm, MIN_KM)
+          // Car route is the customer baseline. If bike route is longer, add half
+          // the detour on top — courier isn't penalised, customer isn't overcharged.
+          // Formula: carKm + (bikeKm - carKm) / 2  when bike > car, else just carKm.
+          const detour = Math.max(bikeKm - carKm, 0)
+          const effectiveDistance = Math.max(carKm + detour / 2, MIN_KM)
           // Map always renders the car route geometry
           setSnapshotUrl(getRouteSnapshotUrl({ ...snapshotOpts, geometry: carData?.geometry || null }))
           setRoadDistanceKm(effectiveDistance)
