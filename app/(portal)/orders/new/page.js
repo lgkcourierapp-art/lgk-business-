@@ -890,37 +890,28 @@ export default function NewOrderPage() {
                 required={true}
                 onChange={handleDeliveryChange}
               />
-              {fetchingDistance && (
-                <p style={{ fontSize: 12, color: '#9CA3AF', margin: '4px 0 0' }}>
-                  {s.calculating}
-                </p>
-              )}
-              {roadDistanceKm && !fetchingDistance && (
-                <p style={{ fontSize: 12, color: colors.textSecondary, margin: '4px 0 0' }}>
-                  {s.route_label} {roadDistanceKm.toFixed(1)} km
-                </p>
-              )}
               {fieldErr('deliveryAddress')}
               {snapshotUrl && (
                 <div style={{ marginTop: 10, borderRadius: 10, overflow: 'hidden', position: 'relative' }}>
                   <img
                     src={snapshotUrl}
                     alt="Trasa dostawy"
-                    style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }}
+                    style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
                   />
-                  {routeData && (
+                  {(form.carRouteKm || form.bikeRouteKm) && (
                     <div style={{
                       position: 'absolute', bottom: 0, left: 0, right: 0,
-                      background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
-                      padding: '20px 12px 8px',
+                      background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
+                      padding: '24px 12px 8px',
                       display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
                     }}>
                       <span style={{ fontSize: 12, color: '#fff', fontWeight: 500 }}>
-                        🚲 {routeData.distanceKm} km · ~{routeData.durationMin} min
+                        {form.carRouteKm ? `🚗 ${form.carRouteKm.toFixed(1)} km` : ''}
+                        {form.carRouteKm && form.bikeRouteKm ? '  ' : ''}
+                        {form.bikeRouteKm ? `🚲 ${form.bikeRouteKm.toFixed(1)} km` : ''}
+                        {form.durationMin ? ` · ~${form.durationMin} min` : ''}
                       </span>
-                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>
-                        {s.route_bike}
-                      </span>
+                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>Mapy.com</span>
                     </div>
                   )}
                 </div>
@@ -1004,11 +995,15 @@ export default function NewOrderPage() {
                     alt="Trasa"
                     style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
                   />
-                  {routeData && (
+                  {(form.carRouteKm || form.bikeRouteKm) && (
                     <div style={{ background: '#0A0A0A', padding: '6px 12px', display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{s.route_bike_short}</span>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
+                        {form.carRouteKm ? `🚗 ${form.carRouteKm.toFixed(1)} km` : ''}
+                        {form.carRouteKm && form.bikeRouteKm ? '  ' : ''}
+                        {form.bikeRouteKm ? `🚲 ${form.bikeRouteKm.toFixed(1)} km` : ''}
+                      </span>
                       <span style={{ fontSize: 11, fontWeight: 500, color: '#D4FF00' }}>
-                        {routeData.distanceKm} km · ~{routeData.durationMin} min · {s.route_arrival}{getETA(routeData.durationMin)}
+                        ~{form.durationMin || routeData?.durationMin || 20} min · {s.route_arrival}{getETA(form.durationMin || routeData?.durationMin)}
                       </span>
                     </div>
                   )}
