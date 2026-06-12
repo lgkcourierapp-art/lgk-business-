@@ -29,7 +29,7 @@
 - **Root cause**: Mapy v1/suggest returns 422 for ANY request that includes a `type` parameter — even `type=address` alone. Also: geocoding without city context returns wrong city (e.g. "Piastów 44" matched Piechowice instead of Szczecin).
 - **Fix (1)**: Removed `type` param entirely from `mapyService.js mapyAutocomplete`.
 - **Fix (2)**: Append city with space to all geocoding queries — `mapyAutocomplete(base + ' Szczecin')` in both delivery handler and profile self-heal.
-- **Commit**: `pending`
+- **Commit**: `cfdaa4f`
 - **Status**: 🟡 Monitor — deploy and verify map renders + price updates
 
 ### BUG-009 — Mapy static map still not rendering
