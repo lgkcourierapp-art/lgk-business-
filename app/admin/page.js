@@ -56,6 +56,7 @@ export default function AdminCommand() {
 
   const load = useCallback(async () => {
     const today = new Date(); today.setHours(0,0,0,0);
+    const weekStart = new Date(Date.now() - 7 * 86400000).toISOString();
 
     const [
       { count: pendingPayment },
@@ -67,6 +68,8 @@ export default function AdminCommand() {
       { count: pendingCodes },
       { count: newWaitlist },
       { data: activeCouriers },
+      { data: clientProfiles },
+      { data: weekDeliveries },
     ] = await Promise.all([
       supabase.from('deliveries').select('id', { count: 'exact', head: true }).eq('status', 'awaiting_payment'),
       supabase.from('deliveries').select('id', { count: 'exact', head: true }).eq('payment_status', 'pending_verification'),
@@ -77,10 +80,30 @@ export default function AdminCommand() {
       supabase.from('location_intel').select('id', { count: 'exact', head: true }).lt('worked_votes', 3).eq('is_active', false),
       supabase.from('waitlist').select('id', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 86400000).toISOString()),
       supabase.from('courier_locations').select('courier_id, updated_at, profiles(full_name, email)').limit(8),
+      supabase.from('profiles').select('business_type').eq('is_client', true),
+      supabase.from('deliveries').select('order_kind, amount_pln, commission_pln').gte('created_at', weekStart),
     ]);
 
     const delivered = (todayDeliveries || []).filter(d => d.status === 'delivered');
     const revenue = delivered.reduce((s, d) => s + (d.price_total || 0), 0);
+
+    const clientsList = clientProfiles || [];
+    const restaurantClients = clientsList.filter(c => c.business_type === 'restaurant').length;
+    const parcelClients = clientsList.filter(c => c.business_type !== 'restaurant').length;
+    const totalClients = clientsList.length;
+
+    const wOrders = weekDeliveries || [];
+    const rOrders = wOrders.filter(o => o.order_kind === 'restaurant');
+    const pOrders = wOrders.filter(o => o.order_kind !== 'restaurant');
+    const rRevenue = rOrders.reduce((s, o) => s + (o.amount_pln || 0) + (o.commission_pln || 0), 0);
+    const pRevenue = pOrders.reduce((s, o) => s + (o.amount_pln || 0), 0);
+
+    let insightText = '';
+    if (restaurantClients > 0 && rOrders.length / restaurantClients < pOrders.length / Math.max(parcelClients, 1)) {
+      insightText = `${restaurantClients} restaurant${restaurantClients > 1 ? 's' : ''} but ${(rOrders.length / restaurantClients).toFixed(1)} orders/client vs ${(pOrders.length / Math.max(parcelClients, 1)).toFixed(1)} for parcels — restaurants under-using LGK (retention signal).`;
+    } else if (wOrders.length > 0) {
+      insightText = `Parcels drive ${Math.round(pOrders.length / wOrders.length * 100)}% of this week's volume — current growth engine.`;
+    }
 
     try {
       const w = await fetch('https://api.open-meteo.com/v1/forecast?latitude=53.4285&longitude=14.5528&current=temperature_2m,precipitation,weathercode&hourly=precipitation_probability&timezone=Europe/Warsaw&forecast_days=1');
@@ -108,6 +131,10 @@ export default function AdminCommand() {
         new Date() - new Date(c.updated_at) < 5 * 60 * 1000
       ),
       allCouriers: activeCouriers || [],
+      restaurantClients, parcelClients, totalClients,
+      restaurantOrders: rOrders.length, parcelOrders: pOrders.length, weekOrders: wOrders.length,
+      restaurantRevenue: rRevenue, parcelRevenue: pRevenue,
+      insightText,
     });
     setLoading(false);
   }, []);
@@ -274,6 +301,64 @@ export default function AdminCommand() {
             </div>
 
           </div>
+
+          {/* BUSINESS TYPE SPLIT */}
+          <div style={{ marginTop: '24px' }}>
+            <div style={{ ...M.mono, fontSize: '10px', color: '#333', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '14px' }}>
+              Business type split · last 7 days
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ ...M.card, flex: 1 }}>
+                <div style={{ fontSize: '18px', marginBottom: '6px' }}>📦</div>
+                <div style={{ ...M.mono, fontSize: '24px', fontWeight: 700, color: '#2563EB', lineHeight: 1 }}>{data.parcelClients}</div>
+                <div style={{ ...M.display, fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '5px' }}>Parcel clients</div>
+                <div style={{ ...M.mono, fontSize: '10px', color: '#333', marginTop: '4px' }}>{data.totalClients > 0 ? Math.round(data.parcelClients / data.totalClients * 100) : 0}% of total</div>
+              </div>
+              <div style={{ ...M.card, flex: 1 }}>
+                <div style={{ fontSize: '18px', marginBottom: '6px' }}>🍽️</div>
+                <div style={{ ...M.mono, fontSize: '24px', fontWeight: 700, color: '#EA580C', lineHeight: 1 }}>{data.restaurantClients}</div>
+                <div style={{ ...M.display, fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '5px' }}>Restaurant clients</div>
+                <div style={{ ...M.mono, fontSize: '10px', color: '#333', marginTop: '4px' }}>{data.totalClients > 0 ? Math.round(data.restaurantClients / data.totalClients * 100) : 0}% of total</div>
+              </div>
+            </div>
+
+            {data.weekOrders > 0 && (
+              <div style={{ ...M.card, marginBottom: '12px' }}>
+                <div style={{ ...M.mono, fontSize: '10px', color: '#444', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '14px' }}>Orders this week by type</div>
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                    <span style={{ ...M.display, fontSize: '12px', color: '#888' }}>📦 Parcel · {data.parcelOrders} orders</span>
+                    <span style={{ ...M.mono, fontSize: '12px', color: '#2563EB' }}>PLN {Math.round(data.parcelRevenue)}</span>
+                  </div>
+                  <div style={{ height: '5px', background: '#1A1A1A', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', background: '#2563EB', width: `${Math.round(data.parcelOrders / data.weekOrders * 100)}%`, borderRadius: '3px' }} />
+                  </div>
+                </div>
+                <div style={{ marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                    <span style={{ ...M.display, fontSize: '12px', color: '#888' }}>🍽️ Restaurant · {data.restaurantOrders} orders</span>
+                    <span style={{ ...M.mono, fontSize: '12px', color: '#EA580C' }}>PLN {Math.round(data.restaurantRevenue)}</span>
+                  </div>
+                  <div style={{ height: '5px', background: '#1A1A1A', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', background: '#EA580C', width: `${Math.round(data.restaurantOrders / data.weekOrders * 100)}%`, borderRadius: '3px' }} />
+                  </div>
+                </div>
+                <div style={{ ...M.mono, fontSize: '10px', color: '#333', borderTop: '1px solid #1A1A1A', paddingTop: '10px' }}>
+                  avg PLN {data.parcelOrders > 0 ? (data.parcelRevenue / data.parcelOrders).toFixed(0) : '—'}/order (parcel)
+                  {' · '}
+                  PLN {data.restaurantOrders > 0 ? (data.restaurantRevenue / data.restaurantOrders).toFixed(0) : '—'}/order (restaurant incl. commission)
+                </div>
+              </div>
+            )}
+
+            {data.insightText && (
+              <div style={{ ...M.display, fontSize: '12px', color: '#555', padding: '10px 14px', background: '#111', borderRadius: '8px', borderLeft: '3px solid #2A2A2A', lineHeight: 1.5 }}>
+                {data.insightText}
+              </div>
+            )}
+          </div>
+
         </>
       )}
     </div>

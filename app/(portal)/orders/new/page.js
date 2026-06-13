@@ -79,6 +79,12 @@ const STRINGS = {
     track_live_title: 'Śledź dostawę na żywo',
     track_live_desc: 'Po opłaceniu zobaczysz kuriera na mapie w czasie rzeczywistym',
     cancellation_note: 'Anulowanie po przypisaniu kuriera: PLN 15.00',
+    food_value_label: 'Wartość jedzenia (PLN) *',
+    food_value_placeholder: 'np. 45.00',
+    commission_label: 'Prowizja LGK (10%)',
+    delivery_fee_label: 'Opłata za dostawę',
+    food_order_label: 'Zamówienie',
+    customer_total_label: 'Do zapłaty',
   },
   en: {
     title: 'New order',
@@ -147,6 +153,12 @@ const STRINGS = {
     track_live_title: 'Track delivery live',
     track_live_desc: 'After payment you can track your courier on the map in real time',
     cancellation_note: 'Cancellation after courier assignment: PLN 15.00',
+    food_value_label: 'Food order value (PLN) *',
+    food_value_placeholder: 'e.g. 45.00',
+    commission_label: 'LGK commission (10%)',
+    delivery_fee_label: 'Delivery fee',
+    food_order_label: 'Food order',
+    customer_total_label: 'Total to pay',
   },
 }
 
@@ -165,6 +177,7 @@ export default function NewOrderPage() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [price, setPrice] = useState(null)
   const [orderMode, setOrderMode] = useState('parcel')
+  const [foodValue, setFoodValue] = useState('')
   const [roadDistanceKm, setRoadDistanceKm] = useState(null)
   const [fetchingDistance, setFetchingDistance] = useState(false)
   const [snapshotUrl, setSnapshotUrl] = useState(null)
@@ -172,6 +185,13 @@ export default function NewOrderPage() {
   const [weather, setWeather] = useState(null)
 
   const displayPrice = price !== null ? applyPsychologicalPricing(price) : null
+  const commissionPln = orderMode === 'restaurant' && parseFloat(foodValue) > 0
+    ? Math.round(parseFloat(foodValue) * 0.10 * 100) / 100
+    : 0
+  const customerTotal = orderMode === 'restaurant' && parseFloat(foodValue) > 0 && displayPrice !== null
+    ? Math.round((parseFloat(foodValue) + commissionPln + displayPrice) * 100) / 100
+    : null
+  const effectiveDisplayPrice = orderMode === 'restaurant' ? customerTotal : displayPrice
 
   useEffect(() => { fetchWeatherSzczecin().then(setWeather) }, [])
 
@@ -242,10 +262,9 @@ export default function NewOrderPage() {
       if (data) {
         setProfile(data)
         if (data.language) setLang(data.language)
-        if (data.business_type === 'restaurant') {
-          setOrderMode('restaurant')
-          setForm(prev => ({ ...prev, readyTime: '15min' }))
-        }
+        const isRestaurant = data.business_type === 'restaurant'
+        setOrderMode(isRestaurant ? 'restaurant' : 'parcel')
+        if (isRestaurant) setForm(prev => ({ ...prev, readyTime: '15min' }))
         if (data.pickup_address) {
           if (data.pickup_lat && data.pickup_lng) {
             setForm(prev => ({
@@ -274,6 +293,35 @@ export default function NewOrderPage() {
     })
   }, [router])
 
+  // Re-read business_type when settings dispatches lgk-profile-updated
+  useEffect(() => {
+    const userId = profile?.['id']
+    if (!userId) return
+    const reloadMode = async () => {
+      const { data } = await supabase.from('profiles').select('business_type').eq('id', userId).single()
+      if (data) setOrderMode(data.business_type === 'restaurant' ? 'restaurant' : 'parcel')
+    }
+    window.addEventListener('lgk-profile-updated', reloadMode)
+    return () => window.removeEventListener('lgk-profile-updated', reloadMode)
+  }, [profile?.['id']])
+
+  // Re-read on tab focus / visibility (covers browser back-navigation)
+  useEffect(() => {
+    const userId = profile?.['id']
+    if (!userId) return
+    const reloadMode = async () => {
+      const { data } = await supabase.from('profiles').select('business_type').eq('id', userId).single()
+      if (data) setOrderMode(data.business_type === 'restaurant' ? 'restaurant' : 'parcel')
+    }
+    const onVisibility = () => { if (!document.hidden) reloadMode() }
+    window.addEventListener('focus', reloadMode)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('focus', reloadMode)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [profile?.['id']])
+
   useEffect(() => {
     const pickupLat = form.pickupLat || profile?.pickup_lat
     const pickupLng = form.pickupLng || profile?.pickup_lng
@@ -300,6 +348,7 @@ export default function NewOrderPage() {
     if (step === 1) {
       const size = getSizeById(form.packageSize)
       if (size.requiresQuote) errs.packageSize = s.quote_required
+      if (orderMode === 'restaurant' && (!foodValue || parseFloat(foodValue) <= 0)) errs.foodValue = s.field_required
     }
     if (step === 2) {
       if (!form.pickupAddress) errs.pickupAddress = s.field_required
@@ -476,9 +525,12 @@ export default function NewOrderPage() {
           delivery_contact_phone: form.recipientPhone,
           recipient_name: form.recipientName,
           recipient_phone: form.recipientPhone,
-          amount_pln: displayPrice ?? price,
-          price_total: displayPrice ?? price,
+          amount_pln: effectiveDisplayPrice ?? displayPrice ?? price,
+          price_total: effectiveDisplayPrice ?? displayPrice ?? price,
           distance_km: Math.ceil((form.distanceKm || roadDistanceKm || 0) * 2) / 2 || null,
+          food_order_value: orderMode === 'restaurant' ? (parseFloat(foodValue) || null) : null,
+          commission_pln: orderMode === 'restaurant' ? (commissionPln || null) : null,
+          order_kind: orderMode,
           time_window: form.deliveryPref,
           estimated_pickup_at: estimatedPickup.toISOString(),
           estimated_delivery_at: estimatedDelivery.toISOString(),
@@ -694,6 +746,46 @@ export default function NewOrderPage() {
                 >+</button>
               </div>
             </div>
+
+            {orderMode === 'restaurant' && (
+              <div style={cardStyle}>
+                <label style={{ ...labelStyle, marginTop: 0 }}>{s.food_value_label}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={foodValue}
+                  onChange={e => { setFoodValue(e.target.value); setFieldErrors(err => ({ ...err, foodValue: undefined })) }}
+                  placeholder={s.food_value_placeholder}
+                  style={inputStyle}
+                />
+                {fieldErr('foodValue')}
+                {parseFloat(foodValue) > 0 && (
+                  <div style={{ marginTop: 12, fontSize: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: colors.textSecondary }}>
+                      <span>{s.food_order_label}</span>
+                      <span style={{ fontFamily: "'Fira Code', monospace" }}>PLN {parseFloat(foodValue).toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: colors.textSecondary }}>
+                      <span>{s.commission_label}</span>
+                      <span style={{ fontFamily: "'Fira Code', monospace" }}>PLN {commissionPln.toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: colors.textSecondary }}>
+                      <span>{s.delivery_fee_label}</span>
+                      <span style={{ fontFamily: "'Fira Code', monospace", color: displayPrice ? colors.text : '#9CA3AF' }}>
+                        {displayPrice ? `PLN ${displayPrice.toFixed(2)}` : '—'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0 0', borderTop: '1px solid ' + colors.border, marginTop: 4, fontWeight: 700, color: colors.text }}>
+                      <span>{s.customer_total_label}</span>
+                      <span style={{ fontFamily: "'Fira Code', monospace" }}>
+                        {customerTotal ? `PLN ${customerTotal.toFixed(2)}` : '—'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div style={cardStyle}>
               {[
@@ -943,12 +1035,12 @@ export default function NewOrderPage() {
               />
             </div>
 
-            {displayPrice !== null && form.deliveryLat && (
+            {effectiveDisplayPrice !== null && form.deliveryLat && (
               <div style={{ ...cardStyle, border: '2px solid #D4FF00' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: colors.textSecondary, fontSize: 14 }}>{s.summary_price}</span>
                   <span style={{ color: '#111827', fontWeight: 900, fontSize: 28, fontFamily: "'Fira Code', monospace" }}>
-                    PLN {displayPrice.toFixed(2)}
+                    PLN {effectiveDisplayPrice.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -1016,12 +1108,37 @@ export default function NewOrderPage() {
               )
             })()}
 
-            <div style={{ ...cardStyle, border: '2px solid #D4FF00', textAlign: 'center', padding: '28px 24px' }}>
-              <div style={{ color: colors.textSecondary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 }}>{s.summary_price}</div>
-              <div style={{ color: '#111827', fontWeight: 900, fontSize: 44, fontFamily: "'Fira Code', monospace", marginBottom: 10, lineHeight: 1 }}>
-                PLN {displayPrice?.toFixed(2) ?? '—'}
-              </div>
-              <div style={{ color: colors.textSecondary, fontSize: 12, lineHeight: 1.5 }}>{s.eta_note}</div>
+            <div style={{ ...cardStyle, border: '2px solid #D4FF00', padding: '28px 24px' }}>
+              {orderMode === 'restaurant' && parseFloat(foodValue) > 0 ? (
+                <>
+                  <div style={{ marginBottom: 16 }}>
+                    {[
+                      { label: s.food_order_label, value: `PLN ${parseFloat(foodValue).toFixed(2)}` },
+                      { label: s.commission_label, value: `PLN ${commissionPln.toFixed(2)}` },
+                      { label: s.delivery_fee_label, value: displayPrice ? `PLN ${displayPrice.toFixed(2)}` : '—' },
+                    ].map(({ label, value }) => (
+                      <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 13, color: colors.textSecondary, borderBottom: '1px solid ' + colors.border }}>
+                        <span>{label}</span>
+                        <span style={{ fontFamily: "'Fira Code', monospace", color: colors.text }}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ color: colors.textSecondary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2 }}>{s.customer_total_label}</div>
+                    <div style={{ color: '#111827', fontWeight: 900, fontSize: 36, fontFamily: "'Fira Code', monospace", lineHeight: 1 }}>
+                      {customerTotal ? `PLN ${customerTotal.toFixed(2)}` : '—'}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: colors.textSecondary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 }}>{s.summary_price}</div>
+                  <div style={{ color: '#111827', fontWeight: 900, fontSize: 44, fontFamily: "'Fira Code', monospace", marginBottom: 10, lineHeight: 1 }}>
+                    PLN {displayPrice?.toFixed(2) ?? '—'}
+                  </div>
+                </div>
+              )}
+              <div style={{ color: colors.textSecondary, fontSize: 12, lineHeight: 1.5, marginTop: 10 }}>{s.eta_note}</div>
               {form.recipientPhone && (
                 <div style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
                   {form.recipientName ? `${form.recipientName} ${s.sms_note}` : s.sms_note}
@@ -1093,7 +1210,7 @@ export default function NewOrderPage() {
                     {s.payment_revolut}
                   </p>
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '2px 0 0' }}>
-                    {process.env.NEXT_PUBLIC_REVOLUT_USER ? `revolut.me/${process.env.NEXT_PUBLIC_REVOLUT_USER}` : '...'} → PLN {displayPrice != null ? parseFloat(displayPrice).toFixed(2) : ''}
+                    {process.env.NEXT_PUBLIC_REVOLUT_USER ? `revolut.me/${process.env.NEXT_PUBLIC_REVOLUT_USER}` : '...'} → PLN {effectiveDisplayPrice != null ? parseFloat(effectiveDisplayPrice).toFixed(2) : ''}
                   </p>
                 </div>
               </a>
@@ -1150,10 +1267,10 @@ export default function NewOrderPage() {
             </div>
           )}
         </div>
-        {displayPrice !== null && step >= 3 && (
+        {effectiveDisplayPrice !== null && step >= 3 && (
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase' }}>{s.summary_price}</div>
-            <div style={{ color: '#111827', fontWeight: 900, fontSize: 20, fontFamily: "'Fira Code', monospace" }}>PLN {displayPrice.toFixed(2)}</div>
+            <div style={{ color: '#111827', fontWeight: 900, fontSize: 20, fontFamily: "'Fira Code', monospace" }}>PLN {effectiveDisplayPrice.toFixed(2)}</div>
           </div>
         )}
       </div>

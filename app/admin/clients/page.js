@@ -18,7 +18,7 @@ export default function AdminClients() {
     setLoading(true);
     const { data: deliveries } = await supabase
       .from('deliveries')
-      .select('client_id, price_total, status, created_at, profiles(id, full_name, email, created_at)')
+      .select('client_id, price_total, status, created_at, profiles(id, full_name, email, created_at, business_type)')
       .not('client_id', 'is', null);
 
     const map = {};
@@ -30,6 +30,7 @@ export default function AdminClients() {
           name: d.profiles?.full_name || d.profiles?.email?.split('@')[0] || 'Unknown',
           email: d.profiles?.email || '',
           memberSince: d.profiles?.created_at,
+          businessType: d.profiles?.business_type || 'general',
           totalSpent: 0,
           orderCount: 0,
           deliveredCount: 0,
@@ -125,7 +126,16 @@ export default function AdminClients() {
                 )}
 
                 <div style={{ marginBottom: '14px' }}>
-                  <div style={{ ...M.display, fontSize: '15px', fontWeight: 700, color: '#FFF', marginBottom: '3px' }}>{c.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                    <div style={{ ...M.display, fontSize: '15px', fontWeight: 700, color: '#FFF' }}>{c.name}</div>
+                    <span style={{
+                      fontSize: '11px', padding: '2px 10px', borderRadius: '20px', fontWeight: 600,
+                      background: c.businessType === 'restaurant' ? 'rgba(234,88,12,0.12)' : 'rgba(37,99,235,0.12)',
+                      color: c.businessType === 'restaurant' ? '#EA580C' : '#2563EB',
+                    }}>
+                      {c.businessType === 'restaurant' ? '🍽 Restauracja' : '📦 Paczki'}
+                    </span>
+                  </div>
                   <div style={{ ...M.mono, fontSize: '11px', color: '#444' }}>{c.email}</div>
                 </div>
 
