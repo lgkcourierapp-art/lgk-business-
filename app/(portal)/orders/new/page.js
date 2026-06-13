@@ -980,32 +980,32 @@ export default function NewOrderPage() {
                 return now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
               }
               return (
-                <div style={{ borderRadius: 8, overflow: 'hidden', marginBottom: 0 }}>
+                <div style={{ borderRadius: 12, overflow: 'hidden', marginTop: 4, marginBottom: 16 }}>
                   <img
                     src={snapshotUrl}
                     alt="Trasa"
-                    style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
+                    style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }}
                   />
                   {form.distanceKm && (
-                    <div style={{ background: '#0A0A0A', padding: '6px 12px', display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
+                    <div style={{ background: '#0A0A0A', padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: 400 }}>
                         {form.distanceKm.toFixed(1)} km
                       </span>
-                      <span style={{ fontSize: 11, fontWeight: 500, color: '#D4FF00' }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#D4FF00', letterSpacing: 0.2 }}>
                         ~{form.durationMin || routeData?.durationMin || 20} min · {s.route_arrival}{getETA(form.durationMin || routeData?.durationMin)}
                       </span>
                     </div>
                   )}
                   <div style={{
                     background: 'rgba(37,99,235,0.06)',
-                    borderBottom: '0.5px solid rgba(37,99,235,0.15)',
-                    padding: '8px 14px',
+                    borderTop: '0.5px solid rgba(37,99,235,0.12)',
+                    padding: '10px 14px',
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: 8,
+                    gap: 10,
                   }}>
-                    <span style={{ fontSize: 14, flexShrink: 0 }}>🚲</span>
-                    <p style={{ fontSize: 11, color: '#374151', margin: 0, lineHeight: 1.5 }}>
+                    <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>🚲</span>
+                    <p style={{ fontSize: 11, color: '#374151', margin: 0, lineHeight: 1.6 }}>
                       {s.bike_info}{' '}
                       <strong style={{ color: '#111827' }}>
                         {s.bike_info_bold}
@@ -1016,14 +1016,12 @@ export default function NewOrderPage() {
               )
             })()}
 
-            <div style={{ height: 12 }} />
-
-            <div style={{ ...cardStyle, border: '2px solid #D4FF00', textAlign: 'center', padding: '24px' }}>
-              <div style={{ color: colors.textSecondary, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{s.summary_price}</div>
-              <div style={{ color: '#111827', fontWeight: 900, fontSize: 40, fontFamily: "'Fira Code', monospace", marginBottom: 8 }}>
+            <div style={{ ...cardStyle, border: '2px solid #D4FF00', textAlign: 'center', padding: '28px 24px' }}>
+              <div style={{ color: colors.textSecondary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 }}>{s.summary_price}</div>
+              <div style={{ color: '#111827', fontWeight: 900, fontSize: 44, fontFamily: "'Fira Code', monospace", marginBottom: 10, lineHeight: 1 }}>
                 PLN {displayPrice?.toFixed(2) ?? '—'}
               </div>
-              <div style={{ color: colors.textSecondary, fontSize: 12 }}>{s.eta_note}</div>
+              <div style={{ color: colors.textSecondary, fontSize: 12, lineHeight: 1.5 }}>{s.eta_note}</div>
               {form.recipientPhone && (
                 <div style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
                   {form.recipientName ? `${form.recipientName} ${s.sms_note}` : s.sms_note}
@@ -1031,45 +1029,46 @@ export default function NewOrderPage() {
               )}
             </div>
 
-            <div style={{
-              background: 'rgba(22,163,74,0.06)',
-              border: '0.5px solid rgba(22,163,74,0.2)',
-              borderRadius: 10,
-              padding: '10px 12px',
-              marginBottom: 12,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-            }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A', flexShrink: 0 }} />
-              <div>
-                <p style={{ fontSize: 11, fontWeight: 500, color: '#111827', margin: 0 }}>
-                  {s.courier_ready_title}
-                </p>
-                <p style={{ fontSize: 10, color: '#6B7280', margin: '2px 0 0' }}>
-                  {s.courier_ready_desc}
-                </p>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+              <div style={{
+                flex: 1,
+                background: 'rgba(22,163,74,0.06)',
+                border: '0.5px solid rgba(22,163,74,0.22)',
+                borderRadius: 12,
+                padding: '12px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A', flexShrink: 0 }} />
+                <div>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: '#111827', margin: 0 }}>
+                    {s.courier_ready_title}
+                  </p>
+                  <p style={{ fontSize: 10, color: '#6B7280', margin: '2px 0 0', lineHeight: 1.4 }}>
+                    {s.courier_ready_desc}
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <div style={{
-              background: 'rgba(212,255,0,0.05)',
-              border: '0.5px solid rgba(212,255,0,0.2)',
-              borderRadius: 10,
-              padding: '10px 12px',
-              marginBottom: 14,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-            }}>
-              <span style={{ fontSize: 16 }}>📡</span>
-              <div>
-                <p style={{ fontSize: 11, fontWeight: 500, color: '#111827', margin: 0 }}>
-                  {s.track_live_title}
-                </p>
-                <p style={{ fontSize: 10, color: '#6B7280', margin: '2px 0 0' }}>
-                  {s.track_live_desc}
-                </p>
+              <div style={{
+                flex: 1,
+                background: 'rgba(212,255,0,0.05)',
+                border: '0.5px solid rgba(212,255,0,0.25)',
+                borderRadius: 12,
+                padding: '12px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}>
+                <span style={{ fontSize: 16, flexShrink: 0 }}>📡</span>
+                <div>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: '#111827', margin: 0 }}>
+                    {s.track_live_title}
+                  </p>
+                  <p style={{ fontSize: 10, color: '#6B7280', margin: '2px 0 0', lineHeight: 1.4 }}>
+                    {s.track_live_desc}
+                  </p>
+                </div>
               </div>
             </div>
 
