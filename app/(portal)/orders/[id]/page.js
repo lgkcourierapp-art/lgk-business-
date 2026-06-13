@@ -32,6 +32,22 @@ export default function OrderPage() {
     })
   }, [id, router])
 
+  useEffect(() => {
+    if (!id) return
+    const channel = supabase
+      .channel('order-detail-' + id)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'deliveries',
+        filter: 'id=eq.' + id,
+      }, ({ new: updated }) => {
+        setOrder(prev => prev ? { ...prev, ...updated } : prev)
+      })
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [id])
+
   if (loading) return (
     <div style={{ minHeight: '100vh', background: colors?.bg || '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#888' }}>
       Loading order...
