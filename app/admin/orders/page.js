@@ -98,7 +98,7 @@ export default function AdminOrders() {
     const { data: fin } = await supabase
       .from('order_financials')
       .select('courier_earnings, lgk_margin, insurance_contribution')
-      .eq('delivery_id', payModal.id)
+      .eq('order_id', payModal.id)
       .single();
 
     if (fin) {
