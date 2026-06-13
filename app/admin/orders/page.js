@@ -77,10 +77,6 @@ export default function AdminOrders() {
 
   const doConfirmPayment = async () => {
     if (!payModal) return;
-    if (!payModal.courierId) {
-      setPayError('Assign a courier before confirming payment.');
-      return;
-    }
     setPayError(null);
     setConfirmingPayment(payModal.id);
     const received = parseFloat(payAmount) || payModal.priceTotal;
