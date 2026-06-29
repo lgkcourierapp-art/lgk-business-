@@ -3,13 +3,14 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import LgkIcon from '@/components/LgkIcon'
 
 const NAV = [
-  { href: '/dashboard', label: 'Dashboard', icon: '⊞' },
-  { href: '/orders/new', label: 'New order', icon: '+' },
-  { href: '/orders', label: 'Orders', icon: '≡' },
-  { href: '/addresses', label: 'Addresses', icon: '📍' },
-  { href: '/settings', label: 'Settings', icon: '⚙' },
+  { href: '/dashboard',  label: 'Dashboard', icon: 'home' },
+  { href: '/orders/new', label: 'New order', icon: 'plus' },
+  { href: '/orders',     label: 'Orders',    icon: 'package' },
+  { href: '/addresses',  label: 'Addresses', icon: 'map-pin' },
+  { href: '/settings',   label: 'Settings',  icon: 'settings' },
 ]
 
 export default function Sidebar() {
@@ -84,7 +85,9 @@ export default function Sidebar() {
                 transition: 'all 120ms ease',
               }}
             >
-              <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>{icon}</span>
+              <span style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <LgkIcon name={icon} size={18} color={active ? '#D4FF00' : '#888'} />
+              </span>
               {label}
             </Link>
           )

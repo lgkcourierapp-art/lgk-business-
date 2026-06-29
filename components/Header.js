@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useApp } from '../utils/appContext'
+import LgkIcon from '@/components/LgkIcon'
 
 export default function Header() {
   const router = useRouter()
@@ -156,7 +157,7 @@ export default function Header() {
                 {hasCompany ? (
                   <span style={{ color: '#D4FF00', fontSize: '12px' }}>🏢</span>
                 ) : (
-                  <span style={{ color: '#666', fontSize: '12px' }}>👤</span>
+                  <LgkIcon name="user" size={14} color="#666" />
                 )}
                 {displayName || '...'} ▾
               </button>

@@ -1,13 +1,14 @@
 'use client'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import LgkIcon from '@/components/LgkIcon'
 
 const NAV = [
-  { href: '/dashboard', label: 'Home', icon: '⊞' },
-  { href: '/orders', label: 'Orders', icon: '≡' },
-  { href: '/orders/new', label: 'New', icon: '+', primary: true },
-  { href: '/addresses', label: 'Places', icon: '📍' },
-  { href: '/settings', label: 'Settings', icon: '⚙' },
+  { href: '/dashboard',  label: 'Home',     icon: 'home' },
+  { href: '/orders',     label: 'Orders',   icon: 'package' },
+  { href: '/orders/new', label: 'New',      icon: 'plus', primary: true },
+  { href: '/addresses',  label: 'Places',   icon: 'map-pin' },
+  { href: '/settings',   label: 'Settings', icon: 'settings' },
 ]
 
 export default function BottomNav() {
@@ -44,16 +45,21 @@ export default function BottomNav() {
             }}
           >
             <span style={{
-              fontSize: primary ? 22 : 18,
               background: primary ? '#D4FF00' : 'transparent',
               borderRadius: primary ? '50%' : 0,
-              width: primary ? 40 : 'auto',
-              height: primary ? 40 : 'auto',
+              width: primary ? 40 : 26,
+              height: primary ? 40 : 26,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: primary ? 2 : 0,
-            }}>{icon}</span>
+            }}>
+              <LgkIcon
+                name={icon}
+                size={primary ? 22 : 20}
+                color={primary ? '#000' : active ? '#D4FF00' : '#555'}
+              />
+            </span>
             <span style={{ fontSize: 10, fontWeight: active || primary ? 700 : 400 }}>{label}</span>
           </Link>
         )
