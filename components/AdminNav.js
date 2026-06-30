@@ -19,6 +19,7 @@ const DEFAULT_NAV = [
   { key: 'flags',      label: 'Flags',      href: '/admin/flags',       icon: 'ti-toggle-right' },
   { key: 'waitlist',   label: 'Waitlist',   href: '/admin/waitlist',    icon: 'ti-clock' },
   { key: 'payouts',    label: 'Payouts',    href: '/admin/payouts',     icon: 'ti-wallet' },
+  { key: 'earnings',   label: 'Earnings',   href: '/admin/earnings',    icon: 'ti-coins' },
   { key: 'moderation', label: 'Moderation', href: '/admin/moderation',  icon: 'ti-shield-check' },
   { key: 'brama',      label: 'Brama',      href: '/admin/brama',       icon: 'ti-door' },
   { key: 'analytics',  label: 'Analytics',  href: '/admin/analytics',   icon: 'ti-chart-bar' },
