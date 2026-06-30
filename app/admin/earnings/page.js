@@ -39,6 +39,21 @@ export default function AdminEarnings() {
 
   const since = useMemo(() => PERIODS[period](), [period]);
 
+  const advanceCleared = useCallback(async () => {
+    if (loading) return;
+    try {
+      const { data, error: err } = await supabase.rpc('admin_advance_cleared', { p_courier_id: null });
+      if (err) { setError(err.message); return; }
+      setError(null);
+      // Reload to reflect new cleared counts.
+      load();
+      alert(`Advanced ${data?.advanced ?? 0} earnings rows pending → cleared.`);
+    } catch (e) {
+      setError(e?.message || 'advance_failed');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -172,6 +187,18 @@ export default function AdminEarnings() {
               {k}
             </button>
           ))}
+          <button
+            onClick={advanceCleared}
+            style={{
+              padding: '6px 12px', fontSize: 12, fontWeight: 700,
+              borderRadius: 8, border: '1px solid var(--yellow)',
+              background: 'var(--yellow-dim)', color: 'var(--yellow)', cursor: 'pointer',
+            }}
+            disabled={loading}
+            title="Advance all pending earnings older than 48 hours to cleared status."
+          >
+            Advance pending → cleared
+          </button>
           <button
             onClick={load}
             style={{
