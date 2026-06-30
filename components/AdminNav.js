@@ -25,6 +25,7 @@ const DEFAULT_NAV = [
   { key: 'analytics',  label: 'Analytics',  href: '/admin/analytics',   icon: 'ti-chart-bar' },
   { key: 'revenue',    label: 'Revenue',    href: '/admin/revenue',     icon: 'ti-chart-line' },
   { key: 'security',   label: 'Security',   href: '/admin/security',    icon: 'ti-lock' },
+  { key: 'audit',      label: 'Audit log',  href: '/admin/audit',       icon: 'ti-history' },
   { key: 'regions',    label: 'Regions',    href: '/admin/regions',     icon: 'ti-map' },
   { key: 'messages',   label: 'Messages',   href: '/admin/messages',    icon: 'ti-message' },
   { key: 'cs',         label: 'CS',         href: '/admin/cs',          icon: 'ti-headset' },
